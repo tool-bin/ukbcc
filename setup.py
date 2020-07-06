@@ -37,6 +37,7 @@ setup(
     keywords='',
     packages=find_packages(),
     include_package_data=True,
+    zip_safe=False,
     author='Isabell Kiral',
     install_requires=[
         'sphinx >= 3.0.3',
@@ -46,7 +47,8 @@ setup(
         'pypi-publisher >= 0.0.4',
         'selenium >= 3.141.0',
         'pandas >= 1.0.3',
-        'requests >= 2.23.0'
+        'requests >= 2.23.0',
+        'webdriver_manager >= 3.2.1'
     ],
     author_email='isa.kiral@gmail.com'
 )

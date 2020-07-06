@@ -1,18 +1,13 @@
 import pandas as pd
-import sys
 import os
-from os import path
 from selenium import webdriver
-from selenium.webdriver.support import expected_conditions as ec
-from selenium.common.exceptions import TimeoutException
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
 import requests
 from . import utils
 import io
-import configparser
+import time
 
-def create_queries(cohort_criteria: dict, main_filename: str, portal_access: bool = True) -> dict:
+
+def create_queries(cohort_criteria: dict, main_filename: str, gpc_path: str) -> dict:
     """Returns query strings for gp_clinical and main dataset.
 
     Keyword arguments:
@@ -60,16 +55,15 @@ def create_queries(cohort_criteria: dict, main_filename: str, portal_access: boo
         for logicKey in data[database]:
             if len(data[database][logicKey]) == 0:
                 continue
-            if portal_access and database == 'gp_clinical':
-                queries['gp_clinical'][logicKey] = _create_gpc_query(data[database][logicKey], logicKey)
+            if gpc_path and database == 'gp_clinical':
+                queries['gp_clinical'][logicKey] = _create_mds_query(gpc_path, entries=data[database][logicKey], delimiter='\t', logic=logicKey)
             elif database == 'main':
                 queries['main'][logicKey] = _create_mds_query(main_filename, data[database][logicKey], logicKey)
     return queries
 
 
-def query_databases(cohort_criteria: dict, queries: dict, main_filename: str, credentials_path: str,
-                    write_dir: str, driver_path: str = ".", driver_type: str = "chrome", timeout: int = 120,
-                    portal_access: bool = True, out_filename: str = "", write: bool = False) -> list:
+def query_databases(cohort_criteria: dict, queries: dict, main_filename: str, write_dir: str,
+                    gpc_path: str="gp_clinical.tsv", out_filename: str = "", write: bool = False) -> list:
     """Returns eids of candidates matching the cohort criteria.
 
     Queries UKBB database and Main dataset for the specified cohort_criteria.
@@ -98,6 +92,8 @@ def query_databases(cohort_criteria: dict, queries: dict, main_filename: str, cr
         time in seconds to wait for response from UKBB. Useful for more involved queries.
     portal_access: bool
         set to False if portal access is not required.
+    gpc_path: str
+        path and name of file to write gp_clinical dataset to (default = gp_clinical.tsv)
     write_dir: str
         path and name of directory to write output files to
     out_filename: str
@@ -133,10 +129,11 @@ def query_databases(cohort_criteria: dict, queries: dict, main_filename: str, cr
         for logicKey in queries[database]:
             if len(queries[database][logicKey]) == 0:
                 continue
-            if database == 'gp_clinical' and portal_access:
+            if database == 'gp_clinical' and gpc_path:
                 query = queries['gp_clinical'][logicKey]
                 print("Querying gp_clinical table with: " + query)
-                pgc_eids = _query_gpc_data(query, credentials_path, driver_path, driver_type, timeout)
+                pgc_eids = _query_main_data(main_filename=gpc_path, delimiter='\t', keys=['read_2', 'read_3'],
+                                            query=query)
                 separate_eids[database][logicKey] = pgc_eids
             elif database == 'main':
                 query = queries['main'][logicKey]
@@ -144,22 +141,26 @@ def query_databases(cohort_criteria: dict, queries: dict, main_filename: str, cr
                 main_eids = _query_main_data(main_filename, main_fields, query)
                 separate_eids[database][logicKey] = main_eids
 
-    # print(separate_eids)
-    # ands = set.intersection(*(set(x) for x in [separate_eids['gp_clinical']['all_of'], separate_eids['main']['all_of']]
-    #                           if x))
-    ands = set.intersection(*(set(x) if x else set() for x in [separate_eids['gp_clinical']['all_of'], separate_eids['main']['all_of']]))
+    try:
+        ands = set.intersection(*(set(x) for x in [separate_eids['gp_clinical']['all_of'],
+                                                   separate_eids['main']['all_of']] if x))
+    except Exception as error:
+        print("Raise exception: {}".format(error))
+        ands = set()
     ors = set(set(separate_eids['gp_clinical']['any_of']) | set(separate_eids['main']['any_of']))
     nots = set(set(separate_eids['gp_clinical']['none_of']) | set(separate_eids['main']['none_of']))
-    ands_ors = set.intersection(*(set(x) for x in [ands, ors] if x))
+    try:
+        ands_ors = set.intersection(*(set(x) for x in [ands, ors] if x))
+    except Exception as error:
+        print("Raise exceptions: {}".format(error))
+        ands_ors = set()
     eids = list(ands_ors - nots)
 
     if write:
         output_file = write_dir + '/' + out_filename
-        with open(output_file, "w") as f:
-            for id in eids:
-                f.write(str(id) + ",")
-        #pd.to_csv(out_filename, sep=", ", header=False, index=False)
-    return eid
+        utils.write_txt_file(output_file, eids)
+    return eids
+
 
 def _create_gpc_query(entries: list, logic: str) -> str:
     """Returns query string for gp_clinical database.
@@ -184,26 +185,11 @@ def _create_gpc_query(entries: list, logic: str) -> str:
         query_end = ' AND '.join(conditions)
     elif logic == "any_of" or logic == "none_of":
         query_end = ' OR '.join(conditions)
-    # for entry in entries:
-    #     field = entry[0]
-    #     code = entry[1]
-    #     if code == 'not null':
-    #         value = ' IS NOT NULL'
-    #     else:
-    #         value = " = '{}'".format(code)
-    #
-    #     if logic == 'all_of':
-    #         query_end = ' AND '.join(f'{field} {value}')
-    #
-    #     elif logic == 'any_of' or logic == 'none_of':
-    #         #query_end = ' OR '.join(f'{field} {value}')
-    #         query_end += ' OR '
-
     query = query_start+query_end
     return query
 
 
-def _create_main_query_updates(main_filename: str, cohort_criteria_sublist: list):
+def _create_main_query_updates(main_filename: str, cohort_criteria_sublist: list, delimiter=','):
     """Returns list of tuples for selected column_keys from cohort_criteria.
 
     Creates an updated list to query the main dataset, where the first entry is the field,
@@ -227,7 +213,7 @@ def _create_main_query_updates(main_filename: str, cohort_criteria_sublist: list
     scroll_replace = lambda x: 't' + x.replace('-', '_')
     period_replace = lambda x: x.replace('.', '_')
     for field, value in cohort_criteria_sublist:
-        columns_list = utils.get_columns(main_filename=main_filename, keys=[field], nrows=2).set_index(
+        columns_list = utils.get_columns(main_filename=main_filename, keys=[field], nrows=2, delimiter=delimiter).set_index(
             'eid').columns.tolist()
         columns = [period_replace(scroll_replace(x)) for x in columns_list]
         query = _create_col_query(columns, value)
@@ -235,7 +221,7 @@ def _create_main_query_updates(main_filename: str, cohort_criteria_sublist: list
     return updates
 
 
-def _query_main_data(main_filename: str, keys: list, query: str) -> list:
+def _query_main_data(main_filename: str, keys: list, query: str, delimiter: str=',', return_df: bool=False) -> list:
     """Returns eids for given query.
 
     Filters main data file, extracting only keys needed, then queries it to return matching eids.
@@ -255,70 +241,73 @@ def _query_main_data(main_filename: str, keys: list, query: str) -> list:
     eids: list
         List of eids
     """
-    main_df = utils.get_columns(main_filename, keys).set_index('eid')
+    main_df = utils.get_columns(main_filename, keys, delimiter=delimiter).set_index('eid')
     main_df.columns = "t" + main_df.columns.str.replace('-', '_')
     main_df.columns = main_df.columns.str.replace('.', '_')
-    filtered_eids = main_df.query(query).reset_index()['eid'].tolist()
-    return filtered_eids
+    filtered_eids = main_df.query(query)#.reset_index()['eid'].tolist()
+    if return_df:
+        return filtered_eids.reset_index()
+    else:
+        return filtered_eids.reset_index()['eid'].tolist()
 
-
-def _query_gpc_data(query: str, credentials_path: str, driver_path: str, driver_type: str,
-                    timeout: int = 120) -> list:
-    """Returns eids for given query.
-
-    Queries UKBB database and list of returns eids.
-
-    Keyword arguments:
-    ------------------
-    query: str
-        string to query database. most likely created with _create_gpc_query
-    credentials_path: str
-    path to a .py file containing the variables:
-    application_id: str
-        ID of the project with UKBB
-    username: str
-        UKBB user name
-    password: str
-        UKBB password
-    driver_path: str
-        path to the driver used by selenium
-    driver_type: str
-        driver_type for selenium e.g chrome or firefox
-    timeout: int [120]
-        time in seconds to wait for response from UKBB. Useful for more involved queries.
-
-    Returns:
-    --------
-    eids: list
-        List of eids
-    """
-    supported_drivers = ['chrome', 'firefox']
-    driver_type = driver_type.lower()
-
-    if not path.exists(credentials_path):
-        sys.exit("Credentials file not found")
-
-    if driver_type not in supported_drivers:
-        raise Exception("Program only supports {} drivers, you provided {}. Please install relevant driver and "
-                        "browser. Instructions in README.md".format(supported_drivers, driver_type))
-
-    application_id = ""
-    username = ""
-    password = ""
-
-    #exec(open(f'{credentials_path}/credentials.py').read())
-    config = configparser.ConfigParser()
-    config.read(credentials_path)# + "/credentials.py")
-
-    application_id = config['CREDS']['application_id'].strip('""')
-    username = config['CREDS']['username'].strip('""')
-    password = config['CREDS']['password'].strip('""')
-    print("app id {}, username {}, password {}".format(application_id, username, password))
-    payload = _get_payload(query, application_id, username, password, driver_path, driver_type,
-                           timeout)
-    response = _download_data(payload)
-    eids = _extract_eids(response)
-    return eids
+#
+# def _query_gpc_data(query: str, credentials_path: str, driver_path: str, driver_type: str,
+#                     timeout: int = 120) -> list:
+#     """Returns eids for given query.
+#
+#     Queries UKBB database and list of returns eids.
+#
+#     Keyword arguments:
+#     ------------------
+#     query: str
+#         string to query database. most likely created with _create_gpc_query
+#     credentials_path: str
+#     path to a .py file containing the variables:
+#     application_id: str
+#         ID of the project with UKBB
+#     username: str
+#         UKBB user name
+#     password: str
+#         UKBB password
+#     driver_path: str
+#         path to the driver used by selenium
+#     driver_type: str
+#         driver_type for selenium e.g chrome or firefox
+#     timeout: int [120]
+#         time in seconds to wait for response from UKBB. Useful for more involved queries.
+#
+#     Returns:
+#     --------
+#     eids: list
+#         List of eids
+#     """
+#     supported_drivers = ['chrome', 'firefox']
+#     driver_type = driver_type.lower()
+#
+#     if not path.exists(credentials_path):
+#         sys.exit("Credentials file not found")
+#
+#     if driver_type not in supported_drivers:
+#         raise Exception("Program only supports {} drivers, you provided {}. Please install relevant driver and "
+#                         "browser. Instructions in README.md".format(supported_drivers, driver_type))
+#
+#     application_id = ""
+#     username = ""
+#     password = ""
+#
+#     #exec(open(f'{credentials_path}/credentials.py').read())
+#     config = configparser.ConfigParser()
+#     config.read(credentials_path)# + "/credentials.py")
+#
+#     application_id = config['CREDS']['application_id'].strip('""')
+#     username = config['CREDS']['username'].strip('""')
+#     password = config['CREDS']['password'].strip('""')
+#     print("app id {}, username {}, password {}".format(application_id, username, password))
+#     payload = download_gpclinical(query, application_id, username, password, driver_path, driver_type,
+#                                   timeout)
+#     response = _download_data(payload)
+#     eids = _extract_eids(response)
+#     return eids
 
 
 def get_inverse_cohort(main_filename: str, eids: list) -> list:
@@ -341,12 +330,11 @@ def get_inverse_cohort(main_filename: str, eids: list) -> list:
     return list(set(main_eids) - set(eids))
 
 
-def _get_payload(query: str, application_id: str, username: str, password: str, driver_path: str, driver_type: str,
-                 timeout: int) -> str:
-    """Returns payload necessary to query gp_clinical database.
+def download_gpclinical(application_id: str, username: str, password: str, driver_path: str, driver_type: str,
+                        download_dir: str, timeout: int = 3600) -> str:
+    """Downloads gp_clinical database.
 
-    Opens headless session to the UKBB database, logs in and creates the payload needed to send request to their
-    database.
+    Opens headless session to the UKBB database, logs in and downloads gp_clinical.csv into download_dir.
 
     Keyword arguments:
     ------------------
@@ -362,28 +350,30 @@ def _get_payload(query: str, application_id: str, username: str, password: str, 
         path to driver
     driver_type: str
         type of driver (either firefox or chrome)
-    timeout: int
-        maximal waiting time for response
-
-
-    Returns:
-    --------
-    payload: str
-        String used in request body to access data in UKBB. To be used with correct headers or as input to
-        _download_data()
+    download_dir: str
+        download directory for gp_clinical.csv
+    timeout: int [3600]
+        optional timeout time in seconds. defaults to an hour.
     """
 
+    prefs = {
+        'download.default_directory': f'{download_dir}'
+    }
     if driver_type == "chrome":
         from selenium.webdriver.chrome.options import Options
+        from webdriver_manager.chrome import ChromeDriverManager
         browser_options = Options()
         browser_options.add_argument("--headless")
-        browser_options.binary_location = '/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary'
-        driver = webdriver.Chrome(executable_path=os.path.abspath(driver_path), options=browser_options)
+        browser_options.add_experimental_option('prefs', prefs)
+        driver = webdriver.Chrome(ChromeDriverManager().install(), options=browser_options)
     elif driver_type == "firefox":
         from selenium.webdriver.firefox.options import Options
+        from webdriver_manager.firefox import GeckoDriverManager
         browser_options = Options()
         browser_options.add_argument("--headless")
-        driver = webdriver.Firefox(options=browser_options)
+        browser_options.add_experimental_option('prefs', prefs)
+        driver = webdriver.Firefox(executable_path=GeckoDriverManager().install(), options=browser_options)
+
     else:
         raise Exception("Unsupported driver type: {}".format(driver_type))
 
@@ -406,23 +396,27 @@ def _get_payload(query: str, application_id: str, username: str, password: str, 
     connect = driver.find_element_by_class_name("btn_glow")
     connect.click()
 
-    sql_field = driver.find_element_by_id('sq0')
-    sql_field.send_keys(query)
+    table_download = driver.find_element_by_link_text("Table Download")
+    table_download.click()
 
-    fetch = driver.find_element_by_class_name("btn_glow")
-    fetch.click()
+    gp_table="gp_clinical"
+    table_input = driver.find_element_by_name("dtab")
+    table_input.send_keys(gp_table)
 
-    try:
-        element_present = ec.presence_of_element_located((By.NAME, 'sr'))
-        WebDriverWait(driver, timeout).until(element_present)
-    except TimeoutException:
-        raise TimeoutException('Timed out. Query could be malformed or be too complex. Try increasing `timeout`.')
+    fetch_table = driver.find_element_by_xpath("//input[@value='Fetch Table']")
+    fetch_table.click()
 
-    hidden_element = driver.find_element_by_name('sr')
-    value = hidden_element.get_property('value')
+    driver.find_element_by_xpath("//a[contains(@href,'https://biota.ndph.ox.ac.uk/tabserv.cgi')]").click()
+    seconds = 0
+    dl_wait = True
+    while dl_wait and seconds < timeout:
+        time.sleep(1)
+        dl_wait = False
+        for fname in os.listdir('./data/'):
+            if fname.endswith('.crdownload'):
+                dl_wait = True
+        seconds += 1
     driver.close()
-    payload = "sr=" + value
-    return payload
 
 
 def _download_data(payload: str) -> requests.Response:
@@ -504,7 +498,7 @@ def _construct_renaming_dict(columns: list, delimiter: str) -> (dict, list):
             numbers.append(c.split(delimiter)[-1])
     return out, numbers
 
-def _create_mds_query(main_filename: str, entries: list, logic: str) -> str:
+def _create_mds_query(main_filename: str,  entries: list, logic: str, delimiter: str=',') -> str:
     """Returns query for main dataset.
 
     Keyword arguments:
@@ -520,21 +514,13 @@ def _create_mds_query(main_filename: str, entries: list, logic: str) -> str:
 
     """
 
-    updated_entries = _create_main_query_updates(main_filename, entries)
+    updated_entries = _create_main_query_updates(main_filename, entries, delimiter=delimiter)
     query = ""
     updated2_entries = [str(f"({code})") for field, code in updated_entries if code]
     if logic == "all_of":
         query = " and ".join(updated2_entries)
     elif logic == "any_of" or logic == "none_of":
         query = " or ".join(updated2_entries)
-    # for entry in updated_entries:
-    #     code = entry[1]
-    #     if code:
-    #         if logic == "all_of":
-    #             query = ' and '.join(f'({code})')
-    #
-    #         elif logic == "any_of" or logic == "none_of":
-    #             query = ' or '.join(f'({code})')
     return query
 
 

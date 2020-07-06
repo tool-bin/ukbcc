@@ -1,6 +1,7 @@
 import argparse
 from . import colors, ui, filter, query
 import os
+import sys
 from os import path
 import configparser
 from datetime import datetime
@@ -9,18 +10,32 @@ from datetime import datetime
 def main():
     """Main function
     """
+
+    def str2bool(v):
+        if isinstance(v, bool):
+            return v
+        if v.lower() in ('yes', 'true', 't', 'y', '1'):
+            return True
+        elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+            return False
+        else:
+            raise argparse.ArgumentTypeError('Boolean value expected.')
+
     parser = argparse.ArgumentParser(description='Create UKBB cohort.')
     parser.add_argument('--config', action='store', dest='config_file',
                         help='Location of config file if provided, optional',
                         default=None)
-    parser.add_argument('--credentials', action='store', dest='cred_path',
+    parser.add_argument('--credentials', action='store', dest='cred_file',
                         help='Location of credentials file if provided, optional',
                         default=None)
-    parser.add_argument('--portal_access-access,', action='store', dest='portal_access',
+    parser.add_argument('--portal_access,', action='store', type=str2bool, dest='portal_access',
                         help='Set to False if interaction with the UKBB portal_access is not necessary. '
                              'Interaction will require valid application id, username, and password.'
                              'Defaults to True.',
                         default=True)
+    parser.add_argument('--gp_clinical_file', action='store', dest='gpc_path',
+                        help='Path and name of gp_clinical table (txt)',
+                        default=None)
     parser.add_argument('--write_directory_path', action='store', dest='write_dir',
                         help='Path and name of directory for writing the output files',
                         default=None)
@@ -31,11 +46,21 @@ def main():
     # defaults:
     driver_type = 'chrome'
     driver_path = '.'
-    cred_path = '.'
+    cred_file = './credentials.py'
+
+    # TODO (comments for nat)
+    # 1. let user input download directory for auxiliary files
+    # 2. download codings, showcase, readcodes into aux_dir
+    # 3. use those paths where ever we need the files
+    # 4. download genomics data
+    # 5. rename package to ukbcc (might require some work)
+    # 6. update all documentation to match the new name, including the command line tool
+
     # constants:
-    coding_filename = "dataFiles/codings.csv"
-    showcase_filename = "dataFiles/showcase.csv"
-    readcode_filename = "dataFiles/readcodes.csv"
+    coding_filename = os.path.join(aux_dir, "/codings.csv")
+    showcase_filename = os.path.join(aux_dir, "/showcase.csv")
+    readcode_filename = os.path.join(aux_dir, "/readcodes.csv")
+
 
     # Create or read config file.
     if not args.config_file:
@@ -87,8 +112,9 @@ def main():
         driver_path = config['PATHS']['driver_path'].strip('""')
 
     # Create or read credentials file.
+    # if not args.portal_access, check gpc_path - if neither, ask if gp_clinical should be queried, if yes then ask for path to write data file to, else skip
     if args.portal_access:
-        if not args.cred_path:
+        if not args.cred_file:
             print(cols['orange'] + 'No credentials provided. Creating credentials file.' + cols['default'])
             cred_directory = input('Please specify directory for credentials [`.` for current directory]: ')
             overwrite = 'N'
@@ -103,9 +129,27 @@ def main():
                 file.write(f'application_id = "{application_id}"\n')
                 file.write(f'username = "{username}"\n')
                 file.write(f'password = "{password}"\n')
-            cred_path = cred_directory
+            cred_file = cred_directory + "/credentials.py"
         else:
-            cred_path = args.cred_path
+            cred_file = args.cred_file
+        if not args.gpc_path:
+            config = configparser.ConfigParser()
+            config.read(cred_file)
+            application_id = config['CREDS']['application_id'].strip('""')
+            username = config['CREDS']['username'].strip('""')
+            password = config['CREDS']['password'].strip('""')
+            gp_directory = input('Please specify download directory for gp_clinical dataset: ')
+            print("Credentials for portal access provided, downloading GP Clinical data, and saving to gp_clinical.txt")
+            query.download_gpclinical(application_id, username, password, driver_path, driver_type,
+                                      download_dir=gp_directory)
+
+    if not args.cred_file and not args.gpc_path:
+        print(cols['orange'] + 'No portal access or gp_clinical.txt file path provided.' + cols['default'])
+        query_gpc = input('Are you sure you do not want to query primary care data? [Y, N]')
+        if query_gpc == 'N':
+            print("Not querying primary care data")
+        else:
+            gpc_path = input('Please provide the path and name to the gp_clinical dataset (gp_clinical.txt)')
 
     if args.write_dir:
         write_dir = args.write_dir
@@ -125,7 +169,7 @@ def main():
         os.mkdir(write_dir)
         print(f'"No directory specified, default directory {write_dir} created. Storing output files here."')
 
-    search_terms_input = input(cols['orange'] + 'Please enter search comma-separated search terms' + cols['default'])
+    search_terms_input = input(cols['orange'] + 'Please enter comma-separated search terms: ' + cols['default'])
     search_terms = search_terms_input.split(',')
 
     search_df = filter.construct_search_df(showcase_filename=showcase_filename,
@@ -133,10 +177,12 @@ def main():
                                            readcode_filename=readcode_filename)
     candidate_df = filter.construct_candidate_df(searchable_df=search_df, search_terms=search_terms)
     cohort_criteria = ui.select_conditions(candidate_df=candidate_df, write_dir=write_dir)
-    cohort_criteria_updated = ui.update_inclusion_logic(cohort_criteria=cohort_criteria, searchable_df=search_df, write_dir=write_dir)
+    cohort_criteria_updated = ui.update_inclusion_logic(cohort_criteria=cohort_criteria, searchable_df=search_df,
+                                                        write_dir=write_dir)
     queries = query.create_queries(cohort_criteria=cohort_criteria_updated, main_filename=main_filename,
-                                   portal_access=args.portal_access)
-    query.query_databases(cohort_criteria=cohort_criteria_updated, queries=queries, main_filename=main_filename, credentials_path=cred_path, write_dir=write_dir, driver_path=driver_path, driver_type=driver_type, timeout=120, portal_access=args.portal_access, out_filename=out_filename, write=True)
+                                   gpc_path=gpc_path)
+    query.query_databases(cohort_criteria=cohort_criteria_updated, queries=queries, main_filename=main_filename,
+                          write_dir=write_dir, gpc_path=gpc_path, out_filename=out_filename, write=True)
 
 
 if __name__ == '__main__':
