@@ -1,4 +1,4 @@
-ukbcohort
+ukbcc
 ===============================
 
 version number: 0.1.9
@@ -33,29 +33,29 @@ For Firefox:
 ### Downloads
 In order to make full use of this module, you will need to download the following files:
 * `main_dataset.csv`: The main dataset as downloaded from UK Biobank. Please follow UKBB instructions to obtain this file.
-* `showcase.csv` and `codings.csv`: Files that can be found [in this repo](https://github.ibm.com/aur-genomics/modellingScripts/blob/master/isabell/ukbcohort/dataFiles) in their current version. A function is provided to download potentially updated files from the UKBB server. These files contain descriptions of columns in the main dataset as well as associated codes.
-* `readcodes.csv`: A file linking readcodes to descriptions for the 'gp_clinical' table in the UKBB data portal. This file can be found [here](https://github.ibm.com/aur-genomics/modellingScripts/blob/master/isabell/ukbcohort/dataFiles).
-* `gp_clinical.txt`: The full general practioner (GP) clinical data that forms part of the primary care dataset. The full table (gp_clinical) can be downloaded from the UKBB data portal website. A function is provided to download this dataset automatically by executing the **`ukcohort`** command. Downloading this file is optional, but will provide the most comprehensive search for participants to generate cohorts.
+* `showcase.csv` and `codings.csv`: Files that can be found in the data_files directory within this repo in their current version. A function is provided to download potentially updated files from the UKBB server. These files contain descriptions of columns in the main dataset as well as associated codes.
+* `readcodes.csv`: A file linking readcodes to descriptions for the 'gp_clinical' table in the UKBB data portal. This file can be found in the data_files directory within this repo.
+* `gp_clinical.txt`: The full general practioner (GP) clinical data that forms part of the primary care dataset. The full table (gp_clinical) can be downloaded from the UKBB data portal website. A function is provided to download this dataset automatically by executing the **`ukbcc`** command. Downloading this file is optional, but will provide the most comprehensive search for participants to generate cohorts.
 <!-- * [`lookupCodeDescriptions.csv`](https://github.ibm.com/aur-genomics/modellingScripts/blob/master/isabell/cohortPipeline/lookupCodeDescriptions.csv): A file that maps descriptions to codes for the following formats: ICD9, ICD10, read_2, read_3.
 * [`coding19.tsv`](https://github.ibm.com/aur-genomics/modellingScripts/blob/master/isabell/cohortPipeline/coding19.tsv): A file that maps the `node_id`s from the main dataset to ICD10 codes.    -->
 
 
 
-Installation 
+Installation
 --------
 
 Installing using pip (or pip3):
 
-    $ pip3 install  git+ssh://git@github.ibm.com/isabeki/ukbcohort.git
+    $ pip3 install git+shh://git@github.com:tool-bin/ukbcc.git
 
 Installing using pip (pip3) from particular branch
 
-    $ pip3 install git+ssh://git@github.ibm.com/isabeki/ukbcohort.git@branchname
+    $ pip3 install git+shh://git@github.com:tool-bin/ukbcc.git@branchname
 
 
 Or clone the repo:
 
-    $ git clone https://github.com/isa_kiko/ukbcohort.git
+    $ git clone https://github.com/tool-bin/ukbcc.git
     $ python setup.py install
 
 Usage
@@ -73,12 +73,12 @@ In order to use the *`interactive mode`* functionality, the module can simple be
 
 1. To start the configuration process, type:
 ```shell
-$ ukbcohort
+$ ukbcc
 ```
-If interaction with the portal is not necessary because all files are local, no configuration file is necessary. 
+If interaction with the portal is not necessary because all files are local, no configuration file is necessary.
 Use the `portal_access` flag and provide the location and filename of the gp_clinical dataset:
 ```shell
-$ ukbcohort --portal_access False --gp_clinical_file ./pathtodata/gp_clinical.txt
+$ ukbcc --portal_access False --gp_clinical_file ./pathtodata/gp_clinical.txt
 ```
 2. You will be asked to provide certain information. Make sure to provide the full or relative path (and filename if asked).
 ```shell
@@ -90,13 +90,13 @@ $ ukbcohort --portal_access False --gp_clinical_file ./pathtodata/gp_clinical.tx
 ```
 The created config and credentials files can be reused in subsequent runs, using flags:
 ```shell
-$ ukbcohort --config ./config.py --credentials ./credentials.py --write_directory_path ./outputdata/
+$ ukbcc --config ./config.py --credentials ./credentials.py --write_directory_path ./outputdata/
 ```
 3. You will be asked to specify search terms used to generate the cohort (e.g `glaucoma`, `optical cohorence tomography`). Provide them as a comma-separated list:
 ```shell
 >> Please enter comma-separated search terms: glaucoma, optical coherence tomography
 ```
-4. Go through all fields that may be relevant and decide if a field or condition will be of interest or not. This process can take some time. 
+4. Go through all fields that may be relevant and decide if a field or condition will be of interest or not. This process can take some time.
 ![Alt text](images/cohort_selection.png?raw=true "Datafield:code Selection")
 5. For all included fields and conditions, you will then be asked to provide logical pointers. Choose if all participants should have a certain condition, none of them, or if every participant should have any of a number of different conditions. Refer to the graphic below for a visual explanation of the logic pointers.
 ![Alt text](images/update_inclusion_logic.png?raw=true "Conditional Logic")
@@ -123,13 +123,13 @@ The module will write all the relevant files to the specified output directory. 
 
 ## Stand-alone mode
 
-The ukbcohort module uses dictionaries in order to represent the various datafield:code combinations and conditional logic to be applied in generating a cohort. 
-This dictionary will be automatically generated through the *`interactive mode`*. 
-Alternatively, the user can write this dictionary themselves, and use the **query** submodule to further interact with UKBB databases. 
-Further information about the expected structure of the dictionary is provided in the docstrings of the functions within this module. 
-It is recommended the user leverage the `interactive mode` if using the ukbcohort module for the first time.
+The ukbcc module uses dictionaries in order to represent the various datafield:code combinations and conditional logic to be applied in generating a cohort.
+This dictionary will be automatically generated through the *`interactive mode`*.
+Alternatively, the user can write this dictionary themselves, and use the **query** submodule to further interact with UKBB databases.
+Further information about the expected structure of the dictionary is provided in the docstrings of the functions within this module.
+It is recommended the user leverage the `interactive mode` if using the ukbcc module for the first time.
 
-To learn about how to use modules in this package in your existing pipeline, see [an example notebook here](https://github.ibm.com/isabeki/ukbcohort/blob/master/examples/example-module.ipynb).
+To learn about how to use modules in this package in your existing pipeline, see [an example notebook here](https://github.ibm.com/isabeki/ukbcc/blob/master/examples/example-module.ipynb).
 
 
 Contributing
@@ -142,6 +142,5 @@ Github issues are also welcome.
 Citation
 ------------
 
-If you found this tool useful in your work, please use the following citation: 
+If you found this tool useful in your work, please use the following citation:
 --INSERT CITATION--
-
