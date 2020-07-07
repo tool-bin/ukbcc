@@ -107,3 +107,22 @@ def download_bulk_files(bulk_file: str, key_file: str, ukbfetch_file: str="./ukb
         os.system(command)
     else:
         command = f"{ukbfetch_file} -b{bulk_file} -a{key_file} -s1 -m1000&"
+
+def download_genotype_files(typename: str, key_file: str, ukbgene_file: str="./ukbgene"):
+    """
+
+    Runs the ukbgene utility to download the genotype call files and related genomic data for each chromosome.
+
+    Keyword arguments:
+    ------------------
+    typename: str
+        type of data to be retrieved - valid entries include 'cal', 'con', 'int', 'baf', 'l2r', 'imp, 'hap'
+    ukbgene_file: str
+        path and name of ukbgene utility
+    key_file: str
+        path and name of the key file in order to authenticate to ukb data servers
+
+    Returns:
+    --------
+    """
+    command = f"{ukbgene_file} {typename} -a{key_file}&"
