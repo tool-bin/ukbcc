@@ -23,12 +23,12 @@ For Chrome:
 2. unzip downloaded file
 3. add the directory to the path (`export PATH=$PATH:<pathToInstallation>`)
 4. execute driver once to make sure your computer trust the distributor (on mac: right click, open, trust developer. double click will not work)
-5. during installation of `ukbcc`, a credentials.py file will be created if it doens't exist already. Enter correct credentials (application ID, user name, and password) to access UKBB or use file as a template to create your own in the location of choice.
+5. during installation of `ukbcc`, a credentials.conf file will be created if it doens't exist already. Enter correct credentials (application ID, user name, and password) to access UKBB or use file as a template to create your own in the location of choice.
 For Firefox:
 1. download [driver](https://github.com/mozilla/geckodriver/releases)
 2. unzip downloaded file
 3. add the directory to the path (`export PATH=$PATH:<pathToInstallation>`)
-4. during installation of `ukbcc`, a credentials.py file will be created if it doens't exist already. Enter correct credentials (application ID, user name, and password) to access UKBB or use file as a template to create your own in the location of choice.
+4. during installation of `ukbcc`, a credentials.conf file will be created if it doens't exist already. Enter correct credentials (application ID, user name, and password) to access UKBB or use file as a template to create your own in the location of choice.
 
 ### Downloads
 In order to make full use of this module, you will need to download the following files:
@@ -90,7 +90,7 @@ $ ukbcc --portal_access False --gp_clinical_file ./pathtodata/gp_clinical.txt
 ```
 The created config and credentials files can be reused in subsequent runs, using flags:
 ```shell
-$ ukbcc --config ./config.py --credentials ./credentials.py --write_directory_path ./outputdata/
+$ ukbcc --config ./config.conf --credentials ./credentials.conf 
 ```
 3. You will be asked to specify search terms used to generate the cohort (e.g `glaucoma`, `optical cohorence tomography`). Provide them as a comma-separated list:
 ```shell
