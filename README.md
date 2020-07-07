@@ -90,7 +90,7 @@ $ ukbcc --portal_access False --gp_clinical_file ./pathtodata/gp_clinical.txt
 ```
 The created config and credentials files can be reused in subsequent runs, using flags:
 ```shell
-$ ukbcc --config ./config.conf --credentials ./credentials.conf 
+$ ukbcc --config ./config.conf --credentials ./credentials.conf
 ```
 3. You will be asked to specify search terms used to generate the cohort (e.g `glaucoma`, `optical cohorence tomography`). Provide them as a comma-separated list:
 ```shell
@@ -129,7 +129,7 @@ Alternatively, the user can write this dictionary themselves, and use the **quer
 Further information about the expected structure of the dictionary is provided in the docstrings of the functions within this module.
 It is recommended the user leverage the `interactive mode` if using the ukbcc module for the first time.
 
-To learn about how to use modules in this package in your existing pipeline, see [an example notebook here](https://github.ibm.com/isabeki/ukbcc/blob/master/examples/example-module.ipynb).
+To learn about how to use modules in this package in your existing pipeline, see example-module notebook in the examples directory in this repo.
 
 
 Contributing
