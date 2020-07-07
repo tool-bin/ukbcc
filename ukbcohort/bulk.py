@@ -108,7 +108,7 @@ def download_bulk_files(bulk_file: str, key_file: str, ukbfetch_file: str="./ukb
     else:
         command = f"{ukbfetch_file} -b{bulk_file} -a{key_file} -s1 -m1000&"
 
-def download_genotype_files(typename: str, key_file: str, ukbgene_file: str="./ukbgene"):
+def download_genetic_files(typename: str, key_file: str, chr: str="all", ukbgene_file: str="./ukbgene"):
     """
 
     Runs the ukbgene utility to download the genotype call files and related genomic data for each chromosome.
@@ -116,13 +116,30 @@ def download_genotype_files(typename: str, key_file: str, ukbgene_file: str="./u
     Keyword arguments:
     ------------------
     typename: str
-        type of data to be retrieved - valid entries include 'cal', 'con', 'int', 'baf', 'l2r', 'imp, 'hap'
+        type of data to be retrieved - valid entries include 'cal', 'con', 'int', 'baf', 'l2r', 'imp', 'hap'
     ukbgene_file: str
         path and name of ukbgene utility
+    chr: str
+        optional variable specifying chromosome to download the data for - if "all", download for all chromosomes
     key_file: str
         path and name of the key file in order to authenticate to ukb data servers
 
     Returns:
     --------
     """
-    command = f"{ukbgene_file} {typename} -a{key_file}&"
+    valid_types = ['cal', 'con', 'int', 'baf', 'l2r', 'imp', 'hap']
+    valid_chr = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', 'X', 'Y', 'XY', 'MT']
+
+    if typename not in valid_types:
+        raise Exception("Invalid typename, please provide a typename in: {}".format(valid_types))
+    else:
+        if chr == 'all':
+            for c in valid_chr:
+                command = f"{ukbgene_file} {typename} -c{c} -a{key_file}&"
+                os.system(command)
+        else:
+            if chr not in valid_chr:
+                raise Exception("Invalid chromosome, please provide a chromosome in {}".format(valid_chr))
+            else:
+                command = f"{ukbgene_file} {typename} -c{chr} -a{key_file}&"
+                os.system(command)
