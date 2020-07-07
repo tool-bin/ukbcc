@@ -371,7 +371,7 @@ def download_gpclinical(application_id: str, username: str, password: str, drive
         from webdriver_manager.firefox import GeckoDriverManager
         browser_options = Options()
         browser_options.add_argument("--headless")
-        browser_options.add_experimental_option('prefs', prefs)
+        browser_options.set_preference('browser.download.dir', download_dir)
         driver = webdriver.Firefox(executable_path=GeckoDriverManager().install(), options=browser_options)
 
     else:
