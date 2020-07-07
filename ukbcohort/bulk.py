@@ -117,12 +117,12 @@ def download_genetic_files(typename: str, key_file: str, chr: str="all", ukbgene
     ------------------
     typename: str
         type of data to be retrieved - valid entries include 'cal', 'con', 'int', 'baf', 'l2r', 'imp', 'hap'
-    ukbgene_file: str
-        path and name of ukbgene utility
-    chr: str
-        optional variable specifying chromosome to download the data for - if "all", download for all chromosomes
     key_file: str
         path and name of the key file in order to authenticate to ukb data servers
+    chr: str
+        optional variable specifying chromosome to download the data for - if "all", download for all chromosomes
+    ukbgene_file: str
+        path and name of ukbgene utility
 
     Returns:
     --------
