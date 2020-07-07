@@ -412,7 +412,9 @@ def download_gpclinical(application_id: str, username: str, password: str, drive
     while dl_wait and seconds < timeout:
         time.sleep(1)
         dl_wait = False
-        for fname in os.listdir('./data/'):
+        # for fname in os.listdir('./data/'):
+        #     if fname.endswith('.crdownload'):
+        for fname in os.listdir(download_dir):
             if fname.endswith('.crdownload'):
                 dl_wait = True
         seconds += 1
