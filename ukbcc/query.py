@@ -372,7 +372,7 @@ def download_gpclinical(application_id: str, username: str, password: str, drive
         # profile.set_preference("browser.download.manager.showWhenStarting", False)
         profile.set_preference("browser.download.dir", download_dir)
         # profile.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/x-gzip")
-        driver = webdriver.Firefox(firefox_profile=profile)
+        # driver = webdriver.Firefox(firefox_profile=profile)
         # driver.get("Name of web site I'm grabbing from")
         # driver.find_element_by_xpath("//a[contains(text(), 'DEV.tgz')]").click()
         from selenium.webdriver.firefox.options import Options
