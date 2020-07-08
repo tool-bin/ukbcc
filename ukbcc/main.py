@@ -149,7 +149,10 @@ def main():
         query.download_gpclinical(application_id, username, password, driver_path, driver_type,
                                       download_dir=gp_directory)
     else:
-        print(cols['orange'] + 'No portal access or gp_clinical.txt file path provided. Not querying GP clinical dataset.' + cols['default'])
+        if args.gpc_path:
+            print(cols['orange'] + 'GP clinical file provided. Querying GP clinical data.')
+        else:
+            print(cols['orange'] + 'No portal access or gp_clinical.txt file path provided. Not querying GP clinical dataset.' + cols['default'])
 
     if not os.path.exists(out_path):
         os.mkdir(out_path)
@@ -158,7 +161,7 @@ def main():
         now = datetime.now()
         dt_string = now.strftime("_%d%m_%H%M%S")
         write_dir = out_path + dt_string
-        os.mkdir(out_path)
+        os.mkdir(write_dir)
         print(f'"Directory {out_path} already exists. Appending timestamp."')
 
     search_terms_input = input(cols['orange'] + 'Please enter comma-separated search terms: ' + cols['default'])
