@@ -367,18 +367,13 @@ def download_gpclinical(application_id: str, username: str, password: str, drive
         browser_options.add_experimental_option('prefs', prefs)
         driver = webdriver.Chrome(ChromeDriverManager().install(), options=browser_options)
     elif driver_type == "firefox":
-        profile = webdriver.FirefoxProfile()
-        profile.set_preference("browser.download.folderList", 2)
-        # profile.set_preference("browser.download.manager.showWhenStarting", False)
-        profile.set_preference("browser.download.dir", download_dir)
-        # profile.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/x-gzip")
-        # driver = webdriver.Firefox(firefox_profile=profile)
-        # driver.get("Name of web site I'm grabbing from")
-        # driver.find_element_by_xpath("//a[contains(text(), 'DEV.tgz')]").click()
         from selenium.webdriver.firefox.options import Options
         from webdriver_manager.firefox import GeckoDriverManager
+        profile = webdriver.FirefoxProfile()
+        profile.set_preference("browser.download.folderList", 2)
+        profile.set_preference("browser.download.dir", download_dir)
         browser_options = Options()
-        browser_options.add_argument("--headless")
+        browser_options.headless = True
         driver = webdriver.Firefox(executable_path=GeckoDriverManager().install(), options=browser_options, firefox_profile=profile)
 
     else:
@@ -419,8 +414,6 @@ def download_gpclinical(application_id: str, username: str, password: str, drive
     while dl_wait and seconds < timeout:
         time.sleep(1)
         dl_wait = False
-        # for fname in os.listdir('./data/'):
-        #     if fname.endswith('.crdownload'):
         for fname in os.listdir(download_dir):
             if fname.endswith('.crdownload'):
                 dl_wait = True
