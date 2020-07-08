@@ -45,10 +45,10 @@ setup(
         'nose >= 1.3.7',
         'coverage >= 5.1',
         'pypi-publisher >= 0.0.4',
-        'selenium >= 3.141.0',
+        'selenium == 3.141.0',
         'pandas >= 1.0.3',
         'requests >= 2.23.0',
-        'webdriver_manager >= 3.2.1'
+        'webdriver_manager == 3.2.1'
     ],
     author_email='isa.kiral@gmail.com'
 )
