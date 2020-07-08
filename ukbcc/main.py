@@ -34,11 +34,11 @@ def main():
                              'Defaults to True.',
                         default=True)
     parser.add_argument('--gp_clinical_file', action='store', dest='gpc_path',
-                        help='Path and name of gp_clinical table (txt)',
+                        help='Path and name of gp_clinical table (txt). If providing path to an existing gp_clinical file, set portal_access parameter to false.',
                         default=None)
-    parser.add_argument('--write_directory_path', action='store', dest='write_dir',
-                        help='Path and name of directory for writing the output files',
-                        default=None)
+    # parser.add_argument('--write_directory_path', action='store', dest='write_dir',
+    #                     help='Path and name of directory for writing the output files',
+    #                     default=None)
 
     args = parser.parse_args()
     cols = colors.terminal
