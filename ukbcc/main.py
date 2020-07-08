@@ -58,9 +58,9 @@ def main():
     # 6. update all documentation to match the new name, including the command line tool
 
     # constants:
-    coding_filename = os.path.join(aux_dir, "/codings.csv")
-    showcase_filename = os.path.join(aux_dir, "/showcase.csv")
-    readcode_filename = os.path.join(aux_dir, "/readcodes.csv")
+    coding_filename = os.path.join(aux_dir, "codings.csv")
+    showcase_filename = os.path.join(aux_dir, "showcase.csv")
+    readcode_filename = os.path.join(aux_dir, "readcodes.csv")
 
     # Create or read config file.
     if not args.config_file:
