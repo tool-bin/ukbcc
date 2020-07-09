@@ -64,7 +64,7 @@ def create_queries(cohort_criteria: dict, main_filename: str, gpc_path: str) -> 
 
 
 def query_databases(cohort_criteria: dict, queries: dict, main_filename: str, write_dir: str,
-                    gpc_path: str="gp_clinical.tsv", out_filename: str = "", write: bool = False) -> list:
+                    gpc_path: str="gp_clinical.txt", out_filename: str = "", write: bool = False) -> list:
     """Returns eids of candidates matching the cohort criteria.
 
     Queries UKBB database and Main dataset for the specified cohort_criteria.
@@ -78,7 +78,7 @@ def query_databases(cohort_criteria: dict, queries: dict, main_filename: str, wr
     main_filename: str
         path to main file
     credentials_path: str
-        path to a .py file containing the variables:
+        path to a .conf file containing the variables:
         application_id: str
             ID of the project with UKBB
         username: str
@@ -94,7 +94,7 @@ def query_databases(cohort_criteria: dict, queries: dict, main_filename: str, wr
     portal_access: bool
         set to False if portal access is not required.
     gpc_path: str
-        path and name of file to write gp_clinical dataset to (default = gp_clinical.tsv)
+        path and name of file to write gp_clinical dataset to (default = gp_clinical.txt)
     write_dir: str
         path and name of directory to write output files to
     out_filename: str
@@ -105,7 +105,7 @@ def query_databases(cohort_criteria: dict, queries: dict, main_filename: str, wr
     Returns:
     --------
     eids: list
-        List of eids matching the search criterion of the searchCodeDict
+        List of eids matching the search criterion of the cohort_criteria
     """
 
     separate_eids = {'gp_clinical': {
@@ -126,6 +126,7 @@ def query_databases(cohort_criteria: dict, queries: dict, main_filename: str, wr
 
     for database in queries.keys():
         if len(queries[database]) == 0:
+            print("No queries found for database: {}".format(database))
             break
         for logicKey in queries[database]:
             if len(queries[database][logicKey]) == 0:
