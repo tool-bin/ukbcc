@@ -16,8 +16,9 @@ def create_queries(cohort_criteria: dict, main_filename: str, gpc_path: str) -> 
         dictionary that was created using select_conditions or update_inclusion_logic function
     main_filename: str
         path to main file
-    portal_access: bool
-        set to False if portal_access access is not required
+    gpc_path: str
+        path to gp_clinical.txt file - if "skip" then gp_clinical data will not be queried
+
 
     Returns:
     --------

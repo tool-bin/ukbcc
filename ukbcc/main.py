@@ -34,7 +34,7 @@ def main():
                              'Defaults to True.',
                         default=True)
     parser.add_argument('--gp_clinical_file', action='store', dest='gpc_path',
-                        help='Path and name of gp_clinical table (txt). If providing path to an existing gp_clinical file, set portal_access parameter to false.',
+                        help='Path and name of gp_clinical table (txt). If providing path to an existing gp_clinical file, set portal_access parameter to False.',
                         default=None)
     # parser.add_argument('--write_directory_path', action='store', dest='write_dir',
     #                     help='Path and name of directory for writing the output files',
@@ -116,7 +116,6 @@ def main():
         driver_path = config['PATHS']['driver_path'].strip('""')
 
     # Create or read credentials file.
-    # if not args.portal_access, check gpc_path - if neither, ask if gp_clinical should be queried, if yes then ask for path to write data file to, else skip
     if args.portal_access:
         if not args.cred_file:
             print(cols['orange'] + 'No credentials provided. Creating credentials file.' + cols['default'])
@@ -151,8 +150,10 @@ def main():
     else:
         if args.gpc_path:
             print(cols['orange'] + 'GP clinical file provided. Querying GP clinical data.')
+            gp_directory = args.gpc_path
         else:
             print(cols['orange'] + 'No portal access or gp_clinical.txt file path provided. Not querying GP clinical dataset.' + cols['default'])
+            gp_directory = None
 
     if not os.path.exists(out_path):
         os.mkdir(out_path)
