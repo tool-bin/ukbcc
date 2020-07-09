@@ -160,8 +160,8 @@ def main():
     else:
         now = datetime.now()
         dt_string = now.strftime("_%d%m_%H%M%S")
-        write_dir = out_path + dt_string
-        os.mkdir(write_dir)
+        out_path = out_path + dt_string
+        os.mkdir(out_path)
         print(f'"Directory {out_path} already exists. Appending timestamp."')
 
     search_terms_input = input(cols['orange'] + 'Please enter comma-separated search terms: ' + cols['default'])
@@ -171,7 +171,7 @@ def main():
                                            coding_filename=coding_filename,
                                            readcode_filename=readcode_filename)
     candidate_df = filter.construct_candidate_df(searchable_df=search_df, search_terms=search_terms)
-    cohort_criteria = ui.select_conditions(candidate_df=candidate_df, write_dir=write_dir)
+    cohort_criteria = ui.select_conditions(candidate_df=candidate_df, write_dir=out_path)
     cohort_criteria_updated = ui.update_inclusion_logic(cohort_criteria=cohort_criteria, searchable_df=search_df,
                                                         write_dir=out_path)
     queries = query.create_queries(cohort_criteria=cohort_criteria_updated, main_filename=main_filename,
