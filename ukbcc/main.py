@@ -159,14 +159,15 @@ def main():
         os.mkdir(out_path)
         print(f'"Directory {out_path} created."')
     else:
+        print(f'"Directory {out_path} already exists. Appending timestamp."')
         now = datetime.now()
         dt_string = now.strftime("_%d%m_%H%M%S")
         out_path = out_path + dt_string
         os.mkdir(out_path)
-        print(f'"Directory {out_path} already exists. Appending timestamp."')
 
     search_terms_input = input(cols['orange'] + 'Please enter comma-separated search terms: ' + cols['default'])
     search_terms = search_terms_input.split(',')
+    print("search terms: ", search_terms)
 
     search_df = filter.construct_search_df(showcase_filename=showcase_filename,
                                            coding_filename=coding_filename,
