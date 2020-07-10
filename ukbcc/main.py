@@ -166,7 +166,7 @@ def main():
         os.mkdir(out_path)
 
     search_terms_input = input(cols['orange'] + 'Please enter comma-separated search terms: ' + cols['default'])
-    search_terms = search_terms_input.strip(" ").split(',')
+    search_terms = search_terms_input.split(',').strip(" ")
     print("search terms: ", search_terms)
 
     search_df = filter.construct_search_df(showcase_filename=showcase_filename,
