@@ -60,7 +60,7 @@ def construct_candidate_df(searchable_df: pd.DataFrame, search_terms: list) -> p
 
     """
 
-    search_terms = [x.lower() for x in search_terms]
+    search_terms = [x.strip(' ').lower() for x in search_terms]
 
     fields = searchable_df.Field.str.lower().str.contains('|'.join(search_terms), na=False)
     meanings = searchable_df.Meaning.str.lower().str.contains('|'.join(search_terms), na=False)
