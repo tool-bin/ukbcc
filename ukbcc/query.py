@@ -159,7 +159,7 @@ def query_databases(cohort_criteria: dict, queries: dict, main_filename: str, wr
     eids = list(ands_ors - nots)
 
     if write:
-        output_file = write_dir + '/' + out_filename
+        output_file = os.path.join(write_dir, out_filename)
         utils.write_txt_file(output_file, eids)
     return eids
 
