@@ -167,7 +167,7 @@ def main():
 
     search_terms_input = input(cols['orange'] + 'Please enter comma-separated search terms: ' + cols['default'])
     search_terms = search_terms_input.strip(" ").split(',')
-    # print("search terms: ", search_terms)
+    print("search terms: ", search_terms)
 
     search_df = filter.construct_search_df(showcase_filename=showcase_filename,
                                            coding_filename=coding_filename,
