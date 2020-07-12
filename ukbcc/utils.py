@@ -157,7 +157,8 @@ def filter_main_df(main_filename: str, column_keys: list, values: list, eids: li
     entries = list(zip(column_keys, values))
     collist = get_columns(main_filename, column_keys).columns.tolist()
     query_string = query._create_mds_query(main_filename, entries, 'any_of')
-    filtered = query._query_main_data(main_filename, collist, query_string, return_df = True).set_index('eid')
+    # filtered = query._query_main_data(main_filename, collist, query_string, return_df = True).set_index('eid')
+    filtered = query._query_main_data(main_filename=main_filename, keys=collist, query=query_string, return_df=True).set_index('eid')    
     if eids:
         df_eids = filtered.loc[eids].reset_index()['eid'].tolist()
         filtered_eids = list(set.intersection(*(set(l) for l in [df_eids, eids] if l)))
