@@ -19,15 +19,12 @@ def download_latest_files(download_path: str) -> bool:
 
     Keyword arguments:
     ------------------
-    cohort_criteria: dict
-        dictionary that was created using select_conditions or update_inclusion_logic function
-    main_filename: str
-        path to main file
+    download_path: str
+        path to download the latest showcase and coding files to
 
     Returns:
     --------
-    queries: dict(str)
-        dictionary containing one query string per database
+    bool
     """
 
     encoding = 'utf-8'

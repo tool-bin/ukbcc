@@ -12,13 +12,11 @@ Tool for curation of UK Biobank data to generate cohorts. The tool can filter th
 Prerequisites
 --------
 
-* The provided tool is developed for Python version 3 and can be imported as a package. as described below.
-* The *`interactive mode`* is developed to be run in the command line and has been developed for and tested on MacOS.
-* Some functionality, particularly automated download of files, relies on running a headless browsers. To make sure this runs smoothly, please follow the steps below.
+* The provided tool is developed for Python version 3 and can be imported as a package as described below.
+* The *`interactive mode`* is developed to be run in the command line and has been developed for and tested on MacOS and Linux systems.
+<!--* Some functionality, particularly automated download of files, relies on running a headless browsers. To make sure this runs smoothly, please follow the steps below
 
-### Enabling UKBB direct access to Primay Care databases using Chrome (Mac/Linux) or Firefox (Linux)
-For Chrome:
-<!--1. download [canary](https://www.google.com/chrome/canary/) -->
+### Enabling UKBB direct access to Primay Care databases
 1. download [driver](https://chromedriver.storage.googleapis.com/index.html?path=83.0.4103.14/)
 2. unzip downloaded file
 3. add the directory to the path (`export PATH=$PATH:<pathToInstallation>`)
@@ -28,18 +26,7 @@ For Firefox:
 1. download [driver](https://github.com/mozilla/geckodriver/releases)
 2. unzip downloaded file
 3. add the directory to the path (`export PATH=$PATH:<pathToInstallation>`)
-4. during installation of `ukbcc`, a credentials.conf file will be created if it doens't exist already. Enter correct credentials (application ID, user name, and password) to access UKBB or use file as a template to create your own in the location of choice.
-
-### Downloads
-In order to make full use of this module, you will need to download the following files:
-* `main_dataset.csv`: The main dataset as downloaded from UK Biobank. Please follow UKBB instructions to obtain this file.
-* `showcase.csv` and `codings.csv`: Files that can be found in the data_files directory within this repo in their current version. A function is provided to download potentially updated files from the UKBB server. These files contain descriptions of columns in the main dataset as well as associated codes.
-* `readcodes.csv`: A file linking readcodes to descriptions for the 'gp_clinical' table in the UKBB data portal. This file can be found in the data_files directory within this repo.
-* `gp_clinical.txt`: The full general practioner (GP) clinical data that forms part of the primary care dataset. The full table (gp_clinical) can be downloaded from the UKBB data portal website. A function is provided to download this dataset automatically by executing the **`ukbcc`** command. Downloading this file is optional, but will provide the most comprehensive search for participants to generate cohorts.
-<!-- * [`lookupCodeDescriptions.csv`](https://github.ibm.com/aur-genomics/modellingScripts/blob/master/isabell/cohortPipeline/lookupCodeDescriptions.csv): A file that maps descriptions to codes for the following formats: ICD9, ICD10, read_2, read_3.
-* [`coding19.tsv`](https://github.ibm.com/aur-genomics/modellingScripts/blob/master/isabell/cohortPipeline/coding19.tsv): A file that maps the `node_id`s from the main dataset to ICD10 codes.    -->
-
-
+4. during installation of `ukbcc`, a credentials.conf file will be created if it doens't exist already. Enter correct credentials (application ID, user name, and password) to access UKBB or use file as a template to create your own in the location of choice.-->
 
 Installation
 --------
@@ -67,6 +54,27 @@ There are two ways to use with this module:
 
 There is more detailed information in [our paper](https://link_to_paper), if you're interested.
 
+### Downloads
+In order to make full use of this module, you will need to download the following files:
+* `main_dataset.csv`: The main dataset as downloaded from UK Biobank. Please follow UKBB instructions to obtain this file.
+* `showcase.csv` and `codings.csv`: Files that can be found in the data_files directory within this repo in their current version. A function is provided to download potentially updated files from the UKBB server. These files contain descriptions of columns in the main dataset as well as associated codes.
+* `readcodes.csv`: A file linking readcodes to descriptions for the 'gp_clinical' table in the UKBB data portal. This file can be found in the data_files directory within this repo.
+* `gp_clinical.txt`: The full general practioner (GP) clinical data that forms part of the primary care dataset. The full table (gp_clinical) can be downloaded from the UKBB data portal website. A function is provided to download this dataset automatically by executing the **`ukbcc`** command. Downloading this file is optional, but will provide the most comprehensive search for participants to generate cohorts. Instructions are provided below.
+<!-- * [`lookupCodeDescriptions.csv`](https://github.ibm.com/aur-genomics/modellingScripts/blob/master/isabell/cohortPipeline/lookupCodeDescriptions.csv): A file that maps descriptions to codes for the following formats: ICD9, ICD10, read_2, read_3.
+* [`coding19.tsv`](https://github.ibm.com/aur-genomics/modellingScripts/blob/master/isabell/cohortPipeline/coding19.tsv): A file that maps the `node_id`s from the main dataset to ICD10 codes.    -->
+
+### Downloading the GP clinical dataset
+The GP clinical dataset can be downloaded directly from the UK Biobank showcase website, through the Data Portal webpage. Instructions for how to download this file are provided below:
+1. Log into the UK Biobank showcase website (https://bbams.ndph.ox.ac.uk/ams/resApplications)
+2. Navigate to your Project by clicking the "Project" button on the left-hand side of the page
+3. Click on the "Data" tab on the right of the page
+4. Click on the "Go to Showcase" tab - this will take you to the UK Biobank Showcase landing page
+5. Click the "Data Portal" tab and click on the "Connect" button. Note! The user requires access permissions to access the Data Portal webpage - if you do not see this button, you do not have access to this page.
+6. Click on the "Table Download" button
+7. Type in "gp_clinical" into the search bar and click the "Fetch Table" button
+8. Click on the generated link. This will automatically start downloading the gp_clinical table, as tab-separated plain-text file.
+9. Provide the path and name of the GP clinical file to the main.py module in order to use this dataset within the *`interactive`* mode of the UKBCC module
+
 ## Interactive mode
 
 In order to use the *`interactive mode`* functionality, the module can simple be called from the command line.
@@ -75,22 +83,21 @@ In order to use the *`interactive mode`* functionality, the module can simple be
 ```shell
 $ ukbcc
 ```
-If interaction with the portal is not necessary because all files are local, no configuration file is necessary.
+<!-- If interaction with the portal is not necessary because all files are local, no configuration file is necessary.
 Use the `portal_access` flag and provide the location and filename of the gp_clinical dataset:
 ```shell
 $ ukbcc --portal_access False --gp_clinical_file ./pathtodata/gp_clinical.txt
-```
+``` -->
 2. You will be asked to provide certain information. Make sure to provide the full or relative path (and filename if asked).
 ```shell
 >> Please specify directory for config file [`.` for current directory]:
 >> Please specify the full path and name of main dataset:
+>> Please specify the full path and name of the GP clinical dataset - if you do not want to query this dataset, please type "No"
 >> Please specify the name of the file to store the list of ids for the cohort:
->> Specify path to driver:
->> Please specify directory for credentials [`.` for current directory]:
 ```
 The created config and credentials files can be reused in subsequent runs, using flags:
 ```shell
-$ ukbcc --config ./config.conf --credentials ./credentials.conf
+$ ukbcc --config ./config.conf
 ```
 3. You will be asked to specify search terms used to generate the cohort (e.g `glaucoma`, `optical cohorence tomography`). Provide them as a comma-separated list:
 ```shell
@@ -130,7 +137,6 @@ Further information about the expected structure of the dictionary is provided i
 It is recommended the user leverage the `interactive mode` if using the ukbcc module for the first time.
 
 To learn about how to use modules in this package in your existing pipeline, see example-module notebook in the examples directory in this repo.
-
 
 Contributing
 ------------
