@@ -192,7 +192,10 @@ def _query_main_data(main_filename: str, keys: list, query: str, delimiter: str=
         list of all column_keys in the cohort_criteria
     query: str
         string to query data. most likely created using _create_mds_query.
-
+    delimiter: str
+        delimiter to use to read the main_filename file
+    return_df: bool
+        determines whether the full dataframe is returned 
 
     Returns:
     --------
