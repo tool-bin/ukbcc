@@ -1,5 +1,5 @@
 import pandas as pd
-from ukbcohort import query
+from ukbcc import query
 import requests
 import json
 
