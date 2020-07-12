@@ -58,7 +58,7 @@ def main():
                        f'main_filename = "{main_filename}"\n'
                        f'gp_clinical_file = "{gp_clinical_file}"\n'
                        f'out_path = "{out_path}"\n'
-                       f'out_filename = "{out_filename}"\n'
+                       f'out_filename = "{out_filename}"\n')
 
         config = configparser.ConfigParser()
         config.read(f'{config_directory}'+'/config.conf')
