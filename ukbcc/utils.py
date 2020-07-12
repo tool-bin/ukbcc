@@ -127,7 +127,7 @@ def read_txt_file(file: str):
                 lines.append(line)
     return lines
 
-def filter_main_df(main_filename: str, column_keys: list, values: list, eids: list=[], write: bool = True, filename: str="filtered_main_df_eids.txt") \
+def filter_main_df(main_filename: str, column_keys: list, values: list, eids: list=[], write: bool=True, filename: str="filtered_main_df_eids.txt") \
         -> pd.DataFrame:
     """Returns bulk dataframe.
 
@@ -142,7 +142,7 @@ def filter_main_df(main_filename: str, column_keys: list, values: list, eids: li
     values: list[str]
         list of values with which to filter the columns
     eids: list[str]
-        optional list of eids to filter main dataframe with
+        optional list of eids to filter main dataframe with - if empty list, dataframe will not be filtered
     write: bool[True]
         if true, list of filtered eids will be written to text file
     filename: str["filtered_main_df_eids"]
@@ -159,11 +159,9 @@ def filter_main_df(main_filename: str, column_keys: list, values: list, eids: li
     query_string = query._create_mds_query(main_filename, entries, 'any_of')
     filtered = query._query_main_data(main_filename=main_filename, keys=collist, query=query_string, return_df=True).set_index('eid')
     if eids:
-        df_eids = filtered.loc[eids].reset_index()['eid'].tolist()
-        filtered_eids = list(set.intersection(*(set(l) for l in [df_eids, eids] if l)))
+        filtered_eids = filtered.loc[filtered.index.intersection(eids)].index.tolist()
         return filtered, filtered_eids
         if write:
             write_txt_file(filename, filtered_eids)
     else:
         return filtered
-    # return filtered, filtered_eids
