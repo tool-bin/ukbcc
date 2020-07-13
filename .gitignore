@@ -1,11 +1,11 @@
 .DS_Store
 **/.DS_Store
 *.py[cod]
-
+geckodriver.log
 # 
 prototype_notebooks/credentials.py
 credentials.py 
-
+tests.py
 # Jupyter lab
 .ipynb_checkpoints
 **/*.ipynb_checkpoints/

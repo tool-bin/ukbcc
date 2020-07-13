@@ -1,0 +1,1 @@
+{"all_of": [], "any_of": [["read_3", "XE18j"], ["read_3", "F4251"], ["read_3", "F4252"], ["read_3", "XE18j"], ["read_3", "XE18j"]], "none_of": []}
