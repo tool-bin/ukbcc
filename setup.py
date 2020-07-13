@@ -15,7 +15,9 @@ def load_readme():
 setup(
     name='ukbcc',
     version=ukbcc.__version__,
-    description='Tool to curate UKBB data',
+    description='Tool to define a UKBB cohort',
+    author='Isabell Kiral, Nathalie Willems, Benjamin Goudey',
+    author_email='isa.kiral@gmail.com',
     long_description=load_readme(),
     long_description_content_type='text/markdown',
     url='https://github.com/tool-bin/ukbcc/',
@@ -24,7 +26,6 @@ setup(
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
-        'Programming Language :: Python :: 3.7.6',
         'Natural Language :: English',
         'Intended Audience :: Science/Research'
     ],
@@ -38,7 +39,6 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
-    author='Isabell Kiral',
     install_requires=[
         'sphinx >= 3.0.3',
         'sphinx_rtd_theme >= 0.4.3',
@@ -48,7 +48,8 @@ setup(
         'selenium == 3.141.0',
         'pandas >= 1.0.3',
         'requests >= 2.23.0',
-        'webdriver_manager == 3.2.1'
+        'webdriver_manager == 3.2.1',
+        'numpy >= 1.18'
     ],
-    author_email='isa.kiral@gmail.com'
+    python_requires='>=3.6'
 )

@@ -1,8 +1,9 @@
 ukbcc
 ===============================
 
-version number: 0.1.9
-author: Isabell Kiral, Nathalie Willems
+version number: 0.1.16
+
+authors: Isabell Kiral, Nathalie Willems, Benjamin Goudey
 
 Overview
 --------
@@ -104,10 +105,7 @@ $ ukbcc --config ./config.conf
 >> Please enter comma-separated search terms: glaucoma, optical coherence tomography
 ```
 4. Go through all fields that may be relevant and decide if a field or condition will be of interest or not. This process can take some time.
-![Alt text](images/cohort_selection.png?raw=true "Datafield:code Selection")
 5. For all included fields and conditions, you will then be asked to provide logical pointers. Choose if all participants should have a certain condition, none of them, or if every participant should have any of a number of different conditions. Refer to the graphic below for a visual explanation of the logic pointers.
-![Alt text](images/update_inclusion_logic.png?raw=true "Conditional Logic")
-![Alt text](images/logic_pointers.png?raw=true "Logic pointers")
 
 Once these selections are made, the module will query the UKBB databases in order to generate a list participants IDs that match the specified criteria. These IDs can then be used in downstream processing and analysis pipelines, for example generating statistics about the cohort (**stats** module), or downloading bulk imaging files for the individuals within the cohort (**bulk** module).
 
