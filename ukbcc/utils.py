@@ -156,8 +156,8 @@ def filter_main_df(main_filename: str, column_keys: list, values: list, eids: li
     query_string = query._create_mds_query(main_filename, entries, 'any_of')
     filtered = query._query_main_data(main_filename=main_filename, keys=collist, query=query_string, return_df=True).set_index('eid')
     if eids:
-        filtered_eids = filtered.loc[filtered.index.intersection(eids)].index.tolist()
-        return filtered, filtered_eids
+        filtered_df = filtered.loc[filtered.index.intersection(eids)]
+        return filtered_df, filtered_df.index.tolist()
         if write:
             write_txt_file(filename, filtered_eids)
     else:
