@@ -50,7 +50,8 @@ setup(
         'requests >= 2.23.0',
         'webdriver_manager == 3.2.1',
         'numpy >= 1.18',
-        'dash >= 1.13.4'
+        'dash >= 1.13.4',
+        'dash-bootstrap-components >= 0.10.3'
     ],
     python_requires='>=3.6'
 )
