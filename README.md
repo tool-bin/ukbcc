@@ -138,7 +138,7 @@ To learn about how to use modules in this package in your existing pipeline, see
 
 Known Issues
 ------------
-Currently there are known issues in running very long and complex queries (e.g > 800 datafield:value combinations), resulting in errors from the pandas library. We are working on these issues, and will update subsequent releases with these bug fixes soon. 
+Currently there are known issues in running very long and complex queries (e.g > 800 datafield:value combinations), resulting in errors from the pandas library. We are working on these issues, and will update subsequent releases with these bug fixes soon.
 
 Contributing
 ------------
@@ -151,6 +151,7 @@ Citation
 ------------
 
 If you found this tool useful in your work, please use the following citation:
-UKBCC: a cohort curation package for UK Biobank
+
+**UKBCC: a cohort curation package for UK Biobank**
 Isabell Kiral, Nathalie Willems, Benjamin Goudey
 bioRxiv 2020.07.12.199810; doi: https://doi.org/10.1101/2020.07.12.199810
