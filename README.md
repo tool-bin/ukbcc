@@ -152,6 +152,6 @@ Citation
 
 If you found this tool useful in your work, please use the following citation:
 
-**UKBCC: a cohort curation package for UK Biobank**
-Isabell Kiral, Nathalie Willems, Benjamin Goudey
+**UKBCC: a cohort curation package for UK Biobank**\
+Isabell Kiral, Nathalie Willems, Benjamin Goudey\
 bioRxiv 2020.07.12.199810; doi: https://doi.org/10.1101/2020.07.12.199810
