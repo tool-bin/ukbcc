@@ -22,7 +22,7 @@ setup(
     long_description_content_type='text/markdown',
     url='https://github.com/tool-bin/ukbcc/',
     download_url='https://github.com/tool-bin/ukbcc/tarball/' + ukbcc.__version__,
-    license='unlicense',
+    license='APACHE 2',
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',

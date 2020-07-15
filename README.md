@@ -38,11 +38,7 @@ Installation
 
 Installing using pip (or pip3):
 
-    $ pip3 install git+shh://git@github.com:tool-bin/ukbcc.git
-
-Installing using pip (pip3) from particular branch
-
-    $ pip3 install git+shh://git@github.com:tool-bin/ukbcc.git@branchname
+    $ pip3 install ukbcc
 
 
 Or clone the repo:
@@ -57,7 +53,8 @@ There are two ways to use with this module:
 1. Running the module from the command line and leveraging the *`interactive mode`* features to dynamically generate cohorts on the fly.
 2. Importing the module into an existing pipeline, and using the functions developed to interact with the UKBB databases.
 
-There is more detailed information in [our paper](https://link_to_paper), if you're interested.
+There is more detailed information in [our paper](https://doi.org/10.1101/2020.07.12.199810).j
+
 
 ### Downloads
 In order to make full use of this module, you will need to download the following files:
