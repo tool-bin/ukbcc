@@ -49,7 +49,8 @@ setup(
         'pandas >= 1.0.3',
         'requests >= 2.23.0',
         'webdriver_manager == 3.2.1',
-        'numpy >= 1.18'
+        'numpy >= 1.18',
+        'plotly >= 4.3'
     ],
     python_requires='>=3.6'
 )

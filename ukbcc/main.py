@@ -111,9 +111,11 @@ def main():
     eids = query.query_databases(cohort_criteria=cohort_criteria_updated, queries=queries, main_filename=main_filename,
                                  write_dir=out_path, gpc_path=gp_clinical_file, out_filename=out_filename, write=True)
 
-    stats.compute_stats(main_filename=main_filename, eids=eids, showcase_filename=showcase_filename,
+    _, translation_df =stats.compute_stats(main_filename=main_filename, eids=eids, showcase_filename=showcase_filename,
                         coding_filename=coding_filename, column_keys=['34-0.0', '52-0.0', '22001-0.0', '21000-0.0',
                                                                       '22021-0.0'], out_path=out_path)
+
+    stats.create_report(translation_df, out_path)
 
 
 if __name__ == '__main__':
