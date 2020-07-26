@@ -92,17 +92,20 @@ tab = dbc.FormGroup(
 #
 @app.callback(
     Output("defined_terms", "data"),
-    [Input({'modal_ctrl':ALL,  'name': ALL}, "n_clicks")],
+    [Input({'modal_ctrl':ALL,  'name': ALL}, "n_clicks"),
+     Input('selected_terms_data', 'modified_timestamp')],
     [State("defined_terms", "data"),
      State({"name":"name_input",'type':ALL}, "value"),
      State("search_logic_state", "children"),
-     #State('selected_terms_data', 'children'),
-     State('kw_result_table', 'derived_virtual_data'),
-     State('kw_result_table', 'derived_virtual_selected_rows')
+     State('selected_terms_data', 'data')
+     #State('kw_result_table', 'derived_virtual_data'),
+     #State('kw_result_table', 'derived_virtual_selected_rows')
      ]
 )
-def alter_defined_term(n_clicks, defined_terms, name,term_add_state, rows, derived_virtual_selected_rows):
+def alter_defined_term(n_clicks, modified_timestamp, defined_terms, name,term_add_state, select_row_dat):#, rows, derived_virtual_selected_rows):
     ctx = dash.callback_context
+    print('alter_defined_term()- Creating term1')
+    print('alter_defined_term()- modified_timestamp {}'.format(modified_timestamp))
 
     if (not ctx.triggered):
         raise PreventUpdate
@@ -110,26 +113,39 @@ def alter_defined_term(n_clicks, defined_terms, name,term_add_state, rows, deriv
     if len(ctx.triggered) and (ctx.triggered[0]['prop_id'] == '.' or ctx.triggered[0]['value'] is None):
         raise PreventUpdate
 
-    calling_ctx = json.loads(ctx.triggered[0]['prop_id'].split('.')[0])
     defined_terms = defined_terms or OrderedDict()
+    print("alter_defined_term()-defined_terms: {}".format(defined_terms))
 
-    #If we aren't related to a modal, we're a button of a defined term
-    if(calling_ctx["modal_ctrl"] == 'none' and calling_ctx['name']!='return_rows'):
-        calling_id, calling_action = calling_ctx["name"].rsplit('_', 1)
-        del defined_terms[calling_id]
-        return defined_terms
+    if ctx.triggered[0]['prop_id'] == 'selected_terms_data.modified_timestamp':
+        if select_row_dat[0] is None:
+            print( "alter_defined_term()- nothing to update")
+            raise PreventUpdate
+        print('alter_defined_term()- Append terms')
+        rows, derived_virtual_selected_rows = select_row_dat
 
-    #If we are returning rows from the new term modal
-    elif (calling_ctx["modal_ctrl"] == 'none' and calling_ctx['name'] == 'return_rows'):
         if derived_virtual_selected_rows is None:
             derived_virtual_selected_rows = []
 
         selected_df = pd.DataFrame(rows).iloc[derived_virtual_selected_rows]
-        defined_terms[term_add_state[0]][term_add_state[1]].append( selected_df.to_json())
+        defined_terms[term_add_state[0]][term_add_state[1]].append(selected_df.to_json())
+        return defined_terms
+
+
+
+
+    calling_ctx = json.loads(ctx.triggered[0]['prop_id'].split('.')[0])
+
+    #If we aren't related to a modal, we're a delete button of a defined term
+    if(calling_ctx["modal_ctrl"] == 'none' and calling_ctx['name']!='return_rows'):
+        print('alter_defined_term()- Delete')
+        calling_id, calling_action = calling_ctx["name"].rsplit('_', 1)
+        del defined_terms[calling_id]
+        return defined_terms
 
     # If we are adding a new term
     elif (calling_ctx["modal_ctrl"] == 'new_term' and calling_ctx["name"] == 'submit'):
-        defined_terms[get_random_string(16)]={'name':name, 'any':[], 'all':[]}
+        print('alter_defined_term()- Creating term')
+        defined_terms[get_random_string(16)]={'name':name, 'any':[]}
 
     return defined_terms
 
@@ -141,39 +157,40 @@ def alter_defined_term(n_clicks, defined_terms, name,term_add_state, rows, deriv
     [State("defined_terms", "data")]
 )
 def populate_defined_terms(_, defined_terms):
-    #If we haven't pressed anything, get out
-
+    #If we have no defined terms, sop this callback
+    if(defined_terms is None):
+        print(defined_terms)
+        raise PreventUpdate
 
     defined_fields=[]
     for idx, (id,v) in enumerate(defined_terms.items()):
         n_any_terms = len(defined_terms[id]['any'])
-        n_all_terms = len(defined_terms[id]['any'])
 
-        #term_count_str = "# terms: {} Any \t{} All".format(n_any_terms)#, n_all_terms)
-        term_count_str = "{} terms".format(n_any_terms)  # , n_all_terms)
+
 
         tab_any_terms = pd.concat([pd.read_json(x) for x in defined_terms[id]['any']]+[pd.DataFrame()])
-        tab_all_terms = pd.concat([pd.read_json(x) for x in defined_terms[id]['all']]+[pd.DataFrame()])
+        print("populate_defined_terms - tab_any_terms: {}".format(tab_any_terms))
+        term_count_str = "{} terms".format(len(tab_any_terms.index))  # , n_all_terms)
+
+        terms_tab=dbc.Table.from_dataframe(tab_any_terms, striped=True, bordered=True, hover=True)
+        if(len(tab_any_terms.index)==0):
+            terms_tab=html.H5("No terms added yet. Hit the 'Add terms' button")
 
         #TODO: Move this to its own function
         #TODO: Consider using dbc.Collapse to allow showing lots of terms
         defined_fields.append(dbc.Card(dbc.Row([
             dbc.Col(dbc.Button("❌", id={'modal_ctrl':'none','name': id + '_remove'}), width={"size": 1}),
-            #dbc.Col(dbc.Input(id={"name": id + '_name', "type": "name_text"}, type='text', disabled=True,  ), width={"size": 3}, ),
-            dbc.Col(html.H3(v['name'], id=id + '_name_title'), width={"size": 3}),
+            dbc.Col(html.H3(v['name'], id=id + '_name_title'), width={"size": 4}),
             dbc.Col(dbc.Button("Add terms", id={"name": id + '_any', "type": "find_terms_modal_btn"}),
                     width={"size": 2}),
-            #dbc.Col(dbc.Button("Add 'all' term", id={"name": id + '_all', "type": "find_terms_modal_btn"}),
-            #        width={"size": 2}),
+
             dbc.Col(html.H5(term_count_str, id={"name": id + '_terms', "type": "text"}), width={"size": 3}),
-            dbc.Col(dbc.Button("▼", id={"index": idx, "type": "expand"}), width={"size": 1}),
+            dbc.Col(dbc.Button("▼", id={"index": idx, "type": "expand"}), width={"size": 1, "offset":1}),
             dbc.Collapse(
                 dbc.Card(
                     dbc.CardBody([
-                        html.H5('At least one of these'),
-                        dbc.Table.from_dataframe(tab_any_terms, striped=True, bordered=True, hover=True)
-                        #html.H5('All of these terms'),
-                        #dbc.Table.from_dataframe(tab_all_terms, striped=True, bordered=True, hover=True)
+                        html.H5('Defining terms'),
+                        terms_tab
                     ])),
                 id={"index": idx, "type": "collapse"})
         ])))

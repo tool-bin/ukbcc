@@ -72,6 +72,11 @@ tab = dbc.FormGroup(
     [State('defined_terms', 'data')]
 )
 def set_querable_terms(active_tab, defined_terms):
+    # If we have no defined terms, sop this callback
+    if (defined_terms is None):
+        print(defined_terms)
+        raise PreventUpdate
+
     opts=[ {'label': val['name'][0], 'value': key} for key,val in defined_terms.items()]
     return(opts)
 

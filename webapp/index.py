@@ -16,6 +16,8 @@ app.layout = dbc.Container(
         dcc.Store(id="kw_search", storage_type='session'),
         dcc.Store(id="include_fields", storage_type='session'),
         dcc.Store(id="defined_terms", storage_type='session'),
+        dcc.Store(id='selected_terms_data', storage_type='memory'),
+
         html.H1('UKB Cohort Curator'),
         html.Hr(),
         dbc.Tabs(
@@ -31,7 +33,6 @@ app.layout = dbc.Container(
         ),
         html.Div(id="tab-content", className="p-4"),
         html.Div(id='search_logic_state', style={'display': 'none'}),
-        html.Div(id='selected_terms_data')#, style={'display': 'none'}),
 
     ]
 )

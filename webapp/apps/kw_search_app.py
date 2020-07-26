@@ -45,7 +45,7 @@ kw_search_group = dbc.FormGroup(
             )
 def search_kw_button(_, config, search_terms, kw_search):
 
-
+    print('search_kw_button')
     #Cancel if we haven't pressed the button
     ctx = dash.callback_context
     if len(ctx.triggered) and ctx.triggered[0]['prop_id']=='.':
@@ -61,11 +61,12 @@ def search_kw_button(_, config, search_terms, kw_search):
         return "Config has not been set. Missing all fields"
 
     #Show error if we are missing fields
-    required_config = set(['main_dat_path', 'cohort_path', 'driver_path', 'aux_path', 'user', 'pass', 'app_id'])
+    required_config = set(['main_dat_path', 'gp_path', 'cohort_path', 'aux_path'])
     existing_config_fields=set(config.keys())
     missing_config_fields = required_config.difference(existing_config_fields)
     if len(missing_config_fields)!=0:
-        return "Config has not been set. Missing fields: {}".format(', '.join([str(x) for x in missing_config_fields]))
+        print("Config has not been set. Missing fields: {}".format(', '.join([str(x) for x in missing_config_fields])))
+        raise PreventUpdate
 
     print('config')
     print(config)
@@ -113,25 +114,39 @@ def show_candidates(candidate_df_json):
         return dbc.Row(
             dbc.Col([
                 dbc.Row([
+                    html.Div([
                     dbc.Button("Select All", id={'type':'select_btn', 'name':'select'}),
                     dbc.Button("Deselect All", id={'type':'select_btn', 'name':'deselect'}),
                     dbc.Button("Return selected fields", id={'modal_ctrl':'none', 'name':'return_rows'})
+                    ])
                 ])
                 ,
                 dbc.Row(
-                    dash_table.DataTable(id='kw_result_table',
-                                         style_cell={
-                                             'whiteSpace': 'normal',
-                                             'height': 'auto',
-                                         },
-                                         columns=[{"name": i, "id": i} for i in candidate_df.columns],
-                                         data=candidate_df.to_dict('records'),
-                                         row_selectable='multi',
-                                         filter_action='native',
+                    dash_table.DataTable(
+                        id='kw_result_table',
+                        #css=[{'selector': 'table', 'rule': 'table-layout: fixed'}],
+                        style_cell={
+                            'whiteSpace': 'normal',
+                            'height': 'auto',
+                        },
+                        columns=[{"name": i, "id": i} for i in candidate_df.columns],
+                        data=candidate_df.to_dict('records'),
+                        row_selectable='multi',
+                        filter_action='native',
+                        page_size=10,
+                        fixed_rows={'headers': True},
+                        style_cell_conditional=[
+                            {'if': {'column_id': 'Field'},   'width': '1%'},
+                            {'if': {'column_id': 'FieldID'}, 'width': '6%'},
+                            {'if': {'column_id': 'Coding'},  'width': '6%'},
+                            {'if': {'column_id': 'Value'},   'width': '8%'},
+                            {'if': {'column_id': 'Meaning'}, 'width': '40%'}
 
-                                         )
+                        ]
+
+                    )
                 )
-            ]), justify='center')
+            ], width={"size": 10, "offset": 2}), justify='right')
 
 
 #
@@ -164,3 +179,22 @@ def select_all(n_clicks, rows, selected_rows, derived_viewport_indices, derived_
     print("After: Selected rows"),
     print(select_rows)
     return select_rows
+
+
+
+@app.callback(
+    Output('selected_terms_data', 'data'),
+    [Input({'modal_ctrl': 'none', 'name': 'return_rows'}, "n_clicks")],
+    [State('kw_result_table', 'derived_virtual_data'),
+    State('kw_result_table', 'derived_virtual_selected_rows')]
+)
+def store_selected_terms(nclick, rows, derived_virtual_selected_rows):
+    ctx = dash.callback_context
+    if (not ctx.triggered):
+        print('\tNothing triggered')
+        raise PreventUpdate
+
+    print("Updating terms")
+    print(type(rows))
+    print(type(derived_virtual_selected_rows))
+    return [rows, derived_virtual_selected_rows]

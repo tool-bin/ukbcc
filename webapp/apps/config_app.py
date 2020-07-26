@@ -15,58 +15,29 @@ from ukbcc import query
 main_dat_path_input = dbc.FormGroup([
         dbc.Label("Main Dataset (path)", html_for={"type":"config","name":"main_dat_path"}),
         dbc.Input(placeholder="Path", type="text", id={"type":"config","name":"main_dat_path"}, persistence=True),
+        #dbc.Input( type="file", id={"type": "file", "name": "main_dat_path"}),
         dbc.FormText("Specify the path to main dataset (server)", color="secondary")
 ])
 
 gp_dat_path_input = dbc.FormGroup([
         dbc.Label("GP data (path)", html_for={"type":"config", "name":"gp_path"}),
         dbc.Input(placeholder="Path", type="text", id={"type":"config", "name":"gp_path"}, persistence=True),
+        #dbc.Input(type="file", id={"type": "file", "name": "gp_path"},),
         dbc.FormText("Specify the path to GP data (server)", color="secondary")
 ])
-driver_path_input = dbc.FormGroup([
-        dbc.Label("Driver (path)", html_for={"type":"config","name":"driver_path"}),
-        dbc.Input(placeholder="Path", type="text", id={"type":"config","name":"driver_path"}, persistence=True),
-        dbc.FormText("Path to the gecko or canary driver", color="secondary")
-])
-
-driver_type_input = dbc.FormGroup([
-        dbc.Label("Driver Type", html_for={"type":"config","name":"driver_type"}),
-        dbc.RadioItems(
-                options=[
-                    {"label": "Chrome (chromedriver)", "value": 'chrome'},
-                    {"label": "Firefox (gecko)", "value": 'firefox'},
-                ],
-                value='firefox',
-                id={"type":"config", "name":"driver_type"}
-)])
-
 cohort_path_input = dbc.FormGroup([
         dbc.Label("Cohort output (path)", html_for={"type": "config", "name": "cohort_path"}),
-    dbc.Input(placeholder="Path to Cohort", type="text", id={"type": "config", "name": "cohort_path"},
-              persistence=True),
-
-    dbc.FormText("Specify the output path", color="secondary")
+        dbc.Input(placeholder="Path to Cohort", type="text", id={"type": "config", "name": "cohort_path"},
+                  persistence=True),
+        #dbc.Input(type="file", id={"type": "file", "name": "cohort_path"}),
+        dbc.FormText("Specify the output path", color="secondary")
 ])
 aux_path_input = dbc.FormGroup([
         dbc.Label("Auxillary files (path)", html_for={"type": "config", "name": "aux_path"}),
         dbc.Input(placeholder="Path to Aux files", type="text", id={"type": "config", "name": "aux_path"},
               persistence=True),
+        #dbc.Input(type="file", id={"type": "file", "name": "aux_path"}),
         dbc.FormText("Specify the path to download (or with existing) auxillary files", color="secondary")
-])
-user_input = dbc.FormGroup([
-        dbc.Label("UKB User", html_for={"type": "config", "name": "user"}),
-        dbc.Input(placeholder="User", type="text", id={"type": "config", "name": "user"}, persistence=True),
-        dbc.FormText("Specify username for UKB", color="secondary")
-])
-pass_input = dbc.FormGroup([
-        dbc.Label("UKB Pass", html_for={"type": "config", "name": "pass"}),
-        dbc.Input(placeholder="Password", type="password", id={"type": "config", "name": "pass"}, persistence=True),
-        dbc.FormText("Specify password for UKB", color="secondary")
-])
-app_id_input = dbc.FormGroup([
-        dbc.Label("UKB Application ID", html_for={"type": "config", "name": "app_id"}),
-        dbc.Input(placeholder="Application ID", type="text", id={"type": "config", "name": "app_id"}, persistence=True),
-        dbc.FormText("Specify the application ID for your project", color="secondary")
 ])
 
 tab = dbc.FormGroup(
@@ -159,7 +130,7 @@ def run_checkpath_modal_check(n_click, main_dat_path, gp_path, aux_path, cohort_
     if(not main_dat_path):
         main_dat_path=''
     if (not gp_path):
-        gp_pathgp_path = ''
+        gp_path = ''
     if (not aux_path):
         aux_path = ''
     if (not cohort_path):
@@ -209,9 +180,13 @@ def save_config_handler(values, config):
     if ctx.triggered and ctx.inputs_list and ctx.inputs_list[0]:
         #Convert input set of patterns into a dictionary
         #Use the results to write config dict
+        print (ctx.inputs_list)
         for field in ctx.inputs_list[0]:
             config_id_dict = field
-            print(field)
-            config[config_id_dict['id']['name']]=config_id_dict['value']
+            print('config_id_dict: {}'.format(field))
+            print('config_id_dict type: {}'.format(type(field)))
+            #If we have a value for some path, add it
+            if('value' in config_id_dict):
+                config[config_id_dict['id']['name']]=config_id_dict['value']
         return config
     return(config)
