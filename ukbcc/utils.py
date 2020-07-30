@@ -2,6 +2,7 @@ import pandas as pd
 from ukbcc import query
 import requests
 import json
+import sqlite3
 
 from datetime import datetime
 print_time = lambda: datetime.now().strftime("%H:%M:%S")
@@ -172,3 +173,45 @@ def filter_main_df(main_filename: str, column_keys: list, values: list, eids: li
             write_txt_file(filename, filtered_eids)
     else:
         return filtered
+
+
+def write_df_as_sqlite(output_file: str, table_name: str, df: pd.DataFrame)-> pd.DataFrame:
+    """Writes pandas dataframe to an SQlite database with a specificed table name dataframe.
+
+       Writes pandas dataframe to an SQlite database with a specificed table name dataframe.
+
+       Keyword arguments:
+       ------------------
+       output_file: str
+           path and name of main dataset
+       table_name: str
+           keys of the columns that should be included to create the bulk file
+       df: pd.DataFrame
+           list of values with which to filter the columns
+
+
+       Returns:
+       --------
+       bool:
+        True if write success, False otherwise
+       """
+    with sqlite3.connect(output_file) as sql_db:
+        df.to_sql(name=table_name, con=sql_db)
+        sql_db.close()
+        return False
+    return False
+
+
+#https://stackoverflow.com/questions/12932607/how-to-check-if-a-sqlite3-database-exists-in-python
+def isSQLite3(filename):
+    from os.path import isfile, getsize
+
+    if not isfile(filename):
+        return False
+    if getsize(filename) < 100: # SQLite database file header is 100 bytes
+        return False
+
+    with open(filename, 'rb') as fd:
+        header = fd.read(100)
+
+    return header[:16] == 'SQLite format 3\x00'
