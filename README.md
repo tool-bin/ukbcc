@@ -78,7 +78,29 @@ The GP clinical dataset can be downloaded directly from the UK Biobank showcase 
 
 ## Interactive mode
 
-In order to use the *`interactive mode`* functionality, the module can simple be called from the command line.
+There are two ways to run *`interactive mode`*:
+1. Through a web-based interface
+2. Through a command-line interface
+
+### Web-based interface
+
+In order to run the web-based interface, please run the following commands:
+1. Navigate to the *"webapp"* folder
+2. Execute:
+
+```$ python index.py
+```
+3. The above command will setup the web-based interface and generates a web address where this can be accessed:
+
+![Alt text](images/web_setup.png?raw=true "Start web-interface")
+
+4. Paste the generated web address (starting with http://) into a web browser.
+5. Follow the web page instructions to use the tool.
+
+
+### Command-line interface
+
+In order to use the command-line interface functionality, the module can simple be called from the command line.
 
 1. To start the configuration process, type:
 ```shell
