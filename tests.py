@@ -8,9 +8,9 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 import requests
-import ukbcohort
-from ukbcohort import utils
-from ukbcohort import query
+import ukbcc
+from ukbcc import utils
+from ukbcc import query
 
 
 
@@ -94,7 +94,7 @@ queries
 
 
 #%%
-from ukbcohort import utils
+from ukbcc import utils
 
 
 def _create_main_query_updates(main_filename: str, cohort_criteria_sublist: list):

@@ -77,12 +77,12 @@ def compute_stats(main_filename: str, eids: list, showcase_filename: str, coding
         col_type = field_dict[col]['type']
         coding_scheme = field_dict[col]['coding']
 
-        print(f'{col}, {col_type}, {coding_scheme}')
+        print('{col}, {col_type}, {coding_scheme}')
         if col_type in ['Integer', 'Categorical single']:
             translation_df[col] = translation_df[col].astype(pd.Int32Dtype()).astype(str)
         if not pd.isna(coding_scheme):
             if str(coding_scheme) in coding_dict.keys():
-                translation_df[col] = translation_df[col].map(coding_dict[f"{coding_scheme}"])
+                translation_df[col] = translation_df[col].map(coding_dict["{coding_scheme}"])
 
     name_dict = dict()
     statistics_dict = dict()
@@ -111,7 +111,7 @@ def compute_stats(main_filename: str, eids: list, showcase_filename: str, coding
         elif col_type in ['Categorical multiple', 'Text', 'Compound']:
             statistics_dict[field_dict[col]['name']]['type'] = 'NA'
             statistics_dict[field_dict[col]['name']][
-                'status'] = f'ERROR: stats on {col_type} data currently not supported'
+                'status'] = 'ERROR: stats on {col_type} data currently not supported'
             statistics_dict[field_dict[col]['name']]['stats_table'] = pd.DataFrame()
         else:
             statistics_dict[field_dict[col]['name']]['type'] = 'Value count'
