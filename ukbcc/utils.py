@@ -6,14 +6,17 @@ import json
 from datetime import datetime
 print_time = lambda: datetime.now().strftime("%H:%M:%S")
 
+
 def read_dictionary(file: str):
     with open(file, 'r') as f:
         dic = json.loads(f.read())
     return dic
 
+
 def write_dictionary(out_dic: dict, output_file: str):
     with open(output_file, 'w') as f:
         f.write(json.dumps(out_dic))
+
 
 def download_latest_files(download_path: str) -> bool:
     """Returns acknowledgement.
@@ -38,6 +41,7 @@ def download_latest_files(download_path: str) -> bool:
     with open('{}/codings.csv'.format(download_path), 'w+') as f:
         f.write(str(codings.content, encoding))
     return True
+
 
 def _get_query(keys: list) -> str:
     """Returns a regex string for a pd.DataFrame filter function.
@@ -93,6 +97,7 @@ def get_columns(main_filename: str, keys: list, delimiter: str=',', nrows: int =
         filtered_df.to_csv(out_filename, index=False)
     return filtered_df
 
+
 def quick_filter_df(main_filename: str, eids: list) -> pd.DataFrame:
     """Returns all columns of dataframe using specified eids only.
 
@@ -119,10 +124,12 @@ def quick_filter_df(main_filename: str, eids: list) -> pd.DataFrame:
 
     return filtered_df
 
+
 def write_txt_file(output_file: str, eids: str):
     with open(output_file, "w") as f:
         for id in eids:
             f.write(str(id) + ",")
+
 
 def read_txt_file(file: str):
     lines = []
@@ -131,6 +138,7 @@ def read_txt_file(file: str):
             if line != "":
                 lines.append(line)
     return lines
+
 
 def filter_main_df(main_filename: str, column_keys: list, values: list, eids: list=[], write: bool=True, filename: str="filtered_main_df_eids.txt") \
         -> pd.DataFrame:

@@ -1,10 +1,11 @@
 import pandas as pd
 import numpy as np
 from . import utils
+import os
 
 
 def compute_stats(main_filename: str, eids: list, showcase_filename: str, coding_filename: str,
-                  column_keys: list = ['34-0.0', '52-0.0', '22001-0.0', '21000-0.0', '22021-0.0']) \
+                  column_keys: list = ['34-0.0', '52-0.0', '22001-0.0', '21000-0.0', '22021-0.0'], out_path: str="") \
                   -> (dict, pd.DataFrame):
     """Returns basic statistics for given columns and a translated dataframe.
 
@@ -20,6 +21,8 @@ def compute_stats(main_filename: str, eids: list, showcase_filename: str, coding
         path and filename of coding file
     column_keys: list[str]
         list of column keys to include from the main dataset
+    out_path: str
+        path to store output files. If empty string, files will not be stored.
 
     Returns:
     --------
@@ -30,6 +33,11 @@ def compute_stats(main_filename: str, eids: list, showcase_filename: str, coding
         `type`: description of the table type
         translation_df is the extraction of the relevant columns and decoded values
     """
+
+    if out_path == "":
+        write_out = False
+    else:
+        write_out = True
 
     # get relevant columns
     translation_df = utils.quick_filter_df(main_filename=main_filename, eids=eids)
@@ -120,5 +128,8 @@ def compute_stats(main_filename: str, eids: list, showcase_filename: str, coding
 
     # rename columns to make them more readable
     translation_df = translation_df.rename(columns=name_dict)
+    if write_out:
+        utils.write_dictionary(statistics_dict, os.path.join(out_path, 'stats_dictionary.json'))
+        translation_df.to_csv(os.path.join(out_path, 'stats_fields.csv'))
 
     return statistics_dict, translation_df
