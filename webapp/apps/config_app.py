@@ -72,6 +72,10 @@ tab = dbc.FormGroup(
                 dbc.Button("Check paths", color="success", id="open_checkpath_modal_btn")#,
                 #dbc.Input(placeholder="GP Path", type="text",disabled='true',        id={"type":"config", "name":"gp_path"}, persistence=True)
                 ]),
+            dbc.Row([
+                dbc.Button("Save configuration", color="success", id="save_config_modal_btn")#,
+                #dbc.Input(placeholder="GP Path", type="text",disabled='true',        id={"type":"config", "name":"gp_path"}, persistence=True)
+                ]),
             #dbc.Button("Download GP", color="success", id="download_gp_btn"),
             dbc.Row([dbc.Button("Next", color='primary', id={"name":"next_button_config","type":"nav_btn"})]),
 
@@ -83,47 +87,73 @@ tab = dbc.FormGroup(
                         dbc.Button("Close", id="close_checkpath_modal_btn", className="ml-auto")
                     ),
                 ],
-                id="checkpath_modal")
+                id="checkpath_modal"),
+
+            dbc.Modal(
+                [
+                    dbc.ModalHeader(""),
+                    dbc.ModalBody(id="saveconfig_modalbody"),
+                    dbc.ModalFooter(
+                        dbc.Button("Close", id="close_saveconfig_modal_btn", className="ml-auto")
+                    ),
+                ],
+                id="saveconfig_modal")
         ]
     ),
     className="mt-3",
 )
 
-#
-# Download GP data
-#
+# save config
 @app.callback(
-    Output({"type":"config", "name":"gp_path"}, "value"),
-    [Input("download_gp_btn", "n_clicks")],
-    [State({"type":"config", "name":"gp_path"}, "value"),
-     State("config_store", "data")]
+    Output("saveconfig_modalbody", "children"),
+    [Input("save_config_modal_btn", "n_clicks")],
+    # Input({'type': 'config', 'name': ALL}, "value")]
+    [State({'type': 'config', 'name': "main_dat_path"}, "value"),
+     State({'type': 'config', 'name': "gp_path"}, "value"),
+     State({'type': 'config', 'name': "cohort_path"}, "value"),
+     State({'type': 'config', 'name': "out_filename"}, "value")]
+    # [State({"config_store"}, "data")]
 )
-def download_gp_data(n_click, gp_path, config):
-
-    print('download_gp_data')
-    if config is None:
-        return
-
-    required_config = set(['driver_path', 'aux_path', 'user', 'pass', 'app_id'])
-    existing_config_fields = set(config.keys())
-    missing_config_fields = required_config.difference(existing_config_fields)
-    if len(missing_config_fields) != 0:
-        return
-
-    print('download_gp_data: config OK')
-
-    if gp_path is None:
-        gp_path =  config['aux_path']
-
-    print("gp_path: " +gp_path)
-    query.download_gpclinical(config['app_id'], config['user'], config['pass'], config['driver_path'], config['driver_type'],
-                              download_dir=gp_path)
-    print('Data downloaded')
-    #BG: This is a bit verbose but I'm not too fussed at the moment.
-    return gp_path
+def write_config(n_click, main_dat_path, gp_path, cohort_path, out_filename):
+    print("in write config")
+    config_out = os.path.join(cohort_path, "config.conf")
+    with open(config_out, "w+") as file:
+        file.write('[PATHS]\n'
+                   f'main_filename = "{main_dat_path}"\n'
+                   f'gp_clinical_file = "{gp_path}"\n'
+                   f'out_path = "{cohort_path}"\n'
+                   f'out_filename = "{out_filename}"\n')
+    if os.path.exists(os.path.join(cohort_path, "config.conf")):
+        check = f"Config saved successfully to {config_out}."
+    else:
+        check = "Config not saved."
+    return dbc.Row(
+                dbc.Col([
+                    html.P(check)
+                ]))
 
 
+@app.callback(
+    Output("saveconfig_modal", "is_open"),
+    [Input("save_config_modal_btn", "n_clicks"),
+     Input("close_saveconfig_modal_btn", "n_clicks")],
+    [State("saveconfig_modal", "is_open")],
+)
+def toggle_saveconfig_modal(n1, n2, is_open):
+    if n1 or n2:
+        return not is_open
+    return is_open
 #
+# @app.callback(
+#     Output("checkpath_modal", "is_open"),
+#     [Input("open_checkpath_modal_btn", "n_clicks"),
+#      Input("close_checkpath_modal_btn", "n_clicks")],
+#     [State("checkpath_modal", "is_open")],
+# )
+# def toggle_checkpath_modal(n1, n2, is_open):
+#     if n1 or n2:
+#         return not is_open
+#     return is_open
 # When we hit the check paths button, print a modal stating whether the given paths are reasonable
 # TODO: Add more sophisticated checks here (check for driver rather than just path)
 @app.callback(
@@ -132,10 +162,9 @@ def download_gp_data(n_click, gp_path, config):
     [State({'type': 'config', 'name': "main_dat_path"}, "value"),
      State({'type': 'config', 'name': "gp_path"}, "value"),
      State({'type': 'config', 'name': "aux_path"}, "value"),
-     State({'type': 'config', 'name': "cohort_path"}, "value"),
-     State({'type': 'config', 'name': "out_filename"}, "value")]
+     State({'type': 'config', 'name': "cohort_path"}, "value")]
 )
-def run_checkpath_modal_check(n_click, main_dat_path, gp_path, aux_path, cohort_path, out_filename):
+def run_checkpath_modal_check(n_click, main_dat_path, gp_path, aux_path, cohort_path):
     if(not main_dat_path):
         main_dat_path=''
     if (not gp_path):
@@ -144,8 +173,6 @@ def run_checkpath_modal_check(n_click, main_dat_path, gp_path, aux_path, cohort_
         aux_path = ''
     if (not cohort_path):
         cohort_path = ''
-    if (not out_filename):
-         out_filename= ''
     val_map = {True:'exists', False:'does not exist', None:'does not exist'}
     #BG: This is a bit verbose but I'm not too fussed at the moment.
     return dbc.Row(
@@ -153,8 +180,7 @@ def run_checkpath_modal_check(n_click, main_dat_path, gp_path, aux_path, cohort_
                     html.P("Path to main data {} ({})".format(val_map[os.path.exists(main_dat_path)], main_dat_path)),
                     html.P("Path to GP {} ({})".format(val_map[os.path.exists(gp_path)], gp_path)),
                     html.P("Path to auxillary data {} ({})".format(val_map[os.path.exists(aux_path)], aux_path)),
-                    html.P("Path to output cohort info {} ({})".format(val_map[os.path.exists(cohort_path)], cohort_path)),
-                    # html.P("Name of file to write cohort IDs to {} ({})".format(val_map[os.path.exists(cohort_path)], cohort_path))
+                    html.P("Path to output cohort info {} ({})".format(val_map[os.path.exists(cohort_path)], cohort_path))
                 ]))
 
 
@@ -175,7 +201,6 @@ def toggle_checkpath_modal(n1, n2, is_open):
     if n1 or n2:
         return not is_open
     return is_open
-
 
 #
 #
