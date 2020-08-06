@@ -39,6 +39,13 @@ aux_path_input = dbc.FormGroup([
         #dbc.Input(type="file", id={"type": "file", "name": "aux_path"}),
         dbc.FormText("Specify the path to download (or with existing) auxillary files", color="secondary")
 ])
+out_filename_input = dbc.FormGroup([
+        dbc.Label("Output file (name)", html_for={"type": "config", "name": "out_filename"}),
+        dbc.Input(placeholder="Name of file to write cohort IDs to", type="text", id={"type": "config", "name": "out_filename"},
+              persistence=True),
+        #dbc.Input(type="file", id={"type": "file", "name": "aux_path"}),
+        dbc.FormText("Please specifiy the name of the file to write the cohort IDs to", color="secondary")
+])
 
 tab = dbc.FormGroup(
     dbc.CardBody(
@@ -53,6 +60,7 @@ tab = dbc.FormGroup(
                       #],form=True),
                       aux_path_input,
                       cohort_path_input,
+                      out_filename_input,
                      # dbc.Row([
                      #     dbc.Col(user_input),
                      #     dbc.Col(pass_input)
@@ -124,9 +132,10 @@ def download_gp_data(n_click, gp_path, config):
     [State({'type': 'config', 'name': "main_dat_path"}, "value"),
      State({'type': 'config', 'name': "gp_path"}, "value"),
      State({'type': 'config', 'name': "aux_path"}, "value"),
-     State({'type': 'config', 'name': "cohort_path"}, "value")]
+     State({'type': 'config', 'name': "cohort_path"}, "value"),
+     State({'type': 'config', 'name': "out_filename"}, "value")]
 )
-def run_checkpath_modal_check(n_click, main_dat_path, gp_path, aux_path, cohort_path):
+def run_checkpath_modal_check(n_click, main_dat_path, gp_path, aux_path, cohort_path, out_filename):
     if(not main_dat_path):
         main_dat_path=''
     if (not gp_path):
@@ -135,6 +144,8 @@ def run_checkpath_modal_check(n_click, main_dat_path, gp_path, aux_path, cohort_
         aux_path = ''
     if (not cohort_path):
         cohort_path = ''
+    if (not out_filename):
+         out_filename= ''
     val_map = {True:'exists', False:'does not exist', None:'does not exist'}
     #BG: This is a bit verbose but I'm not too fussed at the moment.
     return dbc.Row(
@@ -142,7 +153,8 @@ def run_checkpath_modal_check(n_click, main_dat_path, gp_path, aux_path, cohort_
                     html.P("Path to main data {} ({})".format(val_map[os.path.exists(main_dat_path)], main_dat_path)),
                     html.P("Path to GP {} ({})".format(val_map[os.path.exists(gp_path)], gp_path)),
                     html.P("Path to auxillary data {} ({})".format(val_map[os.path.exists(aux_path)], aux_path)),
-                    html.P("Path to output cohort info {} ({})".format(val_map[os.path.exists(cohort_path)], cohort_path))
+                    html.P("Path to output cohort info {} ({})".format(val_map[os.path.exists(cohort_path)], cohort_path)),
+                    # html.P("Name of file to write cohort IDs to {} ({})".format(val_map[os.path.exists(cohort_path)], cohort_path))
                 ]))
 
 

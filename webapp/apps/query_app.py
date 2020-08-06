@@ -119,7 +119,7 @@ def submit_cohort_query(n, defined_terms, all_terms, none_terms, config):
         "none_of": []
     }
     #TODO - HACK
-    out_filename=''
+    # out_filename=''
 
     print('Cohort criteria\t')
     pp.pprint(cohort_criteria)
@@ -132,7 +132,7 @@ def submit_cohort_query(n, defined_terms, all_terms, none_terms, config):
     pp.pprint(queries)
     print('\nquery_databases {}'.format(print_time()))
     ids = query.query_databases(cohort_criteria=cohort_criteria, queries=queries, main_filename=config['main_dat_path'],
-                          write_dir=config['cohort_path'], gpc_path=config['gp_path'], out_filename=out_filename, write=False)
+                          write_dir=config['cohort_path'], gpc_path=config['gp_path'], out_filename=config['out_filename'], write=True)
     #print(ids)
     print('\nfinished query_databases {}'.format(print_time()))
 
