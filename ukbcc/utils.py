@@ -2,18 +2,80 @@ import pandas as pd
 from ukbcc import query
 import requests
 import json
+import os
+from configparser import ConfigParser
 
 
 def read_dictionary(file: str):
+    """Loads contents of a file into a dictionary
+
+    Keyword arguments:
+    ------------------
+    file: str
+        path and name of file
+
+    Returns:
+    --------
+    dict
+    """
     with open(file, 'r') as f:
         dic = json.loads(f.read())
     return dic
 
 
 def write_dictionary(out_dic: dict, output_file: str):
+    """Write contents of a dictionary to a file
+
+    Keyword arguments:
+    ------------------
+    out_dic: dict
+        dictionary to write to file
+    output_file: str
+        file to write dictionary to
+
+    Returns:
+    --------
+    """
     with open(output_file, 'w') as f:
         f.write(json.dumps(out_dic))
 
+def write_config(config_directory: str, main_filename: str,
+                 gp_clinical_file: str, out_path: str, out_filename: str):
+    """Write configuration file for file paths
+
+    Keyword arguments:
+    ------------------
+    config_directory: str
+        path of directory to write config file to
+    main_filename: str
+        name of main.csv file
+    gp_clinical_file: str
+        name of GP Clinical file
+    out_path: str
+        path of write files to
+    out_filename: str
+        name to write cohort IDs to
+
+    Returns:
+    --------
+    check: str
+        string that states whether config file exists
+    """
+    if not os.path.exists(config_directory):
+        os.mkdir(config_directory)
+    config_out = os.path.join(config_directory, "config.conf")
+    with open(config_out, "w+") as file:
+        file.write('[PATHS]\n'
+                   f'main_filename = "{main_filename}"\n'
+                   f'gp_clinical_file = "{gp_clinical_file}"\n'
+                   f'out_path = "{out_path}"\n'
+                   f'out_filename = "{out_filename}"\n')
+
+    if os.path.exists(config_out):
+        check = f"Config saved successfully to {config_out}."
+    else:
+        check = "Config not saved."
+    return check
 
 def download_latest_files(download_path: str) -> bool:
     """Returns acknowledgement.
