@@ -69,7 +69,7 @@ tab = dbc.FormGroup(
         [
             html.H3("Define terms", className="card-text"),
             html.P("Create phenotypes of interest by selecting their corresponding fields", className="card-text"),
-            dbc.Button('Add new term', id={'modal_ctrl':'new_term', 'name': 'add'}),
+            dbc.Button('Add new phenotype', id={'modal_ctrl':'new_term', 'name': 'add'}),
             add_new_phenotype_modal,
             add_new_term_modal,
             dbc.Row(dbc.Col(id='defined_term_rows')),
@@ -127,7 +127,7 @@ def alter_defined_term(n_clicks, modified_timestamp, defined_terms, name,term_ad
             derived_virtual_selected_rows = []
 
         selected_df = pd.DataFrame(rows).iloc[derived_virtual_selected_rows]
-        ### NAT: select column names and values - convert to dict 
+        ### NAT: select column names and values - convert to dict
         defined_terms[term_add_state[0]][term_add_state[1]].append(selected_df.to_json())
         return defined_terms
 
