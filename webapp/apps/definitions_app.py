@@ -127,6 +127,7 @@ def alter_defined_term(n_clicks, modified_timestamp, defined_terms, name,term_ad
             derived_virtual_selected_rows = []
 
         selected_df = pd.DataFrame(rows).iloc[derived_virtual_selected_rows]
+        ### NAT: select column names and values - convert to dict 
         defined_terms[term_add_state[0]][term_add_state[1]].append(selected_df.to_json())
         return defined_terms
 

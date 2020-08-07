@@ -144,16 +144,6 @@ def toggle_saveconfig_modal(n1, n2, is_open):
         return not is_open
     return is_open
 #
-# @app.callback(
-#     Output("checkpath_modal", "is_open"),
-#     [Input("open_checkpath_modal_btn", "n_clicks"),
-#      Input("close_checkpath_modal_btn", "n_clicks")],
-#     [State("checkpath_modal", "is_open")],
-# )
-# def toggle_checkpath_modal(n1, n2, is_open):
-#     if n1 or n2:
-#         return not is_open
-#     return is_open
 # When we hit the check paths button, print a modal stating whether the given paths are reasonable
 # TODO: Add more sophisticated checks here (check for driver rather than just path)
 @app.callback(

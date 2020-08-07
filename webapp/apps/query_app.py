@@ -1,5 +1,4 @@
 import dash
-import json
 from app import app
 
 import dash_html_components as html
@@ -59,12 +58,43 @@ tab = dbc.FormGroup(
                dbc.Button("Previous", color='primary', id={"name":"prev_button_query","type":"nav_btn"}),
                dbc.Button("Next", color='primary',  id={"name":"next_button_query","type":"nav_btn"})
             ]),
+
+            dbc.Modal(
+                [
+                    dbc.ModalHeader("Running query..."),
+                    dbc.ModalBody(id="run_query"),
+                    # dbc.Row(dbc.Col(id="status_message"))),
+                    # dbc.Row(dbc.Col(id="query_output"))),
+                    dbc.ModalFooter(
+                        dbc.Button("Close", id="close_run_query_btn", className="ml-auto")
+                    ),
+                ],
+                id="run_query_modal")
         ]
     ),
     className="mt-3",
 )
 
+@app.callback(
+    Output("run_query", "children"),
+    [Input("cohort_search_submit1", "n_clicks")]
+)
+def update_run_query_modal(n_click):
+    return dbc.Row(
+                dbc.Col([
+                    html.P("Please wait, this could take some time...")
+                ]))
 
+@app.callback(
+    Output("run_query_modal", "is_open"),
+    [Input("cohort_search_submit1", "n_clicks"),
+    Input("close_run_query_btn", "n_clicks")],
+    [State("run_query_modal", "is_open")]
+)
+def toggle_run_query_modal(n1, n2, is_open):
+    if n1 or n2:
+        return not is_open
+    return is_open
 #
 # When we load the derived terms update, so does the list of searchable terms
 #
@@ -114,7 +144,8 @@ def _term_iterator(id: str, defined_terms: dict, rand_terms: list):
 # Submit a query
 #
 @app.callback(
-    Output("query_results", "children"),
+    [Output("run_query_modal", "children"),
+    Output("query_results", "children")],
     [Input("cohort_search_submit1", "n_clicks")],
     [State("defined_terms", "data"),
      State({"index":0, "name":"query_term_dropdown"}, 'value'),
@@ -175,4 +206,8 @@ def submit_cohort_query(n, defined_terms, all_terms, none_terms, config):
     #print(ids)
     print('\nfinished query_databases {}'.format(print_time()))
 
-    return html.P(f"Found {len(ids)} matching ids.")
+    return dbc.Row(
+                dbc.Col([
+                    html.P(f"Found {len(ids)} matching ids.")
+                ])), html.P(f"Found {len(ids)} matching ids.")
+    # return html.P(f"Found {len(ids)} matching ids.")
