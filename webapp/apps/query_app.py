@@ -1,4 +1,5 @@
 import dash
+import json
 from app import app
 
 import dash_html_components as html
@@ -6,8 +7,9 @@ import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State, MATCH, ALL
 import dash_core_components as dcc
 import pandas as pd
+import os
 
-from ukbcc import query
+from ukbcc import query, utils
 import pprint
 
 from datetime import datetime
@@ -81,6 +83,33 @@ def set_querable_terms(active_tab, defined_terms):
     return(opts)
 
 
+def _term_iterator(id: str, defined_terms: dict, rand_terms: list):
+    """Creates list of tuples from defined_terms dictionary.
+
+    Iterates through field, value combinations within defined_terms[id]['any']
+    and appends them to a list as tuples of (key, value)
+
+    Keyword arguments:
+    ------------------
+    id: str
+        id to use as key for defined_terms dict
+    defined_terms: dict
+        dictionary returned by alter_defined_term function in "definitions_app.py"
+    rand_terms: list
+        list to append all tuples to
+
+    Returns:
+    --------
+    rand_terms: list
+        list of tuples of field, value combinations
+
+    """
+    terms = pd.concat([pd.read_json(x) for x in defined_terms[id]['any']] + [pd.DataFrame()])
+    terms['FieldID'] = terms['FieldID'].astype(str)
+    terms['Value'] = terms['Value'].astype(str)
+    rand_terms = rand_terms + [tuple(x) for x in terms[['FieldID', 'Value']].values]
+    return rand_terms
+
 #
 # Submit a query
 #
@@ -104,25 +133,35 @@ def submit_cohort_query(n, defined_terms, all_terms, none_terms, config):
     #Put data in the right for for the ukbcc backend
     # TODO - HACK: Only doing first all term, ignoring none
 
-    any_terms = []
-    for id in all_terms:
-        #id=all_terms[0]
-        terms = pd.concat([pd.read_json(x) for x in defined_terms[id]['any']] + [pd.DataFrame()])
-        any_terms = any_terms + [tuple(x) for x in terms[['FieldID', 'Value']].values]
+    print('all terms', all_terms)
 
-    print(any_terms)
+    anys = []
+    nones = []
+
+    for id in all_terms:
+        anys = _term_iterator(id, defined_terms, anys)
+
+    for id in none_terms:
+        nones = _term_iterator(id, defined_terms, nones)
+
+    print(anys)
+    print(nones)
 
     # TODO - HACK
     cohort_criteria = {
         "all_of": [],
-        "any_of": any_terms,
-        "none_of": []
+        "any_of": anys,
+        "none_of": nones
     }
-    #TODO - HACK
-    # out_filename=''
 
-    print('Cohort criteria\t')
-    pp.pprint(cohort_criteria)
+    outpath = config['cohort_path']
+    cohort_out = os.path.join(outpath, "cohort_dictionary.txt")
+    utils.write_dictionary(cohort_criteria, cohort_out)
+
+    if os.path.exists(cohort_out):
+        print(f"successfully saved cohort dictionary to {cohort_out}")
+    else:
+        print(f"could not save cohort dictionary to {cohort_out}")
 
 
     print('\ncreate_queries {}'.format(print_time()))
