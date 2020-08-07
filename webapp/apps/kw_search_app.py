@@ -11,7 +11,10 @@ from ukbcc import filter as ukbcc_filter
 import json
 from dash.exceptions import PreventUpdate
 
-
+params = [
+    'Weight', 'Torque', 'Width', 'Height',
+    'Efficiency', 'Power', 'Displacement'
+]
 #
 #
 # Keyword Search Tab
@@ -27,7 +30,23 @@ kw_search_group = dbc.FormGroup(
                     dbc.Button("Submit", color="success", id="submit_btn")
                 ]),
             ]),
-            dbc.Row(id='kw_search_output')
+            dbc.Row(id='kw_search_output_select'),
+            html.Div(id='kw_search_output')
+            # html.Div([
+            #     dash_table.DataTable(
+            #         id='table-editing-simple',
+            #         columns=(
+            #             [{'id': 'Model', 'name': 'Model'}] +
+            #             [{'id': p, 'name': p} for p in params]
+            #         ),
+            #         data=[
+            #             dict(Model=i, **{param: 0 for param in params})
+            #             for i in range(1, 5)
+            #         ],
+            #         editable=True
+            #     ),
+            #     dcc.Graph(id='table-editing-simple-output')
+            # ])
         ],
     className="mt-3"
 )
@@ -102,8 +121,10 @@ def search_kw_button(_, config, search_terms, kw_search):
 #
 # Show_candidates as a big queryable table
 # Actually the plotly dash table looks pretty average
-#
-@app.callback(Output('kw_search_output', 'children'),
+# #
+# #
+@app.callback([Output('kw_search_output_select', 'children'),
+               Output('kw_search_output', 'children')],
              [Input('kw_search', 'data')]
             )
 def show_candidates(candidate_df_json):
@@ -120,15 +141,15 @@ def show_candidates(candidate_df_json):
                     dbc.Button("Return selected fields", id={'modal_ctrl':'none', 'name':'return_rows'})
                     ])
                 ])
-                ,
-                dbc.Row(
-                    dash_table.DataTable(
+                ]
+                )
+                ), dash_table.DataTable(
                         id='kw_result_table',
                         #css=[{'selector': 'table', 'rule': 'table-layout: fixed'}],
-                        style_cell={
-                            'whiteSpace': 'normal',
-                            'height': 'auto',
-                        },
+                        # style_cell={
+                        #     'whiteSpace': 'normal',
+                        #     'height': 'auto',
+                        # },
                         columns=[{"name": i, "id": i} for i in candidate_df.columns],
                         data=candidate_df.to_dict('records'),
                         row_selectable='multi',
@@ -140,14 +161,54 @@ def show_candidates(candidate_df_json):
                             {'if': {'column_id': 'FieldID'}, 'width': '6%'},
                             {'if': {'column_id': 'Coding'},  'width': '6%'},
                             {'if': {'column_id': 'Value'},   'width': '8%'},
-                            {'if': {'column_id': 'Meaning'}, 'width': '40%'}
-
-                        ]
-
+                            {'if': {'column_id': 'Meaning'}, 'width': '40%', 'text-align': 'left'}
+                            ]
                     )
-                )
-            ], width={"size": 10, "offset": 2}), justify='right')
 
+# @app.callback(Output('kw_search_output', 'children'),
+#              [Input('kw_search', 'data')]
+#             )
+# def show_candidates(candidate_df_json):
+#
+#     #TODO: This 100 filter is a hack to get around returning nothing or some other component. But seems fragile.
+#     if candidate_df_json is not None and len(candidate_df_json)>100:
+#         candidate_df = pd.read_json(candidate_df_json)
+#         return dbc.Row(
+#             dbc.Col([
+#                 dbc.Row([
+#                     html.Div([
+#                     dbc.Button("Select All", id={'type':'select_btn', 'name':'select'}),
+#                     dbc.Button("Deselect All", id={'type':'select_btn', 'name':'deselect'}),
+#                     dbc.Button("Return selected fields", id={'modal_ctrl':'none', 'name':'return_rows'})
+#                     ])
+#                 ])
+#                 ,
+#                 dbc.Row(
+#                     dash_table.DataTable(
+#                         id='kw_result_table',
+#                         #css=[{'selector': 'table', 'rule': 'table-layout: fixed'}],
+#                         style_cell={
+#                             'whiteSpace': 'normal',
+#                             'height': 'auto',
+#                         },
+#                         columns=[{"name": i, "id": i} for i in candidate_df.columns],
+#                         data=candidate_df.to_dict('records'),
+#                         row_selectable='multi',
+#                         filter_action='native',
+#                         page_size=10,
+#                         fixed_rows={'headers': True},
+#                         style_cell_conditional=[
+#                             {'if': {'column_id': 'Field'},   'width': '1%'},
+#                             {'if': {'column_id': 'FieldID'}, 'width': '6%'},
+#                             {'if': {'column_id': 'Coding'},  'width': '6%'},
+#                             {'if': {'column_id': 'Value'},   'width': '8%'},
+#                             {'if': {'column_id': 'Meaning'}, 'width': '40%'}
+#
+#                         ]
+#
+#                     )
+#                 )
+#             ], width={"size": 20, "offset": 2}), justify='right')
 
 #
 # Select / Deselect all buttons
