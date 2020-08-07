@@ -7,7 +7,7 @@ import dash_bootstrap_components as dbc
 
 import os
 import json
-from ukbcc import query
+from ukbcc import query, utils
 #
 # Configuration Tab
 # TODO: Use form group https://dash-bootstrap-components.opensource.faculty.ai/docs/components/form/
@@ -103,7 +103,11 @@ tab = dbc.FormGroup(
     className="mt-3",
 )
 
-# save config
+def toggle_modals(n1, n2, is_open):
+    if n1 or n2:
+        return not is_open
+    return is_open
+
 @app.callback(
     Output("saveconfig_modalbody", "children"),
     [Input("save_config_modal_btn", "n_clicks")],
@@ -114,24 +118,12 @@ tab = dbc.FormGroup(
      State({'type': 'config', 'name': "out_filename"}, "value")]
     # [State({"config_store"}, "data")]
 )
-def write_config(n_click, main_dat_path, gp_path, cohort_path, out_filename):
-    print("in write config")
-    config_out = os.path.join(cohort_path, "config.conf")
-    with open(config_out, "w+") as file:
-        file.write('[PATHS]\n'
-                   f'main_filename = "{main_dat_path}"\n'
-                   f'gp_clinical_file = "{gp_path}"\n'
-                   f'out_path = "{cohort_path}"\n'
-                   f'out_filename = "{out_filename}"\n')
-    if os.path.exists(os.path.join(cohort_path, "config.conf")):
-        check = f"Config saved successfully to {config_out}."
-    else:
-        check = "Config not saved."
+def write_config_check(n_click, main_dat_path, gp_path, cohort_path, out_filename):
+    check = utils.write_config(cohort_path, main_dat_path, gp_path, cohort_path, out_filename)
     return dbc.Row(
                 dbc.Col([
                     html.P(check)
                 ]))
-
 
 @app.callback(
     Output("saveconfig_modal", "is_open"),
@@ -139,10 +131,9 @@ def write_config(n_click, main_dat_path, gp_path, cohort_path, out_filename):
      Input("close_saveconfig_modal_btn", "n_clicks")],
     [State("saveconfig_modal", "is_open")],
 )
-def toggle_saveconfig_modal(n1, n2, is_open):
-    if n1 or n2:
-        return not is_open
-    return is_open
+def check(n1, n2, is_open):
+    check = toggle_modals(n1, n2, is_open)
+    return check
 #
 # When we hit the check paths button, print a modal stating whether the given paths are reasonable
 # TODO: Add more sophisticated checks here (check for driver rather than just path)
@@ -174,8 +165,6 @@ def run_checkpath_modal_check(n_click, main_dat_path, gp_path, aux_path, cohort_
                 ]))
 
 
-#
-#
 # Open/close path check modal
 # Launch a modal which tells us whether the config paths exist
 # Called when we hit the check paths button or the lose button inside the modal itself.
@@ -187,13 +176,10 @@ def run_checkpath_modal_check(n_click, main_dat_path, gp_path, aux_path, cohort_
      Input("close_checkpath_modal_btn", "n_clicks")],
     [State("checkpath_modal", "is_open")],
 )
-def toggle_checkpath_modal(n1, n2, is_open):
-    if n1 or n2:
-        return not is_open
-    return is_open
+def check(n1, n2, is_open):
+    check = toggle_modals(n1, n2, is_open)
+    return check
 
-#
-#
 # Save config input
 # Changes whenevery one of the config fields is altered
 @app.callback(Output("config_store", "data"),
