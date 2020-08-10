@@ -53,7 +53,7 @@ There are two ways to use with this module:
 1. Running the module from the command line and leveraging the *`interactive mode`* features to dynamically generate cohorts on the fly.
 2. Importing the module into an existing pipeline, and using the functions developed to interact with the UKBB databases.
 
-There is more detailed information in [our paper](https://link_to_paper), if you're interested.
+There is more detailed information in [our paper](https://www.biorxiv.org/content/10.1101/2020.07.12.199810v1), if you're interested.
 
 ### Downloads
 In order to make full use of this module, you will need to download the following files:
@@ -85,16 +85,16 @@ There are two ways to run *`interactive mode`*:
 ### Web-based interface
 
 In order to run the web-based interface, please run the following commands:
-1. Navigate to the *"webapp"* folder
+1. Navigate to the **"webapp"** folder
 2. Execute:
 
-```$ python index.py
-```
+    $ python index.py
+
 3. The above command will setup the web-based interface and generates a web address where this can be accessed:
 
 ![Alt text](images/web_setup.png?raw=true "Start web-interface")
 
-4. Paste the generated web address (starting with http://) into a web browser.
+4. Paste the generated web address into a web browser.
 5. Follow the web page instructions to use the tool.
 
 
