@@ -53,7 +53,7 @@ def main():
         out_path = input('Please specify the output directory for generated files: ')
         out_filename = input('Please specify the name of the file to store the list of ids for the cohort: ')
 
-        with open(config_directory + "/config.conf", "w+") as file:
+        with open(os.path.join(config_directory, "config.conf"), "w+") as file:
             file.write('[PATHS]\n'
                        f'main_filename = "{main_filename}"\n'
                        f'gp_clinical_file = "{gp_clinical_file}"\n'
