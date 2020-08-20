@@ -12,6 +12,9 @@ from ukbcc import query, utils
 # Configuration Tab
 # TODO: Use form group https://dash-bootstrap-components.opensource.faculty.ai/docs/components/form/
 
+# set default aux_path
+aux_path = "./data_files"
+
 main_dat_path_input = dbc.FormGroup([
         dbc.Label("Main Dataset (path)", html_for={"type":"config","name":"main_dat_path"}),
         dbc.Input(placeholder="Path", type="text", id={"type":"config","name":"main_dat_path"}, persistence=True),
@@ -32,13 +35,13 @@ cohort_path_input = dbc.FormGroup([
         #dbc.Input(type="file", id={"type": "file", "name": "cohort_path"}),
         dbc.FormText("Specify the output path", color="secondary")
 ])
-aux_path_input = dbc.FormGroup([
-        dbc.Label("Auxillary files (path)", html_for={"type": "config", "name": "aux_path"}),
-        dbc.Input(placeholder="Path to Aux files", type="text", id={"type": "config", "name": "aux_path"},
-              persistence=True),
-        #dbc.Input(type="file", id={"type": "file", "name": "aux_path"}),
-        dbc.FormText("Specify the path to download (or with existing) auxillary files", color="secondary")
-])
+# aux_path_input = dbc.FormGroup([
+#         dbc.Label("Auxillary files (path)", html_for={"type": "config", "name": "aux_path"}),
+#         dbc.Input(placeholder="Path to Aux files", type="text", id={"type": "config", "name": "aux_path"},
+#               persistence=True),
+#         #dbc.Input(type="file", id={"type": "file", "name": "aux_path"}),
+#         dbc.FormText("Specify the path to download (or with existing) auxillary files", color="secondary")
+# ])
 out_filename_input = dbc.FormGroup([
         dbc.Label("Output file (name)", html_for={"type": "config", "name": "out_filename"}),
         dbc.Input(placeholder="Name of file to write cohort IDs to", type="text", id={"type": "config", "name": "out_filename"},
@@ -58,7 +61,7 @@ tab = dbc.FormGroup(
                       #%      dbc.Col(driver_path_input),
                       #      dbc.Col(driver_type_input)
                       #],form=True),
-                      aux_path_input,
+                      # aux_path_input,
                       cohort_path_input,
                       out_filename_input,
                      # dbc.Row([
@@ -82,13 +85,12 @@ tab = dbc.FormGroup(
             dbc.Modal(
                 [
                     dbc.ModalHeader("Check paths"),
-                    dbc.ModalBody(id="pathcheck_modalbody"),
+                    dbc.ModalBody(id="pathcheck_modalbody", style={"overflow-wrap": "break-word"}),
                     dbc.ModalFooter(
                         dbc.Button("Close", id="close_checkpath_modal_btn", className="ml-auto")
                     ),
                 ],
                 id="checkpath_modal"),
-
             dbc.Modal(
                 [
                     dbc.ModalHeader(""),
@@ -142,10 +144,10 @@ def check(n1, n2, is_open):
     [Input("open_checkpath_modal_btn", "n_clicks")],
     [State({'type': 'config', 'name': "main_dat_path"}, "value"),
      State({'type': 'config', 'name': "gp_path"}, "value"),
-     State({'type': 'config', 'name': "aux_path"}, "value"),
+     # State({'type': 'config', 'name': "aux_path"}, "value"),
      State({'type': 'config', 'name': "cohort_path"}, "value")]
 )
-def run_checkpath_modal_check(n_click, main_dat_path, gp_path, aux_path, cohort_path):
+def run_checkpath_modal_check(n_click, main_dat_path, gp_path, cohort_path, aux_path=aux_path):
     if(not main_dat_path):
         main_dat_path=''
     if (not gp_path):
@@ -162,7 +164,7 @@ def run_checkpath_modal_check(n_click, main_dat_path, gp_path, aux_path, cohort_
                     html.P("Path to GP {} ({})".format(val_map[os.path.exists(gp_path)], gp_path)),
                     html.P("Path to auxillary data {} ({})".format(val_map[os.path.exists(aux_path)], aux_path)),
                     html.P("Path to output cohort info {} ({})".format(val_map[os.path.exists(cohort_path)], cohort_path))
-                ]))
+                ]), "overflow-wrap: break-word")
 
 
 # Open/close path check modal
