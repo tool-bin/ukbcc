@@ -92,4 +92,4 @@ def open_browser():
 
 if __name__ == '__main__':
     Timer(1, open_browser).start();
-    app.run_server(debug=True)#, dev_tools_props_check=False, dev_tools_ui=False)
+    app.run_server(debug=True, use_reloader=False)#, dev_tools_props_check=False, dev_tools_ui=False)
