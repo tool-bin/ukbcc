@@ -46,6 +46,8 @@ Or clone the repo:
     $ git clone https://github.com/tool-bin/ukbcc.git
     $ python setup.py install
 
+NB: We strongly recommend using a virtual environment when installing this package and its dependencies. Please see this link for further information: https://docs.python.org/3/tutorial/venv.html
+
 Usage
 --------
 

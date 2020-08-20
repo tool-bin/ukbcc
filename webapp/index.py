@@ -8,6 +8,8 @@ import json
 
 from app import app
 from apps import config_app, kw_search_app, include_kw_app, definitions_app, query_app
+import webbrowser
+from threading import Timer
 
 
 app.layout = dbc.Container(
@@ -83,6 +85,11 @@ def tab_button_click_handler(values):
        button_id_dict=json.loads(button_id_dict_str)
        return button_map[button_id_dict["name"]]
 
+port = 8050 # default port
+
+def open_browser():
+	webbrowser.open_new("http://localhost:{}".format(port))
 
 if __name__ == '__main__':
+    Timer(1, open_browser).start();
     app.run_server(debug=True)#, dev_tools_props_check=False, dev_tools_ui=False)
