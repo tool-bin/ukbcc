@@ -44,7 +44,7 @@ Installing using pip (pip3) from particular branch
 Or clone the repo:
 
     $ git clone https://github.com/tool-bin/ukbcc.git
-    $ python setup.py install
+    $ python3 setup.py install
 
 NB: We strongly recommend using a virtual environment when installing this package and its dependencies. Please see this link for further information: https://docs.python.org/3/tutorial/venv.html
 
@@ -85,6 +85,8 @@ There are two ways to run *`interactive mode`*:
 2. Through a command-line interface
 
 ### Web-based interface
+
+Currently, to use the web-based interface, you will need to clone this repository (ui branch) and build the package locally.
 
 In order to run the web-based interface, please run the following commands:
 1. Navigate to the **"webapp"** folder
