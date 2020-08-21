@@ -4,6 +4,7 @@ import dash
 import dash_html_components as html
 from dash.dependencies import Input, Output, State, MATCH, ALL
 import dash_bootstrap_components as dbc
+from dash.exceptions import PreventUpdate
 
 import os
 import json
@@ -17,35 +18,35 @@ aux_path = "./data_files"
 
 main_dat_path_input = dbc.FormGroup([
         dbc.Label("Main Dataset (path)", html_for={"type":"config","name":"main_dat_path"}),
-        dbc.Input(placeholder="Specify the name and path to main dataset file e.g /data/main.csv", type="text", id={"type":"config","name":"main_dat_path"}, persistence=True),
+        dbc.Input(placeholder="Specify the name and path to main dataset file e.g /data/main.csv", type="text", id={"type":"config","name":"main_dat_path"}, persistence=False),
         #dbc.Input( type="file", id={"type": "file", "name": "main_dat_path"}),
         dbc.FormText("Specify the name and path to main dataset file", color="secondary")
 ])
 
 gp_dat_path_input = dbc.FormGroup([
         dbc.Label("GP data (path)", html_for={"type":"config", "name":"gp_path"}),
-        dbc.Input(placeholder="Specify the name and path to GP data file e.g /data/gp_clinical.txt", type="text", id={"type":"config", "name":"gp_path"}, persistence=True),
+        dbc.Input(placeholder="Specify the name and path to GP data file e.g /data/gp_clinical.txt", type="text", id={"type":"config", "name":"gp_path"}, persistence=False),
         #dbc.Input(type="file", id={"type": "file", "name": "gp_path"},),
         dbc.FormText("Specify the name and path to GP data file", color="secondary")
 ])
 cohort_path_input = dbc.FormGroup([
         dbc.Label("Directory to write the output files to", html_for={"type": "config", "name": "cohort_path"}),
         dbc.Input(placeholder="Specify the name of the directory to which the output files should be written e.g output_files", type="text", id={"type": "config", "name": "cohort_path"},
-                  persistence=True),
+                  persistence=False),
         #dbc.Input(type="file", id={"type": "file", "name": "cohort_path"}),
         dbc.FormText("Specify the name of the directory to which the output files should be written")
 ])
 aux_path_input = dbc.FormGroup([
         dbc.Label("Directory to auxillary files (the defaulth path is already specified)", html_for={"type": "config", "name": "aux_path"}),
         dbc.Input(placeholder="Default directory is already specified - leave this if you have not changed it", type="text", id={"type": "config", "name": "aux_path"},
-              persistence=True),
+              persistence=False),
         #dbc.Input(type="file", id={"type": "file", "name": "aux_path"}),
         dbc.FormText("Specify the path to the directory containing the auxillary files (the default path has been specified so please leave this if you have not changed the location of the auxillary files)", color="secondary")
 ])
 out_filename_input = dbc.FormGroup([
         dbc.Label("Output file (name)", html_for={"type": "config", "name": "out_filename"}),
         dbc.Input(placeholder="Specifiy the name of the file to write the cohort IDs to e.g cohort_file.txt", type="text", id={"type": "config", "name": "out_filename"},
-              persistence=True),
+              persistence=False),
         #dbc.Input(type="file", id={"type": "file", "name": "aux_path"}),
         dbc.FormText("Specifiy the name of the file to write the cohort IDs to", color="secondary")
 ])
@@ -76,7 +77,7 @@ tab = dbc.FormGroup(
                 #dbc.Input(placeholder="GP Path", type="text",disabled='true',        id={"type":"config", "name":"gp_path"}, persistence=True)
                 ]),
             dbc.Row([
-                dbc.Button("Save configuration", color="success", id="save_config_modal_btn")#,
+                dbc.Button("Write configuration to file", color="success", id="save_config_modal_btn")#,
                 #dbc.Input(placeholder="GP Path", type="text",disabled='true',        id={"type":"config", "name":"gp_path"}, persistence=True)
                 ]),
             #dbc.Button("Download GP", color="success", id="download_gp_btn"),
@@ -121,6 +122,12 @@ def toggle_modals(n1, n2, is_open):
     # [State({"config_store"}, "data")]
 )
 def write_config_check(n_click, main_dat_path, gp_path, cohort_path, out_filename):
+
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        raise PreventUpdate
+
+    print("cp{}, mdp{}, gp{}, cp{}, of{}".format(cohort_path, main_dat_path, gp_path, cohort_path, out_filename))
     check = utils.write_config(cohort_path, main_dat_path, gp_path, cohort_path, out_filename)
     return dbc.Row(
                 dbc.Col([
@@ -191,7 +198,7 @@ def check(n1, n2, is_open):
 def save_config_handler(values, config):
     ctx = dash.callback_context
     config = config or {}
-
+    print ("config_dict:{}".format(config))
     if ctx.triggered and ctx.inputs_list and ctx.inputs_list[0]:
         #Convert input set of patterns into a dictionary
         #Use the results to write config dict

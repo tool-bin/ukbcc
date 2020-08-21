@@ -14,7 +14,7 @@ from threading import Timer
 
 app.layout = dbc.Container(
     [
-        dcc.Store(id="config_store", storage_type='session'),
+        dcc.Store(id="config_store", storage_type='local'),
         dcc.Store(id="kw_search", storage_type='session'),
         dcc.Store(id="include_fields", storage_type='session'),
         dcc.Store(id="defined_terms", storage_type='session'),

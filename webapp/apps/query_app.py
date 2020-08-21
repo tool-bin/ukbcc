@@ -21,7 +21,7 @@ all_dropdown = dbc.FormGroup(
         dbc.Label("All of these", html_for="example-email"),
         dcc.Dropdown(id={"index":0, "name":"query_term_dropdown"}, placeholder="Enter defined terms", clearable=True, multi=True, persistence=True),
         dbc.FormText(
-            "Add terms that all be present for an individal to be included in the cohort",
+            "Add terms that must all be present for an individual to be included in the cohort",
             color="secondary",
         ),
     ]
@@ -33,7 +33,7 @@ none_dropdown = dbc.FormGroup(
         dbc.Label("None of these", html_for="example-email"),
         dcc.Dropdown(id={"index":1, "name":"query_term_dropdown"}, placeholder="Enter defined terms", clearable=True, multi=True, persistence=True),
         dbc.FormText(
-            "Add terms that must be absent for an individal to be included in the cohort",
+            "Add terms that must be absent for an individual to be included in the cohort",
             color="secondary",
         ),
     ]
@@ -169,11 +169,13 @@ def submit_cohort_query(n, defined_terms, all_terms, none_terms, config):
     anys = []
     nones = []
 
-    for id in all_terms:
-        anys = _term_iterator(id, defined_terms, anys)
+    if all_terms:
+        for id in all_terms:
+            anys = _term_iterator(id, defined_terms, anys)
 
-    for id in none_terms:
-        nones = _term_iterator(id, defined_terms, nones)
+    if none_terms:
+        for id in none_terms:
+            nones = _term_iterator(id, defined_terms, nones)
 
     print(anys)
     print(nones)

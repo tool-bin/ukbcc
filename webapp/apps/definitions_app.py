@@ -52,7 +52,7 @@ add_new_term_modal = dbc.Modal(
                     dbc.ModalHeader("Find fields"),
                     dbc.ModalBody(id="find_terms_modalbody", children=kw_search_app.kw_search_group),
                     dbc.ModalFooter(
-                        dbc.Button("Close", id={'type': 'find_terms_modal_btn', 'name': 'close'}, className="ml-auto")
+                        dbc.Button("Close1", id={'type': 'find_terms_modal_btn', 'name': 'close'}, className="ml-auto")
                     ),
                 ],
                 id="find_terms_modal",

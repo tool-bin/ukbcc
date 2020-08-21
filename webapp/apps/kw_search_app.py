@@ -11,10 +11,6 @@ from ukbcc import filter as ukbcc_filter
 import json
 from dash.exceptions import PreventUpdate
 
-params = [
-    'Weight', 'Torque', 'Width', 'Height',
-    'Efficiency', 'Power', 'Displacement'
-]
 #
 #
 # Keyword Search Tab
@@ -27,7 +23,7 @@ kw_search_group = dbc.FormGroup(
                     dbc.Input(id="keyword_input", placeholder="Specify keywords to search, separated by semicolon", type="text", persistence=True)
                 ]),
                 dbc.Col([
-                    dbc.Button("Submit", color="success", id="submit_btn")
+                    dbc.Button("Search", color="success", id="submit_btn")
                 ]),
             ]),
             dbc.Row(id='kw_search_output_select'),
@@ -68,7 +64,7 @@ def search_kw_button(_, config, search_terms, kw_search):
     #Cancel if we haven't pressed the button
     ctx = dash.callback_context
     if len(ctx.triggered) and ctx.triggered[0]['prop_id']=='.':
-        return None
+        raise PreventUpdate
 
     # If we haven't clicked submit and we have a previous value, return the previous value
     if len(ctx.triggered) and ctx.triggered[0]['value'] is None and kw_search is not None:
@@ -94,11 +90,12 @@ def search_kw_button(_, config, search_terms, kw_search):
     #Show error if we haven't set any search terms
     if search_terms is None:
         print ('No search terms')
-        return None
+        raise PreventUpdate
 
     if len(search_terms)==0:
         print ('No search terms')
-        return "No search terms specified"
+        #return "No search terms specified"
+        raise PreventUpdate
 
     search_terms = search_terms.split(';')
     print('Search terms ')
