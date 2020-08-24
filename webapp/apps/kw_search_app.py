@@ -20,34 +20,57 @@ kw_search_group = dbc.FormGroup(
             html.H3("Specify Keywords", className="card-text"),
             dbc.Row([
                 dbc.Col([
-                    dbc.Input(id="keyword_input", placeholder="Specify keywords to search, separated by semicolon", type="text", persistence=True)
+                    dbc.Input(id="keyword_input", placeholder="Specify keywords to search, separated by semicolon", type="text", persistence=False)
                 ]),
                 dbc.Col([
                     dbc.Button("Search", color="success", id="submit_btn")
                 ]),
             ]),
+            dbc.Row(id="running_search_row"),
             dbc.Row(id='kw_search_output_select'),
-            html.Div(id='kw_search_output')
-            # html.Div([
-            #     dash_table.DataTable(
-            #         id='table-editing-simple',
-            #         columns=(
-            #             [{'id': 'Model', 'name': 'Model'}] +
-            #             [{'id': p, 'name': p} for p in params]
-            #         ),
-            #         data=[
-            #             dict(Model=i, **{param: 0 for param in params})
-            #             for i in range(1, 5)
-            #         ],
-            #         editable=True
-            #     ),
-            #     dcc.Graph(id='table-editing-simple-output')
-            # ])
+            html.Div(id='kw_search_output'),
+            dbc.Modal(
+                [
+                    dbc.ModalHeader("Running search.."),
+                    dbc.ModalBody(id="running_search_modalbody"),
+                    dbc.ModalFooter(
+                        dbc.Button("Close", id="close_running_search_modal_btn", className="ml-auto")
+                    ),
+                ],
+                id="running_search_modal")
+
         ],
     className="mt-3"
 )
 
+@app.callback(
+    Output("running_search_modalbody", "children"),
+    # Output("running_search_row", "children"),
+    [Input("submit_btn", "n_clicks")]
+)
+def progress_search(n_click):
 
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        raise PreventUpdate
+
+    return dbc.Row(
+                dbc.Col([
+                    html.P("Search is running, please wait..")
+                ]))
+
+
+@app.callback(
+    Output("running_search_modal", "is_open"),
+    # Output("running_search_row", "is_open"),
+    [Input("submit_btn", "n_clicks"),
+    Input("close_running_search_modal_btn", "n_clicks")],
+    [State("running_search_modal", "is_open")]
+)
+def toggle_run_query_modal(n1, n2, is_open):
+    if n1 or n2 or is_open:
+        return not is_open
+    return is_open
 #
 #
 # Handle keyword search input
@@ -63,6 +86,9 @@ def search_kw_button(_, config, search_terms, kw_search):
     print('search_kw_button')
     #Cancel if we haven't pressed the button
     ctx = dash.callback_context
+    if not ctx.triggered:
+        raise PreventUpdate
+
     if len(ctx.triggered) and ctx.triggered[0]['prop_id']=='.':
         raise PreventUpdate
 
@@ -76,15 +102,12 @@ def search_kw_button(_, config, search_terms, kw_search):
         return "Config has not been set. Missing all fields"
 
     #Show error if we are missing fields
-    required_config = set(['main_dat_path', 'gp_path', 'cohort_path', 'aux_path'])
+    required_config = set(['main_dat_path', 'gp_path', 'aux_path'])
     existing_config_fields=set(config.keys())
     missing_config_fields = required_config.difference(existing_config_fields)
     if len(missing_config_fields)!=0:
         print("Config has not been set. Missing fields: {}".format(', '.join([str(x) for x in missing_config_fields])))
         raise PreventUpdate
-
-    print('config')
-    print(config)
 
     # Run the search
     #Show error if we haven't set any search terms
@@ -121,17 +144,28 @@ def search_kw_button(_, config, search_terms, kw_search):
 # #
 # #
 @app.callback([Output('kw_search_output_select', 'children'),
-               Output('kw_search_output', 'children')],
+               Output('kw_search_output', 'children'),
+               Output("running_search_row", "children")],
              [Input('kw_search', 'data')]
             )
 def show_candidates(candidate_df_json):
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        raise PreventUpdate
+
+    while not candidate_df_json:
+        print("candidate_df_json does not exist")
+        return dbc.Row(
+                dbc.Col([
+                    html.P("Search is running, please wait..")
+                ]))
 
     #TODO: This 100 filter is a hack to get around returning nothing or some other component. But seems fragile.
-    if candidate_df_json is not None and len(candidate_df_json)>100:
+    if candidate_df_json and len(candidate_df_json)>100:
         candidate_df = pd.read_json(candidate_df_json)
         return dbc.Row(
             dbc.Col([
-                dbc.Row([
+                dbc.Col([
                     html.Div([
                     dbc.Button("Select All", id={'type':'select_btn', 'name':'select'}),
                     dbc.Button("Deselect All", id={'type':'select_btn', 'name':'deselect'}),
@@ -153,6 +187,7 @@ def show_candidates(candidate_df_json):
                         filter_action='native',
                         page_size=10,
                         fixed_rows={'headers': True},
+                        style_table={'overflowX': 'scroll', 'overflowY':'scroll'},
                         style_cell_conditional=[
                             {'if': {'column_id': 'Field'},   'width': '1%'},
                             {'if': {'column_id': 'FieldID'}, 'width': '6%'},
@@ -160,7 +195,7 @@ def show_candidates(candidate_df_json):
                             {'if': {'column_id': 'Value'},   'width': '8%'},
                             {'if': {'column_id': 'Meaning'}, 'width': '40%', 'text-align': 'left'}
                             ]
-                    )
+                    ), ""
 
 # @app.callback(Output('kw_search_output', 'children'),
 #              [Input('kw_search', 'data')]
@@ -219,23 +254,17 @@ def show_candidates(candidate_df_json):
      State(component_id="kw_result_table", component_property="derived_virtual_selected_rows")]
 )
 def select_all(n_clicks, rows, selected_rows, derived_viewport_indices, derived_virtual_indices):
-    print("Select All")
-
     ctx = dash.callback_context
-
     #Figure out which button was pressed
     calling_button="select"
     if ctx.triggered and ctx.triggered[0]['value']:
         calling_button = json.loads(ctx.triggered[0]['prop_id'].split('.')[0])['name']
 
-    #Take action
     if selected_rows is None or calling_button == 'deselect':
         select_rows= [[]]
     else:
         select_rows = [[i for i in range(len(rows))]]
 
-    print("After: Selected rows"),
-    print(select_rows)
     return select_rows
 
 

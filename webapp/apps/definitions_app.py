@@ -27,7 +27,7 @@ print_time = lambda: datetime.now().strftime("%H:%M:%S")
 #
 add_new_phenotype_modal = dbc.Modal(
                 [
-                    dbc.ModalHeader("What should the new phenotype be called"),
+                    dbc.ModalHeader("What should the new phenotype be called?"),
                     dbc.ModalBody(
                         dbc.Form([dbc.FormGroup([
                                 dbc.Label("New phenotype name", html_for='new_phenotype_input'),
@@ -52,7 +52,7 @@ add_new_term_modal = dbc.Modal(
                     dbc.ModalHeader("Find fields"),
                     dbc.ModalBody(id="find_terms_modalbody", children=kw_search_app.kw_search_group),
                     dbc.ModalFooter(
-                        dbc.Button("Close1", id={'type': 'find_terms_modal_btn', 'name': 'close'}, className="ml-auto")
+                        dbc.Button("Close", id={'type': 'find_terms_modal_btn', 'name': 'close'}, className="ml-auto")
                     ),
                 ],
                 id="find_terms_modal",
@@ -127,7 +127,6 @@ def alter_defined_term(n_clicks, modified_timestamp, defined_terms, name,term_ad
             derived_virtual_selected_rows = []
 
         selected_df = pd.DataFrame(rows).iloc[derived_virtual_selected_rows]
-        ### NAT: select column names and values - convert to dict
         defined_terms[term_add_state[0]][term_add_state[1]].append(selected_df.to_json())
         return defined_terms
 
@@ -233,7 +232,7 @@ def toggle_new_term_modal(x, y, is_open, term_add_state):
     ctx = dash.callback_context
 
     #If nothing pressed
-    if(not ctx.triggered):
+    if not ctx.triggered:
         raise PreventUpdate
 
     if len(ctx.triggered) and (ctx.triggered[0]['prop_id'] == '.' or ctx.triggered[0]['value'] is None):

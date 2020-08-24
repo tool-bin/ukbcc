@@ -99,4 +99,3 @@ def select_all(n_clicks, rows, selected_rows, derived_viewport_indices, derived_
     print("After: Selected rows"),
     print(select_rows)
     return select_rows
-
