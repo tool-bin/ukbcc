@@ -102,7 +102,7 @@ def search_kw_button(_, config, search_terms, kw_search):
         return "Config has not been set. Missing all fields"
 
     #Show error if we are missing fields
-    required_config = set(['main_dat_path', 'gp_path', 'aux_path'])
+    required_config = set(['main_path', 'gp_path', 'readcodes_path', 'codings_path', 'showcase_path'])
     existing_config_fields=set(config.keys())
     missing_config_fields = required_config.difference(existing_config_fields)
     if len(missing_config_fields)!=0:
@@ -124,9 +124,10 @@ def search_kw_button(_, config, search_terms, kw_search):
     print('Search terms ')
     print(search_terms)
 
-    coding_filename = os.path.join(config['aux_path'], "codings.csv")
-    showcase_filename = os.path.join(config['aux_path'], "showcase.csv")
-    readcode_filename = os.path.join(config['aux_path'], "readcodes.csv")
+    coding_filename = config['codings_path']
+    showcase_filename = config['showcase_path']
+    readcode_filename = config['readcodes_path']
+
     print('Constructing Search')
     search_df = ukbcc_filter.construct_search_df(showcase_filename=showcase_filename,
                                            coding_filename=coding_filename,
@@ -152,13 +153,6 @@ def show_candidates(candidate_df_json):
     ctx = dash.callback_context
     if not ctx.triggered:
         raise PreventUpdate
-
-    while not candidate_df_json:
-        print("candidate_df_json does not exist")
-        return dbc.Row(
-                dbc.Col([
-                    html.P("Search is running, please wait..")
-                ]))
 
     #TODO: This 100 filter is a hack to get around returning nothing or some other component. But seems fragile.
     if candidate_df_json and len(candidate_df_json)>100:
@@ -196,51 +190,6 @@ def show_candidates(candidate_df_json):
                             {'if': {'column_id': 'Meaning'}, 'width': '40%', 'text-align': 'left'}
                             ]
                     ), ""
-
-# @app.callback(Output('kw_search_output', 'children'),
-#              [Input('kw_search', 'data')]
-#             )
-# def show_candidates(candidate_df_json):
-#
-#     #TODO: This 100 filter is a hack to get around returning nothing or some other component. But seems fragile.
-#     if candidate_df_json is not None and len(candidate_df_json)>100:
-#         candidate_df = pd.read_json(candidate_df_json)
-#         return dbc.Row(
-#             dbc.Col([
-#                 dbc.Row([
-#                     html.Div([
-#                     dbc.Button("Select All", id={'type':'select_btn', 'name':'select'}),
-#                     dbc.Button("Deselect All", id={'type':'select_btn', 'name':'deselect'}),
-#                     dbc.Button("Return selected fields", id={'modal_ctrl':'none', 'name':'return_rows'})
-#                     ])
-#                 ])
-#                 ,
-#                 dbc.Row(
-#                     dash_table.DataTable(
-#                         id='kw_result_table',
-#                         #css=[{'selector': 'table', 'rule': 'table-layout: fixed'}],
-#                         style_cell={
-#                             'whiteSpace': 'normal',
-#                             'height': 'auto',
-#                         },
-#                         columns=[{"name": i, "id": i} for i in candidate_df.columns],
-#                         data=candidate_df.to_dict('records'),
-#                         row_selectable='multi',
-#                         filter_action='native',
-#                         page_size=10,
-#                         fixed_rows={'headers': True},
-#                         style_cell_conditional=[
-#                             {'if': {'column_id': 'Field'},   'width': '1%'},
-#                             {'if': {'column_id': 'FieldID'}, 'width': '6%'},
-#                             {'if': {'column_id': 'Coding'},  'width': '6%'},
-#                             {'if': {'column_id': 'Value'},   'width': '8%'},
-#                             {'if': {'column_id': 'Meaning'}, 'width': '40%'}
-#
-#                         ]
-#
-#                     )
-#                 )
-#             ], width={"size": 20, "offset": 2}), justify='right')
 
 #
 # Select / Deselect all buttons
