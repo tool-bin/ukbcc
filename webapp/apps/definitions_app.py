@@ -52,8 +52,8 @@ add_new_term_modal = dbc.Modal(
                     dbc.ModalHeader("Find fields"),
                     dbc.ModalBody(id="find_terms_modalbody", children=kw_search_app.kw_search_group),
                     dbc.ModalFooter(
-                        dbc.Button("Close", id={'type': 'find_terms_modal_btn', 'name': 'close'}, className="ml-auto")
-                    ),
+                        dbc.Button("Close", id={'type': 'find_terms_modal_btn', 'name': 'close'}, className="ml-auto"),
+                    id="find_terms_modalfooter"),
                 ],
                 id="find_terms_modal",
                 size="xl",
@@ -69,13 +69,13 @@ tab = dbc.FormGroup(
         [
             html.H3("Define terms", className="card-text"),
             html.P("Create phenotypes of interest by selecting their corresponding fields", className="card-text"),
-            dbc.Button('Add new phenotype', id={'modal_ctrl':'new_term', 'name': 'add'}),
+            dbc.Button('Add new phenotype', id={'modal_ctrl':'new_term', 'name': 'add'}, style={"margin": "5px"}),
             add_new_phenotype_modal,
             add_new_term_modal,
             dbc.Row(dbc.Col(id='defined_term_rows')),
-            dbc.Row([
-               dbc.Button("Previous", color='primary', id={"name":"prev_button_terms","type":"nav_btn"}),
-               dbc.Button("Next", color='primary', id={"name":"next_button_terms","type":"nav_btn"})
+            html.Div([
+               dbc.Button("Previous", color='primary', id={"name":"prev_button_terms","type":"nav_btn"}, style={"margin": "5px"}),
+               dbc.Button("Next", color='primary', id={"name":"next_button_terms","type":"nav_btn"}, style={"margin": "5px"})
             ]),
 
         ]

@@ -43,8 +43,8 @@ def show_candidates(candidate_df_json):
         return dbc.Row(
             dbc.Col([
                 dbc.Row([
-                    dbc.Button("Select All", id={'type':'select_btn', 'name':'select'}),
-                    dbc.Button("Deselect All", id={'type':'select_btn', 'name':'deselect'})
+                    dbc.Button("Select All", id={'type':'select_btn', 'name':'select'}, style={"margin": "5px"}),
+                    dbc.Button("Deselect All", id={'type':'select_btn', 'name':'deselect'}, style={"margin": "5px"})
                 ])
                 ,
                 dbc.Row(

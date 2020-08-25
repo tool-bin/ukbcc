@@ -27,6 +27,17 @@ all_dropdown = dbc.FormGroup(
     ]
 )
 
+any_dropdown = dbc.FormGroup(
+    [
+        dbc.Label("Any of these", html_for="example-email"),
+        dcc.Dropdown(id={"index":0, "name":"query_term_dropdown"}, placeholder="Enter defined terms", clearable=True, multi=True, persistence=True),
+        dbc.FormText(
+            "Add terms that are optionally present for an individual to be included in the cohort",
+            color="secondary",
+        ),
+    ]
+)
+
 
 none_dropdown = dbc.FormGroup(
     [
@@ -152,7 +163,7 @@ def _term_iterator(id: str, defined_terms: dict, rand_terms: list):
      State({"index":1, "name":"query_term_dropdown"}, 'value'),
      State("config_store", "data")]
 )
-def submit_cohort_query(n, defined_terms, all_terms, none_terms, config):
+def submit_cohort_query(n, defined_terms, all_terms, any_terms, none_terms, config):
     print('\nsubmit_cohort_query()')
     print(n)
     pp = pprint.PrettyPrinter(indent=4)
@@ -160,29 +171,30 @@ def submit_cohort_query(n, defined_terms, all_terms, none_terms, config):
     if n is None:
         raise PreventUpdate
 
-
     #Put data in the right for for the ukbcc backend
-    # TODO - HACK: Only doing first all term, ignoring none
-
-    print('all terms', all_terms)
-
     anys = []
     nones = []
+    alls = []
 
     if all_terms:
         for id in all_terms:
             anys = _term_iterator(id, defined_terms, anys)
+
+    if all_terms:
+        for id in all_terms:
+            alls = _term_iterator(id, defined_terms, alls)
 
     if none_terms:
         for id in none_terms:
             nones = _term_iterator(id, defined_terms, nones)
 
     print(anys)
+    print(alls)
     print(nones)
 
     # TODO - HACK
     cohort_criteria = {
-        "all_of": [],
+        "all_of": alls,
         "any_of": anys,
         "none_of": nones
     }

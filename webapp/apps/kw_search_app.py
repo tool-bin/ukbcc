@@ -26,7 +26,6 @@ kw_search_group = dbc.FormGroup(
                     dbc.Button("Search", color="success", id="submit_btn")
                 ]),
             ]),
-            dbc.Row(id="running_search_row"),
             dbc.Row(id='kw_search_output_select'),
             html.Div(id='kw_search_output'),
             dbc.Modal(
@@ -37,8 +36,8 @@ kw_search_group = dbc.FormGroup(
                         dbc.Button("Close", id="close_running_search_modal_btn", className="ml-auto")
                     ),
                 ],
-                id="running_search_modal")
-
+                id="running_search_modal"),
+            dbc.Row(id="kw_fields_output")
         ],
     className="mt-3"
 )
@@ -64,11 +63,17 @@ def progress_search(n_click):
     Output("running_search_modal", "is_open"),
     # Output("running_search_row", "is_open"),
     [Input("submit_btn", "n_clicks"),
-    Input("close_running_search_modal_btn", "n_clicks")],
+    Input("close_running_search_modal_btn", "n_clicks"),
+    Input("kw_search", "modified_timestamp")],
     [State("running_search_modal", "is_open")]
 )
-def toggle_run_query_modal(n1, n2, is_open):
-    if n1 or n2 or is_open:
+def toggle_run_query_modal(n1, n2, n3, is_open):
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        raise PreventUpdate
+
+    print("n1 {}, n2 {}, n3 {}, is open {}".format(n1,n2,type(n3),is_open))
+    if n1 or n2 or n3 or is_open:
         return not is_open
     return is_open
 #
@@ -146,7 +151,8 @@ def search_kw_button(_, config, search_terms, kw_search):
 # #
 @app.callback([Output('kw_search_output_select', 'children'),
                Output('kw_search_output', 'children'),
-               Output("running_search_row", "children")],
+               Output('find_terms_modalfooter', 'children')],
+               # Output("kw_fields_output", "children")],
              [Input('kw_search', 'data')]
             )
 def show_candidates(candidate_df_json):
@@ -161,9 +167,9 @@ def show_candidates(candidate_df_json):
             dbc.Col([
                 dbc.Col([
                     html.Div([
-                    dbc.Button("Select All", id={'type':'select_btn', 'name':'select'}),
-                    dbc.Button("Deselect All", id={'type':'select_btn', 'name':'deselect'}),
-                    dbc.Button("Return selected fields", id={'modal_ctrl':'none', 'name':'return_rows'})
+                    dbc.Button("Select All", id={'type':'select_btn', 'name':'select'}, style={"margin": "5px"}),
+                    dbc.Button("Deselect All", id={'type':'select_btn', 'name':'deselect'}, style={"margin": "5px"})
+                    # dbc.Button("Return selected fields", id={'modal_ctrl':'none', 'name':'return_rows'})
                     ])
                 ])
                 ]
@@ -189,8 +195,10 @@ def show_candidates(candidate_df_json):
                             {'if': {'column_id': 'Value'},   'width': '8%'},
                             {'if': {'column_id': 'Meaning'}, 'width': '40%', 'text-align': 'left'}
                             ]
-                    ), ""
-
+                    ), dbc.Button("Return selected fields", id={'modal_ctrl':'none', 'name':'return_rows'}, className="ml-auto", color='success')
+# dbc.ModalFooter(
+#     dbc.Button("Close", id={'type': 'find_terms_modal_btn', 'name': 'close'}, className="ml-auto")
+# ),
 #
 # Select / Deselect all buttons
 #

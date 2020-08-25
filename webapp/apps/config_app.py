@@ -173,11 +173,18 @@ def check(n1, n2, is_open):
 #Data is a dict containing all stored data
 def save_config_handler(values, config):
     ctx = dash.callback_context
-    config = config or {}
+    print("config_dict:{}".format(config))
+    if config:
+        print("config store exists")
+        configdic = config
+    else:
+        configdic = {}
+    # else:
+    #     config = {}
+    # config = config or {}
     # specify default path for readcodes.csv
     readcodes_path = "../data_files/readcodes.csv"
-    config['readcodes_path'] = readcodes_path
-    print ("config_dict:{}".format(config))
+    configdic['readcodes_path'] = readcodes_path
     if ctx.triggered and ctx.inputs_list and ctx.inputs_list[0]:
         #Convert input set of patterns into a dictionary
         #Use the results to write config dict
@@ -186,6 +193,6 @@ def save_config_handler(values, config):
             config_id_dict = field
             #If we have a value for some path, add it
             if('value' in config_id_dict):
-                config[config_id_dict['id']['name']]=config_id_dict['value']
-        return config
-    return(config)
+                configdic[config_id_dict['id']['name']]=config_id_dict['value']
+        return configdic
+    return(configdic)
