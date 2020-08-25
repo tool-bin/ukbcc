@@ -180,33 +180,31 @@ def check(n1, n2, is_open):
     return check
 
 # Save config input
-# Changes whenevery one of the config fields is altered
+# Changes whenever one of the config fields is altered
 @app.callback(Output("config_store", "data"),
               [Input({'type': 'config', 'name': ALL}, "value")],
               [State("config_store", "data")])
 #Data is a dict containing all stored data
-def save_config_handler(values, config):
+def save_config_handler(values, config_init):
     ctx = dash.callback_context
-    print("config_dict:{}".format(config))
-    if config:
-        print("config store exists")
-        configdic = config
-    else:
-        configdic = {}
-    # else:
-    #     config = {}
-    # config = config or {}
+
+    # On initialisation, don't run this. Dictionary may not be populated yet
+    if not ctx.triggered or not ctx.triggered[0]['value']:
+        raise PreventUpdate
+
+    config = config_init or {}
+
     # specify default path for readcodes.csv
-    readcodes_path = "../data_files/readcodes.csv"
-    configdic['readcodes_path'] = readcodes_path
+    config['readcodes_path'] = "../data_files/readcodes.csv"
+
     if ctx.triggered and ctx.inputs_list and ctx.inputs_list[0]:
-        #Convert input set of patterns into a dictionary
-        #Use the results to write config dict
+        # Convert input set of patterns into a dictionary
+        # Use the results to write config dict
         print(ctx.inputs_list)
         for field in ctx.inputs_list[0]:
             config_id_dict = field
-            #If we have a value for some path, add it
-            if('value' in config_id_dict):
-                configdic[config_id_dict['id']['name']]=config_id_dict['value']
-        return configdic
-    return(configdic)
+            # If we have a value for some path, add it
+            if 'value' in config_id_dict:
+                config[config_id_dict['id']['name']]=config_id_dict['value']
+        return config
+    return config
