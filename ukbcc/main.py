@@ -51,7 +51,7 @@ def main():
             #config_directory = input('Please specify directory for config file: ')
 
         db_exists = 'a'
-        while db_exists not in ['y, Y', 'N, n']:
+        while db_exists not in ['y', 'Y', 'N', 'n']:
             db_exists = input('Have you run ukbcc previously and created an optimised database? [Y/N]: ')
             print(f'|{db_exists}|')
         db_exists=str2bool(db_exists)
@@ -64,10 +64,6 @@ def main():
                 db_filename=db_filename_new
             main_filename = input('Please specify the full path and name of main dataset: ')
             gp_clinical_file = input('Please specify the path and name of the GP clinical file (see README for how to download this). If you do not want to query this dataset, please type NO')
-            search_df = filter.construct_search_df(showcase_filename=showcase_filename,
-                                                   coding_filename=coding_filename,
-                                                   readcode_filename=readcode_filename)
-            conn=db.create_sqlite_db(db_filename, main_filename, gp_clinical_file, search_df)
 
         out_path = input('Please specify the output directory for generated files: ')
         out_filename = input('Please specify the name of the file to store the list of ids for the cohort: ')
@@ -105,6 +101,7 @@ def main():
 
         config = configparser.ConfigParser()
         config.read(config_filepath)
+        db_filename = config['PATHS']['db_filename'].strip('""')
         main_filename = config['PATHS']['main_filename'].strip('""')
         out_filename = config['PATHS']['out_filename'].strip('""')
         out_path = config['PATHS']['out_path'].strip('""')
@@ -121,6 +118,17 @@ def main():
         dt_string = now.strftime("_%d%m_%H%M%S")
         out_path = out_path + dt_string
         os.mkdir(out_path)
+
+    if(not os.path.exists(db_filename)):
+        print(f'"Creating UKBCC optimised database {datetime.now().strftime("%H:%M:%S")}. This may take a few minutes."')
+        search_df = filter.construct_search_df(showcase_filename=showcase_filename,
+                                               coding_filename=coding_filename,
+                                               readcode_filename=readcode_filename)
+
+        conn=db.create_sqlite_db(db_filename, main_filename, gp_clinical_file, search_df)
+        print(f'"UKBCC optimised database created. {datetime.now().strftime("%H:%M:%S")}"')
+
+
 
     search_terms_input = input(cols['orange'] + 'Please enter comma-separated search terms: ' + cols['default'])
     search_terms = search_terms_input.split(',')
