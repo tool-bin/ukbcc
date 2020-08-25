@@ -8,6 +8,7 @@ from dash.exceptions import PreventUpdate
 
 import os
 import json
+import ukbcc
 from ukbcc import query, utils
 #
 # Configuration Tab
@@ -40,6 +41,14 @@ codings_path_input = dbc.FormGroup([
         dbc.FormText("Path to read codes csv file, This file can be downloaded here: https://biobank.ctsu.ox.ac.uk/~bbdatan/Codings_Showcase.csv", color="secondary")
 ])
 
+cohort_path_input = dbc.FormGroup([
+        dbc.Label("Directory for Output Files (path)", html_for={"type": "config", "name":"codings_path"}),
+        dbc.Input(placeholder="Specify the directory to save the output files to e.g /data/ukbcc_output.", type="text", id={"type": "config", "name": "cohort_path"},
+        persistence=True),
+        dbc.FormText("Directory path to save output files to", color="secondary")
+])
+
+
 tab = dbc.FormGroup(
     dbc.CardBody(
         [
@@ -47,7 +56,8 @@ tab = dbc.FormGroup(
             dbc.Form([main_path_input,
                       gp_path_input,
                       showcase_path_input,
-                      codings_path_input
+                      codings_path_input,
+                      cohort_path_input
                       ]),
 
             dbc.Row([
@@ -127,10 +137,11 @@ def toggle_modals(n1, n2, is_open):
     [State({'type': 'config', 'name': "main_path"}, "value"),
      State({'type': 'config', 'name': "gp_path"}, "value"),
      State({'type': 'config', 'name': "codings_path"}, "value"),
-     State({'type': 'config', 'name': "showcase_path"}, "value")]
+     State({'type': 'config', 'name': "showcase_path"}, "value"),
+     State({'type': 'config', 'name': "cohort_path"}, "value")]
      # State({'type': 'config', 'name': "cohort_path"}, "value")]
 )
-def run_checkpath_modal_check(n_click, main_path, gp_path, codings_path, showcase_path):
+def run_checkpath_modal_check(n_click, main_path, gp_path, codings_path, showcase_path, cohort_path):
     if(not main_path):
         main_path=''
     if (not gp_path):
@@ -139,6 +150,8 @@ def run_checkpath_modal_check(n_click, main_path, gp_path, codings_path, showcas
         codings_path = ''
     if (not showcase_path):
          showcase_path= ''
+    if (not cohort_path):
+         cohort_path= ''
     val_map = {True:'exists', False:'does not exist', None:'does not exist'}
     #BG: This is a bit verbose but I'm not too fussed at the moment.
     return dbc.Row(
@@ -146,7 +159,8 @@ def run_checkpath_modal_check(n_click, main_path, gp_path, codings_path, showcas
                     html.P("Path to main data {} ({})".format(val_map[os.path.exists(main_path)], main_path)),
                     html.P("Path to GP {} ({})".format(val_map[os.path.exists(gp_path)], gp_path)),
                     html.P("Path to showcase data {} ({})".format(val_map[os.path.exists(showcase_path)], showcase_path)),
-                    html.P("Path to codings data {} ({})".format(val_map[os.path.exists(codings_path)], codings_path))
+                    html.P("Path to codings data {} ({})".format(val_map[os.path.exists(codings_path)], codings_path)),
+                    html.P("Path to write output files to {} ({})".format(val_map[os.path.exists(cohort_path)], cohort_path))
                 ]))
 
 

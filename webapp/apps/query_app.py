@@ -30,7 +30,7 @@ all_dropdown = dbc.FormGroup(
 any_dropdown = dbc.FormGroup(
     [
         dbc.Label("Any of these", html_for="example-email"),
-        dcc.Dropdown(id={"index":0, "name":"query_term_dropdown"}, placeholder="Enter defined terms", clearable=True, multi=True, persistence=True),
+        dcc.Dropdown(id={"index":2, "name":"query_term_dropdown"}, placeholder="Enter defined terms", clearable=True, multi=True, persistence=True),
         dbc.FormText(
             "Add terms that are optionally present for an individual to be included in the cohort",
             color="secondary",
@@ -61,13 +61,13 @@ tab = dbc.FormGroup(
             html.H3("Cohort Search", className="card-text"),
             html.P("Define the properties of a cohort, based on the defined terms and show results", className="card-text"),
             dbc.Form(
-                dbc.FormGroup([all_dropdown, none_dropdown,
+                dbc.FormGroup([all_dropdown, any_dropdown, none_dropdown,
                                dbc.Button("Submit", color="success", id='cohort_search_submit1')])
             ),
             dbc.Row(dbc.Col(id='query_results'), align='center'),
             dbc.Row([
-               dbc.Button("Previous", color='primary', id={"name":"prev_button_query","type":"nav_btn"}),
-               dbc.Button("Next", color='primary',  id={"name":"next_button_query","type":"nav_btn"})
+               dbc.Button("Previous", color='primary', id={"name":"prev_button_query","type":"nav_btn"}, style={"margin": "5px"}),
+               dbc.Button("Next", color='primary',  id={"name":"next_button_query","type":"nav_btn"}, style={"margin": "5px"})
             ]),
 
             dbc.Modal(
@@ -77,7 +77,7 @@ tab = dbc.FormGroup(
                     # dbc.Row(dbc.Col(id="status_message"))),
                     # dbc.Row(dbc.Col(id="query_output"))),
                     dbc.ModalFooter(
-                        dbc.Button("Close", id="close_run_query_btn", className="ml-auto")
+                        dbc.Button("Close", id="close_run_query_btn", className="ml-auto", style={"margin": "5px"})
                     ),
                 ],
                 id="run_query_modal")
@@ -161,6 +161,7 @@ def _term_iterator(id: str, defined_terms: dict, rand_terms: list):
     [State("defined_terms", "data"),
      State({"index":0, "name":"query_term_dropdown"}, 'value'),
      State({"index":1, "name":"query_term_dropdown"}, 'value'),
+     State({"index":2, "name":"query_term_dropdown"}, 'value'),
      State("config_store", "data")]
 )
 def submit_cohort_query(n, defined_terms, all_terms, any_terms, none_terms, config):
@@ -201,6 +202,9 @@ def submit_cohort_query(n, defined_terms, all_terms, any_terms, none_terms, conf
 
     outpath = config['cohort_path']
     cohort_out = os.path.join(outpath, "cohort_dictionary.txt")
+    if not config['out_filename']:
+        config['out_filename'] = "cohort_ids.txt"
+
     utils.write_dictionary(cohort_criteria, cohort_out)
 
     if os.path.exists(cohort_out):
@@ -211,11 +215,11 @@ def submit_cohort_query(n, defined_terms, all_terms, any_terms, none_terms, conf
 
     print('\ncreate_queries {}'.format(print_time()))
     print(config['gp_path'])
-    queries = query.create_queries(cohort_criteria=cohort_criteria, main_filename=config['main_dat_path'],
+    queries = query.create_queries(cohort_criteria=cohort_criteria, main_filename=config['main_path'],
                                    gpc_path=config['gp_path'])
     pp.pprint(queries)
     print('\nquery_databases {}'.format(print_time()))
-    ids = query.query_databases(cohort_criteria=cohort_criteria, queries=queries, main_filename=config['main_dat_path'],
+    ids = query.query_databases(cohort_criteria=cohort_criteria, queries=queries, main_filename=config['main_path'],
                           write_dir=config['cohort_path'], gpc_path=config['gp_path'], out_filename=config['out_filename'], write=True)
     #print(ids)
     print('\nfinished query_databases {}'.format(print_time()))

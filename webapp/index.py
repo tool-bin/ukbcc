@@ -58,8 +58,10 @@ def render_tab_content(active_tab):
         elif active_tab == "query":
          return query_app.tab
         return html.P("Tab '{}' is not implemented...".format(active_tab))
+    else:
+        return config_app.tab
 
-    return html.P("Click config to start")
+    #return active_tab#html.P("Click config to start")
 
 
 #
