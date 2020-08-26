@@ -101,7 +101,7 @@ def search_kw_button(_, config, search_terms, kw_search):
         return kw_search
 
     #Show error if we haven't set any config
-    if config=={}:
+    if not config:
         print('no config')
         return "Config has not been set. Missing all fields"
 
@@ -152,12 +152,14 @@ def search_kw_button(_, config, search_terms, kw_search):
                Output('kw_search_output', 'children'),
                Output('find_terms_modalfooter', 'children')],
                # Output("kw_fields_output", "children")],
-             [Input('kw_search', 'data')]
+             [Input('kw_search', 'modified_timestamp')],
+              [State('kw_search', 'data')]
             )
-def show_candidates(candidate_df_json):
-    ctx = dash.callback_context
-    if not ctx.triggered:
+def show_candidates(ts, candidate_df_json):
+    if not ts:
         raise PreventUpdate
+
+
 
     #TODO: This 100 filter is a hack to get around returning nothing or some other component. But seems fragile.
     if candidate_df_json and len(candidate_df_json)>100:
@@ -195,6 +197,8 @@ def show_candidates(candidate_df_json):
                             {'if': {'column_id': 'Meaning'}, 'width': '40%', 'text-align': 'left'}
                             ]
                     ), dbc.Button("Return selected fields", id={'modal_ctrl':'none', 'name':'return_rows'}, className="ml-auto", color='success')
+    raise PreventUpdate
+
 # dbc.ModalFooter(
 #     dbc.Button("Close", id={'type': 'find_terms_modal_btn', 'name': 'close'}, className="ml-auto")
 # ),

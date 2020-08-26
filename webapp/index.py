@@ -108,5 +108,5 @@ def open_browser():
 	webbrowser.open_new("http://localhost:{}".format(port))
 
 if __name__ == '__main__':
-    Timer(1, open_browser).start();
-    app.run_server(debug=True, use_reloader=False)#, dev_tools_props_check=False, dev_tools_ui=False)
+    #Timer(1, open_browser).start();
+    app.run_server(debug=True, use_reloader=True, dev_tools_props_check=False, dev_tools_ui=True)

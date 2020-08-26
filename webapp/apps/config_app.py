@@ -15,35 +15,36 @@ from ukbcc import query, utils
 # TODO: Use form group https://dash-bootstrap-components.opensource.faculty.ai/docs/components/form/
 
 main_path_input = dbc.FormGroup([
-        dbc.Label("Main Dataset (path)", html_for={"type":"config","name":"main_path"}),
-        dbc.Input(placeholder="Specify the name and path to main dataset file e.g /data/main.csv", type="text", id={"type":"config","name":"main_path"}, persistence=True),
+        dbc.Label("Main Dataset (path)", html_for={"type": "config_input","name":"main_path"}),
+        dbc.Input(placeholder="Specify the name and path to main dataset file e.g /data/main.csv",
+                                      type="text", id={"type": "config_input","name":"main_path"}, persistence=True, style={"margin": "5px"}),
         dbc.FormText("Specify the name and path to main dataset file", color="secondary")
 ])
 
 gp_path_input = dbc.FormGroup([
-        dbc.Label("GP Dataset (path)", html_for={"type":"config", "name":"gp_path"}),
-        dbc.Input(placeholder="Specify the name and path to GP data file e.g /data/gp_clinical.txt", type="text", id={"type":"config", "name":"gp_path"}, persistence=True),
+        dbc.Label("GP Dataset (path)", html_for={"type": "config_input", "name":"gp_path"}),
+        dbc.Input(placeholder="Specify the name and path to GP data file e.g /data/gp_clinical.txt", type="text", id={"type": "config_input", "name":"gp_path"}, persistence=True),
         #dbc.Input(type="file", id={"type": "file", "name": "gp_path"},),
         dbc.FormText("Specify the name and path to GP data file", color="secondary")
 ])
 
 showcase_path_input = dbc.FormGroup([
-        dbc.Label("Showcase Dataset (path)", html_for={"type": "config", "name": "showcase_path"}),
-        dbc.Input(placeholder="Specify the name and path to the showcase data csv file e.g /data/Data_Dictionary_Showcase.csv.", type="text", id={"type": "config", "name": "showcase_path"},
+        dbc.Label("Showcase Dataset (path)", html_for={"type": "config_input", "name": "showcase_path"}),
+        dbc.Input(placeholder="Specify the name and path to the showcase data csv file e.g /data/Data_Dictionary_Showcase.csv.", type="text", id={"type": "config_input", "name": "showcase_path"},
         persistence=True),
         dbc.FormText("Path to data showcase csv file. This file can be downloaded here: https://biobank.ctsu.ox.ac.uk/~bbdatan/Data_Dictionary_Showcase.csv", color="secondary")
 ])
 
 codings_path_input = dbc.FormGroup([
-        dbc.Label("Codings Dataset (path)", html_for={"type": "config", "name":"codings_path"}),
-        dbc.Input(placeholder="Specify the name and path to the readcodes csv file e.g /data/Codings_Showcase.csv.", type="text", id={"type": "config", "name": "codings_path"},
+        dbc.Label("Codings Dataset (path)", html_for={"type": "config_input", "name":"codings_path"}),
+        dbc.Input(placeholder="Specify the name and path to the readcodes csv file e.g /data/Codings_Showcase.csv.", type="text", id={"type": "config_input", "name": "codings_path"},
         persistence=True),
         dbc.FormText("Path to read codes csv file, This file can be downloaded here: https://biobank.ctsu.ox.ac.uk/~bbdatan/Codings_Showcase.csv", color="secondary")
 ])
 
 cohort_path_input = dbc.FormGroup([
-        dbc.Label("Directory for Output Files (path)", html_for={"type": "config", "name":"codings_path"}),
-        dbc.Input(placeholder="Specify the directory to save the output files to e.g /data/ukbcc_output.", type="text", id={"type": "config", "name": "cohort_path"},
+        dbc.Label("Directory for Output Files (path)", html_for={"type": "config_input", "name":"codings_path"}),
+        dbc.Input(placeholder="Specify the directory to save the output files to e.g /data/ukbcc_output.", type="text", id={"type": "config_input", "name": "cohort_path"},
         persistence=True),
         dbc.FormText("Directory path to save output files to", color="secondary")
 ])
@@ -65,7 +66,7 @@ tab = dbc.FormGroup(
                 ]),
             # dbc.Row([
             #     dbc.Button("Write configuration to file", color="success", id="save_config_modal_btn")#,
-            #     #dbc.Input(placeholder="GP Path", type="text",disabled='true',        id={"type":"config", "name":"gp_path"}, persistence=True)
+            #     #dbc.Input(placeholder="GP Path", type="text",disabled='true',        id={"type": "config_input", "name":"gp_path"}, persistence=True)
             #     ]),
             # dbc.Button("Load configuration from file", color="success", id="upload_config_btn"),
             dbc.Row([dbc.Button("Next", color='primary', id={"name":"next_button_config","type":"nav_btn"}, style={"margin": "5px"})]),
@@ -134,11 +135,11 @@ def toggle_modals(n1, n2, is_open):
 @app.callback(
     Output("pathcheck_modalbody", "children"),
     [Input("open_checkpath_modal_btn", "n_clicks")],
-    [State({'type': 'config', 'name': "main_path"}, "value"),
-     State({'type': 'config', 'name': "gp_path"}, "value"),
-     State({'type': 'config', 'name': "codings_path"}, "value"),
-     State({'type': 'config', 'name': "showcase_path"}, "value"),
-     State({'type': 'config', 'name': "cohort_path"}, "value")]
+    [State({'type': 'config_input', 'name': "main_path"}, "value"),
+     State({'type': 'config_input', 'name': "gp_path"}, "value"),
+     State({'type': 'config_input', 'name': "codings_path"}, "value"),
+     State({'type': 'config_input', 'name': "showcase_path"}, "value"),
+     State({'type': 'config_input', 'name': "cohort_path"}, "value")]
      # State({'type': 'config', 'name': "cohort_path"}, "value")]
 )
 def run_checkpath_modal_check(n_click, main_path, gp_path, codings_path, showcase_path, cohort_path):
@@ -182,7 +183,7 @@ def check(n1, n2, is_open):
 # Save config input
 # Changes whenever one of the config fields is altered
 @app.callback(Output("config_store", "data"),
-              [Input({'type': 'config', 'name': ALL}, "value")],
+              [Input({'type': 'config_input', 'name': ALL}, "value")],
               [State("config_store", "data")])
 #Data is a dict containing all stored data
 def save_config_handler(values, config_init):
