@@ -72,7 +72,6 @@ def toggle_run_query_modal(n1, n2, n3, is_open):
     if not ctx.triggered:
         raise PreventUpdate
 
-    print("n1 {}, n2 {}, n3 {}, is open {}".format(n1,n2,type(n3),is_open))
     if n1 or n2 or n3 or is_open:
         return not is_open
     return is_open

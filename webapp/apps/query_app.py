@@ -62,7 +62,7 @@ tab = dbc.FormGroup(
             html.P("Define the properties of a cohort, based on the defined terms and show results", className="card-text"),
             dbc.Form(
                 dbc.FormGroup([all_dropdown, any_dropdown, none_dropdown,
-                               dbc.Button("Submit", color="success", id='cohort_search_submit1')])
+                               dbc.Button("Submit", color="success", id='cohort_search_submit1', style={"margin": "5px"})])
             ),
             dbc.Row(dbc.Col(id='query_results'), align='center'),
             dbc.Row([
@@ -140,22 +140,34 @@ def _term_iterator(id: str, defined_terms: dict):
     Returns:
     --------
     rand_terms: list
-        list of tuples of field, value combinations
+        list of tuples of encoded field, value combinations
+    decoded_terms: list
+        list of tuples of decoded field, value combinations
 
     """
     rand_terms = []
+    rand_terms_decoded = []
     terms = pd.concat([pd.read_json(x) for x in defined_terms[id]['any']] + [pd.DataFrame()])
     terms['FieldID'] = terms['FieldID'].astype(str)
     terms['Value'] = terms['Value'].astype(str)
     rand_terms = rand_terms + [tuple(x) for x in terms[['FieldID', 'Value']].values]
-    return rand_terms
+    return rand_terms, rand_terms_decoded
 
+# switch to history/results tab
+# @app.callback(Output('tabs', 'active_tab'),
+#           [Input('query_results', 'modified_timestamp')])
+# def switch_tab(results, *params):
+#     print("inside switch tabs")
+#     if results:
+#         print("clicks {}".format(clicks))
+#         return history_app.tab
 #
 # Submit a query
 #
 @app.callback(
     [Output("run_query_modal", "children"),
-    Output("query_results", "children")],
+    Output("query_results", "children"),
+    Output("cohort_id_results", "data")],
     [Input("cohort_search_submit1", "n_clicks")],
     [State("defined_terms", "data"),
      State({"index":0, "name":"query_term_dropdown"}, 'value'),
@@ -168,6 +180,9 @@ def submit_cohort_query(n, defined_terms, all_terms, any_terms, none_terms, conf
     print(n)
     pp = pprint.PrettyPrinter(indent=4)
 
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        raise PreventUpdate
     if n is None:
         raise PreventUpdate
 
@@ -175,26 +190,23 @@ def submit_cohort_query(n, defined_terms, all_terms, any_terms, none_terms, conf
     anys = []
     nones = []
     alls = []
+    anys_decoded = []
+    nones_decoded = []
+    alls_decoded = []
 
     print("defined terms {}".format(defined_terms))
 
     if all_terms:
-        print("all terms! {}".format(all_terms))
         for id in all_terms:
-            print("id {}".format(id))
-            alls = _term_iterator(id, defined_terms)
+            alls, alls_decoded = _term_iterator(id, defined_terms)
 
     if any_terms:
-        print("any terms! {}".format(any_terms))
         for id in any_terms:
-            print("id {}".format(id))
-            anys = _term_iterator(id, defined_terms)
+            anys, anys_decoded = _term_iterator(id, defined_terms)
 
     if none_terms:
-        print("none terms! {}".format(none_terms))
         for id in none_terms:
-            print("id {}".format(id))
-            nones = _term_iterator(id, defined_terms)
+            nones, nones_decoded = _term_iterator(id, defined_terms)
 
     print("any terms {}, all terms {}, none terms {}".format(anys, alls, nones))
 
@@ -205,18 +217,23 @@ def submit_cohort_query(n, defined_terms, all_terms, any_terms, none_terms, conf
         "none_of": nones
     }
 
+    cohort_criteria_decoded = {
+        "all_of": alls_decoded,
+        "any_of": anys_decoded,
+        "none_of": nones_decoded
+    }
+
+    print("cohort decoded {}".format(cohort_criteria_decoded))
+
     outpath = config['cohort_path']
     cohort_out = os.path.join(outpath, "cohort_dictionary.txt")
 
-    utils.write_dictionary(cohort_criteria, cohort_out)
+    utils.write_dictionary(cohort_criteria_decoded, cohort_out)
 
     if os.path.exists(cohort_out):
         print(f"successfully saved cohort dictionary to {cohort_out}")
     else:
         print(f"could not save cohort dictionary to {cohort_out}")
-
-    #TODO: HACK FOR OUTPUT FILE
-    config['out_filename'] = "cohort_ids.txt"
 
 
     print('\ncreate_queries {}'.format(print_time()))
@@ -226,11 +243,19 @@ def submit_cohort_query(n, defined_terms, all_terms, any_terms, none_terms, conf
     print('\nquery_databases {}'.format(print_time()))
     ids = query.query_databases(cohort_criteria=cohort_criteria, queries=queries, main_filename=config['main_path'],
                           write_dir=config['cohort_path'], gpc_path=config['gp_path'], out_filename=config['out_filename'], write=True)
-    #print(ids)
+    print(ids)
     print('\nfinished query_databases {}'.format(print_time()))
 
-    return dbc.Row(
-                dbc.Col([
-                    html.P(f"Found {len(ids)} matching ids.")
-                ])), html.P(f"Found {len(ids)} matching ids.")
+     # output_form = dbc.FormGroup([
+     #        dbc.Label("Name of file to write IDs to", html_for={"type": "config", "name":"codings_path"}),
+     #        dbc.Input(placeholder="Specify the directory to save the output files to e.g /data/ukbcc_output.", type="text", id={"type": "config", "name": "cohort_path"},
+     #        persistence=True),
+     #        dbc.FormText("Directory path to save output files to", color="secondary")])
+    footer = dbc.ModalFooter(dbc.Button("Close", id="close_run_query_btn_new", className="ml-auto", style={"margin": "5px"}))
+    output_text = html.P(f"Found {len(ids)} matching ids. Please find the IDs for cohort in the following file: {cohort_out}")
+    output_runquery = dbc.Row(dbc.Col([output_text,
+                                       dbc.Button("Close", color='primary', id="run_query_close", style={"margin": "5px"})]))
+     # output_queryresults = dbc.Row(dbc.Col([]))
+
+    return output_runquery, output_text, ids
     # return html.P(f"Found {len(ids)} matching ids.")

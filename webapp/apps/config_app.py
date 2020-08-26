@@ -194,8 +194,9 @@ def save_config_handler(values, config_init):
 
     config = config_init or {}
 
-    # specify default path for readcodes.csv
+    # TODO: Make this readable from a config or .py file
     config['readcodes_path'] = "../data_files/readcodes.csv"
+    config['out_filename'] = "cohort_ids.txt"
 
     if ctx.triggered and ctx.inputs_list and ctx.inputs_list[0]:
         # Convert input set of patterns into a dictionary

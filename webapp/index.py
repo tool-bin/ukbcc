@@ -7,15 +7,17 @@ import dash_bootstrap_components as dbc
 import json
 
 from app import app
-from apps import config_app, kw_search_app, include_kw_app, definitions_app, query_app
+from apps import config_app, kw_search_app, include_kw_app, definitions_app, query_app, results_app
 import webbrowser
 from threading import Timer
 
+from dash.exceptions import PreventUpdate
 
 app.layout = dbc.Container(
     [
         dcc.Store(id="config_store", storage_type='local'),
         dcc.Store(id="kw_search", storage_type='session'),
+        dcc.Store(id="cohort_id_results", storage_type='memory'),
         dcc.Store(id="include_fields", storage_type='session'),
         dcc.Store(id="defined_terms", storage_type='session'),
         dcc.Store(id='selected_terms_data', storage_type='memory'),
@@ -28,7 +30,7 @@ app.layout = dbc.Container(
                 dbc.Tab(label="Define Terms", tab_id="definitions"),
                 dbc.Tab(label="Cohort search", tab_id="query"),
                 #dbc.Tab(label="Exclude fields", tab_id="exclude"),
-                dbc.Tab(label="History", tab_id="results"),
+                dbc.Tab(label="Results History", tab_id="results")
             ],
             id="tabs",
             active_tab="config"
@@ -42,7 +44,7 @@ app.layout = dbc.Container(
 
 @app.callback(
     Output("tab-content", "children"),
-    [Input("tabs", "active_tab")],
+    [Input("tabs", "active_tab")]
 )
 def render_tab_content(active_tab):
     """
@@ -50,14 +52,19 @@ def render_tab_content(active_tab):
     stored graphs, and renders the tab content depending on what the value of
     'active_tab' is.
     """
+    print("render tab content")
     if active_tab:
+        print("active tab is {}".format(active_tab))
         if active_tab == "config":
             return config_app.tab
         elif active_tab == "definitions":
-         return definitions_app.tab
+            return definitions_app.tab
         elif active_tab == "query":
-         return query_app.tab
-        return html.P("Tab '{}' is not implemented...".format(active_tab))
+            return query_app.tab
+        elif active_tab == "results":
+            return results_app.tab
+        else:
+            return html.P("Tab '{}' is not implemented...".format(active_tab))
     else:
         return config_app.tab
 
@@ -70,9 +77,10 @@ def render_tab_content(active_tab):
 #
 @app.callback(
     Output("tabs", "active_tab"),
-    [Input({'type': 'nav_btn', 'name': ALL}, "n_clicks")]
+    [Input({'type': 'nav_btn', 'name': ALL}, "n_clicks"),
+    Input("cohort_id_results", "modified_timestamp")]
 )
-def tab_button_click_handler(values):
+def tab_button_click_handler(values, results_returned):
     ctx = dash.callback_context
 
     #TODO: Why not make a dictionary of the fields and automate this mapping. But I'm so lazy...
@@ -80,12 +88,19 @@ def tab_button_click_handler(values):
                 "prev_button_terms": "config",
                 "next_button_terms": "query",
                 "prev_button_query": "definitions",
-                "next_button_query": "history"
+                "next_button_query": "results"
                 }
+
+    print("results return timestamp {}".format(results_returned))
+    if results_returned:
+        print("results return timestamp {}".format(results_returned))
+        return "results"
     if ctx.triggered and ctx.triggered[0]['value']:
-       button_id_dict_str = ctx.triggered[0]['prop_id'].split('.')[0]
-       button_id_dict=json.loads(button_id_dict_str)
-       return button_map[button_id_dict["name"]]
+        # print("ctx not triggered {}".format(ctx.triggered))
+        # raise PreventUpdate
+        button_id_dict_str = ctx.triggered[0]['prop_id'].split('.')[0]
+        button_id_dict=json.loads(button_id_dict_str)
+        return button_map[button_id_dict["name"]]
 
 port = 8050 # default port
 
