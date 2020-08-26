@@ -183,7 +183,7 @@ def check(n1, n2, is_open):
 # Save config input
 # Changes whenever one of the config fields is altered
 @app.callback(Output("config_store", "data"),
-              [Input({'type': 'config', 'name': ALL}, "value")],
+              [Input({'type': 'config_input', 'name': ALL}, "value")],
               [State("config_store", "data")])
 #Data is a dict containing all stored data
 def save_config_handler(values, config_init):
