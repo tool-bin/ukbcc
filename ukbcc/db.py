@@ -2,6 +2,64 @@
 import pandas as pd
 import sqlite3
 from . import utils
+import progressbar
+
+#TODO: Could refactor this whole thing to use pandas data frames
+# - rows are main_file fields, have columns for category, types (ukb, sql, pd)
+
+#
+# Create mapping from column name to field name
+#
+def map_col_field(field_cols):
+    col_field_map = dict(zip(
+        field_cols,
+        [int(x.split('-')[0]) for x in field_cols]
+    ))
+    field_col_map = {}
+    for c, f in col_field_map.items():
+        field_col_map.setdefault(f, []).append(c)
+    return col_field_map, field_col_map
+
+# Create a table for a given category ('cat')
+def create_cat_table(con, cat, cat_field_map, field_col_map, field_sqltype_map):
+    x = con.execute(f"DROP TABLE IF EXISTS {cat};")
+
+    # Get all the fields that are in this category, if we have them in our data
+    cat_fields = ['eid'] + [y for x in cat_field_map[cat] if x in field_col_map for y in field_col_map[x]]
+    if (len(cat_fields) == 1):
+        return
+    cat_col_types = list(field_sqltype_map.get, cat_fields
+
+    cols = ','.join(map(' '.join, zip(['[{}]'.format(x) for x in cat_fields], cat_col_types)))
+    cmd = f"CREATE TABLE {cat} ({cols}) ;"
+    # print(cmd)
+    x = con.execute(cmd)
+
+def create_type_maps():
+
+    ukbtypes = ['Date', 'Categorical multiple', 'Integer',
+                'Categorical single', 'Text',
+                'Time', 'Continuous', 'Compound']
+    sqltypes = ['VARCHAR', 'VARCHAR', 'INTEGER',
+                'VARCHAR', 'VARCHAR',
+                'VARCHAR', 'REAL', 'VARCHAR']
+    pandastypes = ['object', 'object', 'int',
+                   'object', 'object',
+                   'object', 'float', 'object']
+
+    ukbtype_sqltype_map = dict(zip(ukbtypes, sqltypes))
+    ukbtype_pandastypes_map = dict(zip(ukbtypes, pandastypes))
+    sqltype_pandastypes_map = dict(zip(sqltypes, pandastypes))
+
+    return ukbtype_sqltype_map, ukbtype_pandastypes_map, sqltype_pandastypes_map
+
+def get_col_types(data_dict, field_cols, col_field_map, ukbtype_sqltype_map):
+    field_ukbtype_map = dict(zip(data_dict['FieldID'], data_dict['ValueType']))
+
+    # The plus text at the start is for patient ID
+    col_types = ['INTEGER'] + [ukbtype_sqltype_map[field_ukbtype_map[col_field_map[x]]] for x in field_cols]
+
+    return field_ukbtype_map, col_types
 
 
 # TODO: do more checks on whether the files exist
@@ -28,7 +86,37 @@ def create_sqlite_db(db_filename: str, main_filename: str, gpc_filename: str, se
 
     #Read in files
 
+    data_dict = pd.read_csv(showcase_file)
+    main_df = pd.read_csv(main_filename, nrows=2)
 
+    #take all fields except patient id (eid)
+    field_cols = main_df.columns.to_list()[1:]
+    col_field_map, field_col_map = map_col_field(field_cols)
+
+    #Get a bunch of type maps
+    ukbtype_sqltype_map, ukbtype_pandastypes_map,sqltype_pandastypes_map = create_type_maps()
+    field_ukbtype_map, col_types = get_col_types(data_dict, field_cols, col_field_map, ukbtype_sqltype_map)
+    field_sqltype_map = dict(zip(main_df.columns.to_list(), col_types))
+
+    #
+    # Figure out tables to create
+    #
+    field_cat_map = dict(zip(data_dict['FieldID'], 'cat' + data_dict['Category'].astype(str)))
+    cat_field_map = {}
+    for f, c in field_cat_map.items():
+        cat_field_map.setdefault(c, []).append(f)
+
+    cats = cat_field_map.keys()
+
+    # Connect to db
+    con = sqlite3.connect(database='./tmp/ukb5e4.sqlite')
+
+    # Create a table for every category
+    print("create table")
+    for cat in progressbar.progressbar(cats):
+        create_cat_table(con, cat, cat_field_map, field_col_map, field_sqltype_map)
+
+pd.read_csv(main_filename, chunksize=10000, dtype=dict(zip(main_df.columns.to_list(), list(map(sqltype_pandastypes_map.get, col_types)))), d   )
     try:
         print("")
 
@@ -85,3 +173,17 @@ def isSQLite3(filename):
         header = fd.read(100)
 
     return header[:16] == 'SQLite format 3\x00'
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -110,21 +110,20 @@ def compute_stats(main_filename: str, eids: list, showcase_filename: str, coding
             translation_df[col] = pd.to_numeric(translation_df[col], errors='coerce')
             statistics_dict[field_dict[col]['name']]['type'] = 'Pandas describe'
             statistics_dict[field_dict[col]['name']]['status'] = 'success'
-            statistics_dict[field_dict[col]['name']]['stats_table'] = translation_df[col].describe()
+            statistics_dict[field_dict[col]['name']]['stats_table'] = translation_df[col].describe().to_dict()
         elif col_type in ['Date', 'Time']:
             translation_df[col] = pd.to_datetime(translation_df[col], errors='coerce')
             statistics_dict[field_dict[col]['name']]['type'] = 'Pandas describe'
             statistics_dict[field_dict[col]['name']]['status'] = 'success'
-            statistics_dict[field_dict[col]['name']]['stats_table'] = translation_df[col].describe()
+            statistics_dict[field_dict[col]['name']]['stats_table'] = translation_df[col].describe().to_dict()
         elif col_type in ['Categorical multiple', 'Text', 'Compound']:
             statistics_dict[field_dict[col]['name']]['type'] = 'NA'
-            statistics_dict[field_dict[col]['name']][
-                'status'] = 'ERROR: stats on {col_type} data currently not supported'
-            statistics_dict[field_dict[col]['name']]['stats_table'] = pd.DataFrame()
+            statistics_dict[field_dict[col]['name']]['status'] = f'ERROR: stats on {col_type} data currently not supported'
+            statistics_dict[field_dict[col]['name']]['stats_table'] = pd.DataFrame().to_dict()
         else:
             statistics_dict[field_dict[col]['name']]['type'] = 'Value count'
             statistics_dict[field_dict[col]['name']]['status'] = 'success'
-            statistics_dict[field_dict[col]['name']]['stats_table'] = translation_df[col].value_counts(normalize=False)
+            statistics_dict[field_dict[col]['name']]['stats_table'] = translation_df[col].value_counts(normalize=False).to_dict()
 
     # rename columns to make them more readable
     translation_df = translation_df.rename(columns=name_dict)
