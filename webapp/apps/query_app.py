@@ -19,7 +19,7 @@ from dash.exceptions import PreventUpdate
 all_dropdown = dbc.FormGroup(
     [
         dbc.Label("All of these", html_for="example-email"),
-        dcc.Dropdown(id={"index":0, "name":"query_term_dropdown"}, placeholder="Enter defined terms", clearable=True, multi=True, persistence=True),
+        dcc.Dropdown(id={"index":0, "name":"query_term_dropdown"}, placeholder="Enter defined terms", clearable=True, multi=True, persistence=False),
         dbc.FormText(
             "Add terms that must all be present for an individual to be included in the cohort",
             color="secondary",
@@ -30,7 +30,7 @@ all_dropdown = dbc.FormGroup(
 any_dropdown = dbc.FormGroup(
     [
         dbc.Label("Any of these", html_for="example-email"),
-        dcc.Dropdown(id={"index":2, "name":"query_term_dropdown"}, placeholder="Enter defined terms", clearable=True, multi=True, persistence=True),
+        dcc.Dropdown(id={"index":1, "name":"query_term_dropdown"}, placeholder="Enter defined terms", clearable=True, multi=True, persistence=False),
         dbc.FormText(
             "Add terms that are optionally present for an individual to be included in the cohort",
             color="secondary",
@@ -42,7 +42,7 @@ any_dropdown = dbc.FormGroup(
 none_dropdown = dbc.FormGroup(
     [
         dbc.Label("None of these", html_for="example-email"),
-        dcc.Dropdown(id={"index":1, "name":"query_term_dropdown"}, placeholder="Enter defined terms", clearable=True, multi=True, persistence=True),
+        dcc.Dropdown(id={"index":2, "name":"query_term_dropdown"}, placeholder="Enter defined terms", clearable=True, multi=True, persistence=False),
         dbc.FormText(
             "Add terms that must be absent for an individual to be included in the cohort",
             color="secondary",
@@ -124,7 +124,7 @@ def set_querable_terms(active_tab, defined_terms):
     return(opts)
 
 
-def _term_iterator(id: str, defined_terms: dict, rand_terms: list):
+def _term_iterator(id: str, defined_terms: dict):
     """Creates list of tuples from defined_terms dictionary.
 
     Iterates through field, value combinations within defined_terms[id]['any']
@@ -136,8 +136,6 @@ def _term_iterator(id: str, defined_terms: dict, rand_terms: list):
         id to use as key for defined_terms dict
     defined_terms: dict
         dictionary returned by alter_defined_term function in "definitions_app.py"
-    rand_terms: list
-        list to append all tuples to
 
     Returns:
     --------
@@ -145,6 +143,7 @@ def _term_iterator(id: str, defined_terms: dict, rand_terms: list):
         list of tuples of field, value combinations
 
     """
+    rand_terms = []
     terms = pd.concat([pd.read_json(x) for x in defined_terms[id]['any']] + [pd.DataFrame()])
     terms['FieldID'] = terms['FieldID'].astype(str)
     terms['Value'] = terms['Value'].astype(str)
@@ -177,21 +176,27 @@ def submit_cohort_query(n, defined_terms, all_terms, any_terms, none_terms, conf
     nones = []
     alls = []
 
-    if all_terms:
-        for id in all_terms:
-            anys = _term_iterator(id, defined_terms, anys)
+    print("defined terms {}".format(defined_terms))
 
     if all_terms:
+        print("all terms! {}".format(all_terms))
         for id in all_terms:
-            alls = _term_iterator(id, defined_terms, alls)
+            print("id {}".format(id))
+            alls = _term_iterator(id, defined_terms)
+
+    if any_terms:
+        print("any terms! {}".format(any_terms))
+        for id in any_terms:
+            print("id {}".format(id))
+            anys = _term_iterator(id, defined_terms)
 
     if none_terms:
+        print("none terms! {}".format(none_terms))
         for id in none_terms:
-            nones = _term_iterator(id, defined_terms, nones)
+            print("id {}".format(id))
+            nones = _term_iterator(id, defined_terms)
 
-    print(anys)
-    print(alls)
-    print(nones)
+    print("any terms {}, all terms {}, none terms {}".format(anys, alls, nones))
 
     # TODO - HACK
     cohort_criteria = {
@@ -202,8 +207,6 @@ def submit_cohort_query(n, defined_terms, all_terms, any_terms, none_terms, conf
 
     outpath = config['cohort_path']
     cohort_out = os.path.join(outpath, "cohort_dictionary.txt")
-    if not config['out_filename']:
-        config['out_filename'] = "cohort_ids.txt"
 
     utils.write_dictionary(cohort_criteria, cohort_out)
 
@@ -212,9 +215,11 @@ def submit_cohort_query(n, defined_terms, all_terms, any_terms, none_terms, conf
     else:
         print(f"could not save cohort dictionary to {cohort_out}")
 
+    #TODO: HACK FOR OUTPUT FILE
+    config['out_filename'] = "cohort_ids.txt"
+
 
     print('\ncreate_queries {}'.format(print_time()))
-    print(config['gp_path'])
     queries = query.create_queries(cohort_criteria=cohort_criteria, main_filename=config['main_path'],
                                    gpc_path=config['gp_path'])
     pp.pprint(queries)

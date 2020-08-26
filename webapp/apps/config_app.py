@@ -61,21 +61,21 @@ tab = dbc.FormGroup(
                       ]),
 
             dbc.Row([
-                dbc.Button("Check paths", color="success", id="open_checkpath_modal_btn")#,
+                dbc.Button("Check paths", color="success", id="open_checkpath_modal_btn", style={"margin": "5px"})
                 ]),
             # dbc.Row([
             #     dbc.Button("Write configuration to file", color="success", id="save_config_modal_btn")#,
             #     #dbc.Input(placeholder="GP Path", type="text",disabled='true',        id={"type":"config", "name":"gp_path"}, persistence=True)
             #     ]),
             # dbc.Button("Load configuration from file", color="success", id="upload_config_btn"),
-            dbc.Row([dbc.Button("Next", color='primary', id={"name":"next_button_config","type":"nav_btn"})]),
+            dbc.Row([dbc.Button("Next", color='primary', id={"name":"next_button_config","type":"nav_btn"}, style={"margin": "5px"})]),
 
             dbc.Modal(
                 [
                     dbc.ModalHeader("Check paths"),
                     dbc.ModalBody(id="pathcheck_modalbody", style={"overflow-wrap": "break-word"}),
                     dbc.ModalFooter(
-                        dbc.Button("Close", id="close_checkpath_modal_btn", className="ml-auto")
+                        dbc.Button("Close", id="close_checkpath_modal_btn", className="ml-auto", style={"margin": "5px"})
                     ),
                 ],
                 id="checkpath_modal"),
@@ -84,7 +84,7 @@ tab = dbc.FormGroup(
                     dbc.ModalHeader(""),
                     dbc.ModalBody(id="saveconfig_modalbody"),
                     dbc.ModalFooter(
-                        dbc.Button("Close", id="close_saveconfig_modal_btn", className="ml-auto")
+                        dbc.Button("Close", id="close_saveconfig_modal_btn", className="ml-auto", style={"margin": "5px"})
                     ),
                 ],
                 id="saveconfig_modal")
