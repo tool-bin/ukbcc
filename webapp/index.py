@@ -88,7 +88,8 @@ def tab_button_click_handler(values, results_returned):
                 "prev_button_terms": "config",
                 "next_button_terms": "query",
                 "prev_button_query": "definitions",
-                "next_button_query": "results"
+                "next_button_query": "results",
+                "prev_button_results": "query"
                 }
 
     print("results return timestamp {}".format(results_returned))
@@ -98,7 +99,9 @@ def tab_button_click_handler(values, results_returned):
     if ctx.triggered and ctx.triggered[0]['value']:
         # print("ctx not triggered {}".format(ctx.triggered))
         # raise PreventUpdate
+        print("ctx {}".format(ctx.triggered[0]['value']))
         button_id_dict_str = ctx.triggered[0]['prop_id'].split('.')[0]
+        print("button id {}".format(button_id_dict_str))
         button_id_dict=json.loads(button_id_dict_str)
         return button_map[button_id_dict["name"]]
 

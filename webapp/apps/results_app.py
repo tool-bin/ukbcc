@@ -19,7 +19,7 @@ tab = dbc.FormGroup(
             # html.P("Please find the results of your cohort search below", className="card-text"),
             dbc.Row(id='history_results', align='center'),
             html.Div([
-               dbc.Button("Previous", color='primary', id={"name":"prev_button_terms","type":"nav_btn"}, style={"margin": "5px"}),
+               dbc.Button("Previous", color='primary', id={"name":"prev_button_results","type":"nav_btn"}, style={"margin": "5px"}),
             ]),
 
         ]
