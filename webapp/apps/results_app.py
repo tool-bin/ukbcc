@@ -28,7 +28,7 @@ tab = dbc.FormGroup(
 )
 
 @app.callback(
-    Output("history_results", "children"),
+    [Output("history_results", "children")],
     [Input("cohort_id_results", "modified_timestamp")],
     [State("cohort_id_results", "data"),
      State("config_store", "data")]
@@ -38,10 +38,11 @@ def return_results(results_returned, results, config):
     # if not ctx.triggered:
     #     raise PreventUpdate
     if results_returned:
-        print("inside return results")
+        print("inside return results in results tab")
+        print("results are {}".format(results[:10]))
         output_path = config['cohort_path']
         output_file = config['out_filename']
         output_text = dbc.Col([html.P(f"Found {len(results)} matching ids. Please find the IDs for cohort in the following file: {os.path.join(output_path, output_file)}")])
     else:
         output_text = dbc.Col([html.P("No results, please run a cohort search by navigating to the Configure tab.")])
-    return output_text
+    return [output_text]

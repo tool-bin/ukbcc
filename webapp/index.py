@@ -52,7 +52,6 @@ def render_tab_content(active_tab):
     stored graphs, and renders the tab content depending on what the value of
     'active_tab' is.
     """
-    print("render tab content")
     if active_tab:
         print("active tab is {}".format(active_tab))
         if active_tab == "config":
@@ -78,11 +77,13 @@ def render_tab_content(active_tab):
 @app.callback(
     Output("tabs", "active_tab"),
     [Input({'type': 'nav_btn', 'name': ALL}, "n_clicks"),
-    Input("cohort_id_results", "modified_timestamp")]
+    Input("cohort_id_results", "modified_timestamp")],
+    [State("cohort_id_results", "data")]
 )
-def tab_button_click_handler(values, results_returned):
+def tab_button_click_handler(values, results_returned, data):
     ctx = dash.callback_context
-
+    print("ctx in tab click handler {}".format(ctx.triggered))
+    print("tab click handlers click value {}".format(values))
     #TODO: Why not make a dictionary of the fields and automate this mapping. But I'm so lazy...
     button_map={"next_button_config":"definitions",
                 "prev_button_terms": "config",
@@ -92,18 +93,32 @@ def tab_button_click_handler(values, results_returned):
                 "prev_button_results": "query"
                 }
 
-    print("results return timestamp {}".format(results_returned))
+    print("results returned  {}".format(results_returned))
+    # print("results timestamp {}".format(results_timestamp))
+    prop_id = ctx.triggered[0]['prop_id']
+    bad_prop = "cohort_id_results.modified_timestamp"
+    print("prop id {}".format(prop_id))
     if results_returned:
-        print("results return timestamp {}".format(results_returned))
-        return "results"
-    if ctx.triggered and ctx.triggered[0]['value']:
-        # print("ctx not triggered {}".format(ctx.triggered))
-        # raise PreventUpdate
-        print("ctx {}".format(ctx.triggered[0]['value']))
-        button_id_dict_str = ctx.triggered[0]['prop_id'].split('.')[0]
-        print("button id {}".format(button_id_dict_str))
-        button_id_dict=json.loads(button_id_dict_str)
-        return button_map[button_id_dict["name"]]
+        if prop_id == bad_prop:
+            print("check results returned")
+            return "results"
+        else:
+            if ctx.triggered and ctx.triggered[0]['value']:
+                print("ctx {}".format(ctx.triggered[0]['value']))
+                button_id_dict_str = ctx.triggered[0]['prop_id'].split('.')[0]
+                print("button id {}".format(button_id_dict_str))
+                button_id_dict=json.loads(button_id_dict_str)
+                return button_map[button_id_dict["name"]]
+    else:
+        print(" in else statement ")
+        if ctx.triggered and ctx.triggered[0]['value']:
+            # print("ctx not triggered {}".format(ctx.triggered))
+            # raise PreventUpdate
+            print("ctx {}".format(ctx.triggered[0]['value']))
+            button_id_dict_str = ctx.triggered[0]['prop_id'].split('.')[0]
+            print("button id {}".format(button_id_dict_str))
+            button_id_dict=json.loads(button_id_dict_str)
+            return button_map[button_id_dict["name"]]
 
 port = 8050 # default port
 
