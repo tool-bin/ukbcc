@@ -9,12 +9,12 @@ import progressbar
 
 
 # Create a table for a given category ('cat')
-def create_field_type_table(con, field_type):
+def create_field_type_table(con, tab_name, tab_type):
     field_cols = ["eid", "field", "time", "value"]
-    field_col_types = ["INTEGER",  "INTEGER", "INTEGER", field_type]
+    field_col_types = ["INTEGER",  "INTEGER", "INTEGER", tab_type]
     cols = ','.join(map(' '.join, zip(field_cols, field_col_types)))
-    x = con.execute(f"DROP TABLE IF EXISTS tab{field_type};")
-    cmd = f"CREATE TABLE tab{field_type} ({cols}) ;"
+    x = con.execute(f"DROP TABLE IF EXISTS {tab_name};")
+    cmd = f"CREATE TABLE {tab_name} ({cols}) ;"
     print(cmd)
     x = con.execute(cmd)
 
@@ -38,7 +38,7 @@ def create_type_maps():
 
 
 # TODO: do more checks on whether the files exist
-def create_sqlite_db(db_filename: str, main_filename: str, gpc_filename: str, search_df: pd.DataFrame) -> sqlite3.Connection:
+def create_sqlite_db(db_filename: str, main_filename: str, gpc_filename: str, showcase_file: str, step=5000, nrow=520000) -> sqlite3.Connection:
     """Returns basic statistics for given columns and a translated dataframe.
 
     Keyword arguments:
@@ -60,10 +60,9 @@ def create_sqlite_db(db_filename: str, main_filename: str, gpc_filename: str, se
     """
 
     #Read in files
-if(1):
-    db_filename='./tmp/ukb1.sqlite'
-    showcase_file = '/media/ntfs_2TB/Research/datasets/ukb/showcase.csv'
-    main_filename = '/media/ntfs_2TB/Research/datasets/ukb/ukb41268_20.csv'
+    #db_filename='./tmp/ukb.sqlite'
+    #showcase_file = '/media/ntfs_2TB/Research/datasets/ukb/showcase.csv'
+    #main_filename = '/media/ntfs_2TB/Research/datasets/ukb/ukb41268.csv'
     gp_filename = '/media/ntfs_2TB/Research/datasets/ukb/gp_clinical.txt'
     data_dict = pd.read_csv(showcase_file)
     main_df = pd.read_csv(main_filename, nrows=2)
@@ -85,42 +84,51 @@ if(1):
     #
     # Create a table for every sqltype
     print("create table")
-    tabs=["TEXT", "INTEGER", "REAL", "DATE"]
-    type_fields={}
-    for t in ["VARCHAR", "INTEGER", "REAL", "NUMERIC"]:
-            create_field_type_table(con, t)
+    tabs=dict(zip(['str', 'int', 'real', 'datetime'], ["VARCHAR", "INTEGER", "REAL", "REAL"]))
+    for tab_name,field_type in tabs.items():
+            create_field_type_table(con,tab_name=tab_name, tab_type=field_type)
     #
-    for t in ["VARCHAR", "INTEGER", "REAL", "NUMERIC"]:
-        type_fields[t] = field_df[field_df['sql_type'] == t]['field_col']
+    type_fields={}
+    type_lookups=dict(zip(['str', 'int', 'real', 'datetime'], [['Categorical multiple', 'Categorical single', 'Text', 'Compound'],
+                                                                ['Integer'],
+                                                                ['Continuous'],
+                                                                ['Date', 'Time']]))
+    for tab_name,field_type in tabs.items():
+        type_fields[tab_name] = field_df[(field_df['ukb_type'].isin(type_lookups[tab_name])) & (field_df['field_col'] != 'eid')]['field_col']
     #
     tf_eid= field_df[field_df['field_col'] == 'eid']['field_col']
     #
     con.commit()
     #
-    nrow= int(525000/1000)+1
+    #step=1000
+    #nrow= 525000
     date_cols = field_df['field_col'][(field_df['ukb_type']=='Date') | (field_df['ukb_type']=='Time')].to_list()
     dtypes = dict(zip(field_df['field_col'], field_df['pd_type']))
     #
     #
-    with progressbar.ProgressBar(widgets=[progressbar.Percentage(), progressbar.Bar(), progressbar.ETA(),], max_value=nrow) as bar:
-        for i, chunk in enumerate(pd.read_csv(main_filename, chunksize=5000, dtype=object,low_memory=False, encoding = "ISO-8859-1")):
-            for t in tabs:
+    with progressbar.ProgressBar(widgets=[progressbar.Percentage(), progressbar.Bar(), progressbar.ETA(),], max_value=int(nrow/step)+1) as bar:
+        for i, chunk in enumerate(pd.read_csv(main_filename, chunksize=step, dtype=dtypes,low_memory=False, encoding = "ISO-8859-1", parse_dates=date_cols)):
+            for tab_name,field_type in tabs.items():
                 #Convert to triples, remove nulls and then explode field
-                trips = chunk[type_fields[t].append(tf_eid)].melt(id_vars='eid', value_vars=type_fields[t])
+                #print(i,t)
+                trips = chunk[type_fields[tab_name].append(tf_eid)].melt(id_vars='eid', value_vars=type_fields[tab_name])
                 trips = trips[trips['value'].notnull()]
-                trips['field'],trips['time'],trips['array']=trips['variable'].str.split("[-.]", 2, expand=True)
+                trips['field'],trips['time'],trips['array']=trips['variable'].str.split("[-.]", 2).str
                 trips = trips[['eid', 'field', 'time', 'value']]
+                if(tab_name=='datetime'):
+                    trips['value']=pd.to_numeric(trips['value'])
                 #
-                if not trips.shape[0]:
-                    continue
+                #if not trips.shape[0]:
+                #    continue
                 #chunk_cat_df.to_sql(f'cat{cat}', con, if_exists="append", index=False, method='multi')
-                x=con.executemany(f'INSERT INTO tab{t} values({",".join("?" * len(trips.columns))})',
+                x=con.executemany(f'INSERT INTO {tab_name} values({",".join("?" * len(trips.columns))})',
                                 trips.values.tolist())
                 bar.update(i)
     #
     con.commit()
-
-
+    print('UKBCC database - finished')
+    return(con)
+    #cProfile.run("db.create_sqlite_db(db_filename='./tmp/ukb_tmp.sqlite', main_filename='/media/ntfs_2TB/Research/datasets/ukb/ukb41268_5e3.csv', gpc_filename=None, showcase_file=showcase_file, nrow=5000, step=500)")
 
 
 
