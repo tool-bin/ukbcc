@@ -105,7 +105,10 @@ def create_sqlite_db(db_filename: str, main_filename: str, gpc_filename: str, sh
     date_cols = field_df['field_col'][(field_df['ukb_type']=='Date') | (field_df['ukb_type']=='Time')].to_list()
     dtypes = dict(zip(field_df['field_col'], field_df['pd_type']))
     #
-    #
+    # TODO: This is slow. I wonder whether we can parallelise this by having pd.read_csv spread across 3 workers
+    # and then having a single worker pushing to the DB. The problem is that SQLite is not made for parallelism,
+    # so we cannot write in parallel. Dask might be a way to do the reading in parallel but not sure how to hand off
+    # to another thread for writing. 
     with progressbar.ProgressBar(widgets=[progressbar.Percentage(), progressbar.Bar(), progressbar.ETA(),], max_value=int(nrow/step)+1) as bar:
         for i, chunk in enumerate(pd.read_csv(main_filename, chunksize=step, dtype=dtypes,low_memory=False, encoding = "ISO-8859-1", parse_dates=date_cols)):
             for tab_name,field_type in tabs.items():
