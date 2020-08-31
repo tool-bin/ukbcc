@@ -69,7 +69,6 @@ def render_tab_content(active_tab):
 
     #return active_tab#html.P("Click config to start")
 
-
 #
 #
 # Handle next/previous tab buttons
@@ -83,7 +82,6 @@ def render_tab_content(active_tab):
 def tab_button_click_handler(values, results_returned, data):
     ctx = dash.callback_context
     print("ctx in tab click handler {}".format(ctx.triggered))
-    print("tab click handlers click value {}".format(values))
     #TODO: Why not make a dictionary of the fields and automate this mapping. But I'm so lazy...
     button_map={"next_button_config":"definitions",
                 "prev_button_terms": "config",
@@ -104,17 +102,14 @@ def tab_button_click_handler(values, results_returned, data):
             return "results"
         else:
             if ctx.triggered and ctx.triggered[0]['value']:
-                print("ctx {}".format(ctx.triggered[0]['value']))
                 button_id_dict_str = ctx.triggered[0]['prop_id'].split('.')[0]
                 print("button id {}".format(button_id_dict_str))
                 button_id_dict=json.loads(button_id_dict_str)
                 return button_map[button_id_dict["name"]]
     else:
-        print(" in else statement ")
         if ctx.triggered and ctx.triggered[0]['value']:
             # print("ctx not triggered {}".format(ctx.triggered))
             # raise PreventUpdate
-            print("ctx {}".format(ctx.triggered[0]['value']))
             button_id_dict_str = ctx.triggered[0]['prop_id'].split('.')[0]
             print("button id {}".format(button_id_dict_str))
             button_id_dict=json.loads(button_id_dict_str)

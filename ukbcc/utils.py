@@ -1,6 +1,6 @@
 import pandas as pd
 from ukbcc import query
-import requests
+#import requests
 import json
 import os
 from configparser import ConfigParser
@@ -179,7 +179,7 @@ def quick_filter_df(main_filename: str, eids: list) -> pd.DataFrame:
     return filtered_df
 
 
-def write_txt_file(output_file: str, eids: str):
+def write_txt_file(output_file: str, eids: list):
     with open(output_file, "w") as f:
         for id in eids:
             f.write(str(id) + ",")

@@ -73,7 +73,7 @@ tab = dbc.FormGroup(
             dbc.Modal(
                 [
                     dbc.ModalHeader("Running query..."),
-                    dbc.ModalBody(id="run_query"),
+                    dbc.ModalBody(id="run_query", children="Please wait, this could take some time.."),
                     # dbc.Row(dbc.Col(id="status_message"))),
                     # dbc.Row(dbc.Col(id="query_output"))),
                     dbc.ModalFooter(
@@ -86,15 +86,20 @@ tab = dbc.FormGroup(
     className="mt-3",
 )
 
-@app.callback(
-    Output("run_query", "children"),
-    [Input("cohort_search_submit1", "n_clicks")]
-)
-def update_run_query_modal(n_click):
-    return dbc.Row(
-                dbc.Col([
-                    html.P("Please wait, this could take some time...")
-                ]))
+# @app.callback(
+#     Output("run_query", "children"),
+#     [Input("cohort_search_submit1", "n_clicks")]
+# )
+# def update_run_query_modal(n_click):
+#     return dbc.Row(
+#                 dbc.Col([
+#                     html.P("Please wait, this could take some time...")
+#                 ]))
+
+def toggle_modal(n1, n2, is_open):
+    if n1 or n2:
+        return not is_open
+    return is_open
 
 @app.callback(
     Output("run_query_modal", "is_open"),
@@ -103,9 +108,8 @@ def update_run_query_modal(n_click):
     [State("run_query_modal", "is_open")]
 )
 def toggle_run_query_modal(n1, n2, is_open):
-    if n1 or n2:
-        return not is_open
-    return is_open
+    check = toggle_modal(n1, n2, is_open)
+    return check
 #
 # When we load the derived terms update, so does the list of searchable terms
 #
@@ -151,6 +155,7 @@ def _term_iterator(id: str, defined_terms: dict):
     terms['FieldID'] = terms['FieldID'].astype(str)
     terms['Value'] = terms['Value'].astype(str)
     rand_terms = rand_terms + [tuple(x) for x in terms[['FieldID', 'Value']].values]
+    rand_terms_decoded = rand_terms_decoded + [tuple(x) for x in terms[['Field', 'Meaning']].values]
     return rand_terms, rand_terms_decoded
 
 # switch to history/results tab
@@ -165,8 +170,7 @@ def _term_iterator(id: str, defined_terms: dict):
 # Submit a query
 #
 @app.callback(
-    [Output("run_query_modal", "children"),
-    Output("query_results", "children"),
+    [Output("query_results", "children"),
     Output("cohort_id_results", "data")],
     [Input("cohort_search_submit1", "n_clicks")],
     [State("defined_terms", "data"),
@@ -177,7 +181,6 @@ def _term_iterator(id: str, defined_terms: dict):
 )
 def submit_cohort_query(n, defined_terms, all_terms, any_terms, none_terms, config):
     print('\nsubmit_cohort_query()')
-    print(n)
     pp = pprint.PrettyPrinter(indent=4)
 
     ctx = dash.callback_context
@@ -223,6 +226,7 @@ def submit_cohort_query(n, defined_terms, all_terms, any_terms, none_terms, conf
         "none_of": nones_decoded
     }
 
+    print("cohort encoded {}".format(cohort_criteria))
     print("cohort decoded {}".format(cohort_criteria_decoded))
 
     outpath = config['cohort_path']
@@ -242,7 +246,7 @@ def submit_cohort_query(n, defined_terms, all_terms, any_terms, none_terms, conf
     pp.pprint(queries)
     print('\nquery_databases {}'.format(print_time()))
     ids = query.query_databases(cohort_criteria=cohort_criteria, queries=queries, main_filename=config['main_path'],
-                          write_dir=config['cohort_path'], gpc_path=config['gp_path'], out_filename=config['out_filename'], write=True)
+                          write_dir=config['cohort_path'], gpc_path=config['gp_path'], out_filename=config['out_filename'], write=False)
     print(ids)
     print('\nfinished query_databases {}'.format(print_time()))
 
@@ -256,6 +260,4 @@ def submit_cohort_query(n, defined_terms, all_terms, any_terms, none_terms, conf
     output_runquery = dbc.Row(dbc.Col([output_text,
                                        dbc.Button("Close", color='primary', id="run_query_close", style={"margin": "5px"})]))
      # output_queryresults = dbc.Row(dbc.Col([]))
-
-    return output_runquery, output_text, ids
-    # return html.P(f"Found {len(ids)} matching ids.")
+    return output_text, ids
