@@ -126,6 +126,16 @@ def create_sqlite_db(db_filename: str, main_filename: str, gpc_filename: str, sh
                 bar.update(i)
     #
     con.commit()
+    print('UKBCC database - finished populting')
+
+    print('Creating string index')
+    con.execute('CREATE INDEX str_index ON str (field, value, time, eid)')
+    print('Creating integer index')
+    con.execute('CREATE INDEX int_index ON int (field, value, time, eid)')
+    print('Creating continuous index')
+    con.execute('CREATE INDEX real_index ON real (field, value, time, eid)')
+    print('Creating date index')
+    con.execute('CREATE INDEX dt_index ON datetime (field, value, time, eid)')
     print('UKBCC database - finished')
     return(con)
     #cProfile.run("db.create_sqlite_db(db_filename='./tmp/ukb_tmp.sqlite', main_filename='/media/ntfs_2TB/Research/datasets/ukb/ukb41268_5e3.csv', gpc_filename=None, showcase_file=showcase_file, nrow=5000, step=500)")
