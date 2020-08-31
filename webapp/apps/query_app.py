@@ -103,6 +103,14 @@ def update_run_query_modal(n_click):
     [State("run_query_modal", "is_open")]
 )
 def toggle_run_query_modal(n1, n2, is_open):
+
+    ctx = dash.callback_context
+    print("toggle_run_query_modal ctx: {}".format(ctx.triggered))
+    print("toggle_run_query_modal n1: {}".format(n1))
+    print("toggle_run_query_modal n2: {}".format(n2))
+    if not ctx.triggered or ctx.triggered[0]['prop_id']=='.':
+        raise PreventUpdate
+
     if n1 or n2:
         return not is_open
     return is_open
@@ -257,5 +265,6 @@ def submit_cohort_query(n, defined_terms, all_terms, any_terms, none_terms, conf
                                        dbc.Button("Close", color='primary', id="run_query_close", style={"margin": "5px"})]))
      # output_queryresults = dbc.Row(dbc.Col([]))
 
+    print("IDs: {}".format(ids))
     return output_runquery, output_text, ids
     # return html.P(f"Found {len(ids)} matching ids.")

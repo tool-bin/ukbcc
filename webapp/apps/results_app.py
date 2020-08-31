@@ -37,7 +37,10 @@ def return_results(results_returned, results, config):
     # ctx = dash.callback_context
     # if not ctx.triggered:
     #     raise PreventUpdate
-    if results_returned:
+    if not results_returned and not results:
+        raise PreventUpdate
+
+    if results_returned and results:
         print("inside return results in results tab")
         print("results are {}".format(results[:10]))
         output_path = config['cohort_path']

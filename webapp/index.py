@@ -14,60 +14,61 @@ from threading import Timer
 from dash.exceptions import PreventUpdate
 
 app.layout = dbc.Container(
-    [
-        dcc.Store(id="config_store", storage_type='local'),
-        dcc.Store(id="kw_search", storage_type='session'),
-        dcc.Store(id="cohort_id_results", storage_type='memory'),
-        dcc.Store(id="include_fields", storage_type='session'),
-        dcc.Store(id="defined_terms", storage_type='session'),
-        dcc.Store(id='selected_terms_data', storage_type='memory'),
+	[
+		dcc.Store(id="config_store", storage_type='local'),
+		dcc.Store(id="kw_search", storage_type='session'),
+		dcc.Store(id="cohort_id_results", storage_type='memory'),
+		dcc.Store(id="include_fields", storage_type='session'),
+		dcc.Store(id="defined_terms", storage_type='session'),
+		dcc.Store(id='selected_terms_data', storage_type='memory'),
+		dcc.Store(id='cohort_id_results_modified', storage_type='memory'),
 
-        html.H1('UKB Cohort Curator'),
-        html.Hr(),
-        dbc.Tabs(
-            [
-                dbc.Tab(label="Configure", tab_id="config"),
-                dbc.Tab(label="Define Terms", tab_id="definitions"),
-                dbc.Tab(label="Cohort search", tab_id="query"),
-                #dbc.Tab(label="Exclude fields", tab_id="exclude"),
-                dbc.Tab(label="Results History", tab_id="results")
-            ],
-            id="tabs",
-            active_tab="config"
-        ),
-        html.Div(id="tab-content", className="p-4"),
-        html.Div(id='search_logic_state', style={'display': 'none'}),
+		html.H1('UKB Cohort Curator'),
+		html.Hr(),
+		dbc.Tabs(
+			[
+				dbc.Tab(label="Configure", tab_id="config"),
+				dbc.Tab(label="Define Terms", tab_id="definitions"),
+				dbc.Tab(label="Cohort search", tab_id="query"),
+				#dbc.Tab(label="Exclude fields", tab_id="exclude"),
+				dbc.Tab(label="Results History", tab_id="results")
+			],
+			id="tabs",
+			active_tab="config"
+		),
+		html.Div(id="tab-content", className="p-4"),
+		html.Div(id='search_logic_state', style={'display': 'none'}),
 
-    ]
+	]
 )
 
 
 @app.callback(
-    Output("tab-content", "children"),
-    [Input("tabs", "active_tab")]
+	Output("tab-content", "children"),
+	[Input("tabs", "active_tab")]
 )
 def render_tab_content(active_tab):
-    """
-    This callback takes the 'active_tab' property as input, as well as the
-    stored graphs, and renders the tab content depending on what the value of
-    'active_tab' is.
-    """
-    if active_tab:
-        print("active tab is {}".format(active_tab))
-        if active_tab == "config":
-            return config_app.tab
-        elif active_tab == "definitions":
-            return definitions_app.tab
-        elif active_tab == "query":
-            return query_app.tab
-        elif active_tab == "results":
-            return results_app.tab
-        else:
-            return html.P("Tab '{}' is not implemented...".format(active_tab))
-    else:
-        return config_app.tab
+	"""
+	This callback takes the 'active_tab' property as input, as well as the
+	stored graphs, and renders the tab content depending on what the value of
+	'active_tab' is.
+	"""
+	if active_tab:
+		print("active tab is {}".format(active_tab))
+		if active_tab == "config":
+			return config_app.tab
+		elif active_tab == "definitions":
+			return definitions_app.tab
+		elif active_tab == "query":
+			return query_app.tab
+		elif active_tab == "results":
+			return results_app.tab
+		else:
+			return html.P("Tab '{}' is not implemented...".format(active_tab))
+	else:
+		return config_app.tab
 
-    #return active_tab#html.P("Click config to start")
+	#return active_tab#html.P("Click config to start")
 
 
 #
@@ -75,50 +76,52 @@ def render_tab_content(active_tab):
 # Handle next/previous tab buttons
 #
 @app.callback(
-    Output("tabs", "active_tab"),
-    [Input({'type': 'nav_btn', 'name': ALL}, "n_clicks"),
-    Input("cohort_id_results", "modified_timestamp")],
-    [State("cohort_id_results", "data")]
+	[Output("tabs", "active_tab"),
+	 Output("cohort_id_results_modified", "data")],
+	[Input({'type': 'nav_btn', 'name': ALL}, "n_clicks"),
+	Input("cohort_id_results", "modified_timestamp")],
+	[State("cohort_id_results", "data"),
+	 State("cohort_id_results_modified", "data")]
 )
-def tab_button_click_handler(values, results_returned, data):
-    ctx = dash.callback_context
-    print("ctx in tab click handler {}".format(ctx.triggered))
-    print("tab click handlers click value {}".format(values))
-    #TODO: Why not make a dictionary of the fields and automate this mapping. But I'm so lazy...
-    button_map={"next_button_config":"definitions",
-                "prev_button_terms": "config",
-                "next_button_terms": "query",
-                "prev_button_query": "definitions",
-                "next_button_query": "results",
-                "prev_button_results": "query"
-                }
+def tab_button_click_handler(values, results_ts_new, results, results_ts_old):
+	ctx = dash.callback_context
+	print("ctx in tab click handler {}".format(ctx.triggered))
+	print("tab click handlers click value {}".format(values))
+	#TODO: Why not make a dictionary of the fields and automate this mapping. But I'm so lazy...
+	button_map={"next_button_config":"definitions",
+				"prev_button_terms": "config",
+				"next_button_terms": "query",
+				"prev_button_query": "definitions",
+				"next_button_query": "results",
+				"prev_button_results": "query"
+				}
 
-    print("results returned  {}".format(results_returned))
-    # print("results timestamp {}".format(results_timestamp))
-    prop_id = ctx.triggered[0]['prop_id']
-    bad_prop = "cohort_id_results.modified_timestamp"
-    print("prop id {}".format(prop_id))
-    if results_returned:
-        if prop_id == bad_prop:
-            print("check results returned")
-            return "results"
-        else:
-            if ctx.triggered and ctx.triggered[0]['value']:
-                print("ctx {}".format(ctx.triggered[0]['value']))
-                button_id_dict_str = ctx.triggered[0]['prop_id'].split('.')[0]
-                print("button id {}".format(button_id_dict_str))
-                button_id_dict=json.loads(button_id_dict_str)
-                return button_map[button_id_dict["name"]]
-    else:
-        print(" in else statement ")
-        if ctx.triggered and ctx.triggered[0]['value']:
-            # print("ctx not triggered {}".format(ctx.triggered))
-            # raise PreventUpdate
-            print("ctx {}".format(ctx.triggered[0]['value']))
-            button_id_dict_str = ctx.triggered[0]['prop_id'].split('.')[0]
-            print("button id {}".format(button_id_dict_str))
-            button_id_dict=json.loads(button_id_dict_str)
-            return button_map[button_id_dict["name"]]
+	print("tab_button_click_handler - results_ts_new: {}".format(results_ts_new))
+	print("tab_button_click_handler - results_ts_old: {}".format(results_ts_old))
+	print("tab_button_click_handler - results: {}".format(results))
+	print("tab_button_click_handler - ctx.trig: {}".format(ctx.triggered))
+
+	print (ctx.triggered is None)
+	print(ctx.triggered[0]['value'] =='cohort_id_results.modified_timestamp')
+	print(results_ts_new==-1)
+	# print("results timestamp {}".format(results_timestamp))
+	if ctx.triggered is None or \
+			ctx.triggered[0]['value'] =='cohort_id_results.modified_timestamp' or \
+			results_ts_new==-1:
+		print ('tab_button_click_handler - PreventUpdate')
+		raise PreventUpdate
+
+	if results_ts_new!=results_ts_old and results_ts_new!=-1 and results is not None:
+		print("Change tabs due to results")
+		return "results", results_ts_new
+	if ctx.triggered and ctx.triggered[0]['value'] and ctx.triggered[0]['value']!= -1 :
+		print("Change tabs due to buttons")
+		print("ctx {}".format(ctx.triggered[0]['value']))
+		button_id_dict_str = ctx.triggered[0]['prop_id'].split('.')[0]
+		print("button id {}".format(button_id_dict_str))
+		button_id_dict=json.loads(button_id_dict_str)
+		return button_map[button_id_dict["name"]], results_ts_new
+	return "config", results_ts_new
 
 port = 8050 # default port
 
@@ -126,5 +129,5 @@ def open_browser():
 	webbrowser.open_new("http://localhost:{}".format(port))
 
 if __name__ == '__main__':
-    #Timer(1, open_browser).start();
-    app.run_server(debug=True, use_reloader=True, dev_tools_props_check=False, dev_tools_ui=True)
+	#Timer(1, open_browser).start();
+	app.run_server(debug=True, use_reloader=True, dev_tools_props_check=False, dev_tools_ui=True)
