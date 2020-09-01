@@ -213,32 +213,37 @@ def submit_cohort_query(n, defined_terms, all_terms, any_terms, none_terms, conf
 
     print("any terms {}, all terms {}, none terms {}".format(anys, alls, nones))
 
-    # TODO - HACK
-    cohort_criteria = {
-        "all_of": alls,
-        "any_of": anys,
-        "none_of": nones
-    }
-
-    cohort_criteria_decoded = {
-        "all_of": alls_decoded,
-        "any_of": anys_decoded,
-        "none_of": nones_decoded
-    }
-
-    print("cohort encoded {}".format(cohort_criteria))
-    print("cohort decoded {}".format(cohort_criteria_decoded))
+    cohort_dictionaries = {"encoded": {"all_of": alls, "any_of": anys, "none_of": nones},
+                           "decoded": {"all_of": alls_decoded, "any_of": anys_decoded, "none_of": nones_decoded}}
 
     outpath = config['cohort_path']
-    cohort_out = os.path.join(outpath, "cohort_dictionary.txt")
 
-    utils.write_dictionary(cohort_criteria_decoded, cohort_out)
+    for k, v in cohorts_dictionaries:
+        print("cohort {} {}".format(k, v))
+        name = "cohort_dictionary_" + k + ".txt"
+        cohort_out = os.path.join(outpath, name)
+        utils.write_dictionary(cohort_out, v)
+        if os.path.exists(cohort_out):
+            print(f"successfully saved {k} cohort dictionary to {cohort_out}")
+        else:
+            print(f"could not save {k} cohort dictionary to {cohort_out}")
 
-    if os.path.exists(cohort_out):
-        print(f"successfully saved cohort dictionary to {cohort_out}")
-    else:
-        print(f"could not save cohort dictionary to {cohort_out}")
 
+    # cohort_out_decoded = os.path.join(outpath, "cohort_dictionary_decoded.txt")
+    # cohort_out_encoded = os.path.join(outpath, "cohort_dictionary_encoded.txt")
+    #
+    # utils.write_dictionary(cohort_criteria_decoded, cohort_out_decoded)
+    # utils.write_dictionary(cohort_criteria_encoded, cohort_out_encoded)
+
+    # if os.path.exists(cohort_out_decoded):
+    #     print(f"successfully saved decoded cohort dictionary to {cohort_out_decoded}")
+    # else:
+    #     print(f"could not save cohort dictionary to {cohort_out_decoded}")
+    #
+    # if os.path.exists(cohort_out_encoded):
+    #     print(f"successfully saved encoded cohort dictionary to {cohort_out_encoded}")
+    # else:
+    #     print(f"could not save cohort dictionary to {cohort_out_encoded}")
 
     print('\ncreate_queries {}'.format(print_time()))
     queries = query.create_queries(cohort_criteria=cohort_criteria, main_filename=config['main_path'],
@@ -256,7 +261,7 @@ def submit_cohort_query(n, defined_terms, all_terms, any_terms, none_terms, conf
      #        persistence=True),
      #        dbc.FormText("Directory path to save output files to", color="secondary")])
     footer = dbc.ModalFooter(dbc.Button("Close", id="close_run_query_btn_new", className="ml-auto", style={"margin": "5px"}))
-    output_text = html.P(f"Found {len(ids)} matching ids. Please find the IDs for cohort in the following file: {cohort_out}")
+    output_text = html.P(f"Found {len(ids)} matching ids.")
     output_runquery = dbc.Row(dbc.Col([output_text,
                                        dbc.Button("Close", color='primary', id="run_query_close", style={"margin": "5px"})]))
      # output_queryresults = dbc.Row(dbc.Col([]))
