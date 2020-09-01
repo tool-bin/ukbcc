@@ -218,11 +218,11 @@ def submit_cohort_query(n, defined_terms, all_terms, any_terms, none_terms, conf
 
     outpath = config['cohort_path']
 
-    for k, v in cohorts_dictionaries:
+    for k, v in cohort_dictionaries.items():
         print("cohort {} {}".format(k, v))
         name = "cohort_dictionary_" + k + ".txt"
         cohort_out = os.path.join(outpath, name)
-        utils.write_dictionary(cohort_out, v)
+        utils.write_dictionary(v, cohort_out)
         if os.path.exists(cohort_out):
             print(f"successfully saved {k} cohort dictionary to {cohort_out}")
         else:
@@ -246,11 +246,11 @@ def submit_cohort_query(n, defined_terms, all_terms, any_terms, none_terms, conf
     #     print(f"could not save cohort dictionary to {cohort_out_encoded}")
 
     print('\ncreate_queries {}'.format(print_time()))
-    queries = query.create_queries(cohort_criteria=cohort_criteria, main_filename=config['main_path'],
+    queries = query.create_queries(cohort_criteria=cohort_dictionaries['encoded'], main_filename=config['main_path'],
                                    gpc_path=config['gp_path'])
     pp.pprint(queries)
     print('\nquery_databases {}'.format(print_time()))
-    ids = query.query_databases(cohort_criteria=cohort_criteria, queries=queries, main_filename=config['main_path'],
+    ids = query.query_databases(cohort_criteria=cohort_dictionaries['encoded'], queries=queries, main_filename=config['main_path'],
                           write_dir=config['cohort_path'], gpc_path=config['gp_path'], out_filename=config['out_filename'], write=False)
     print(ids)
     print('\nfinished query_databases {}'.format(print_time()))
