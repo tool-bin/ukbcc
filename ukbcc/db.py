@@ -4,12 +4,12 @@ import sqlite3
 from . import utils
 import progressbar
 
-#TODO: Could refactor this whole thing to use pandas data frames
-# - rows are main_file fields, have columns for category, types (ukb, sql, pd)
+
+def create_field_table_lookup(con, ):
 
 
 # Create a table for a given category ('cat')
-def create_field_type_table(con, tab_name, tab_type):
+def create_long_value_table(con, tab_name, tab_type):
     field_cols = ["eid", "field", "time", "value"]
     field_col_types = ["INTEGER",  "INTEGER", "INTEGER", tab_type]
     cols = ','.join(map(' '.join, zip(field_cols, field_col_types)))
@@ -17,6 +17,7 @@ def create_field_type_table(con, tab_name, tab_type):
     cmd = f"CREATE TABLE {tab_name} ({cols}) ;"
     print(cmd)
     x = con.execute(cmd)
+    con.commit()
 
 
 def create_type_maps():
@@ -65,7 +66,7 @@ def create_sqlite_db(db_filename: str, main_filename: str, gpc_filename: str, sh
     #main_filename = '/media/ntfs_2TB/Research/datasets/ukb/ukb41268.csv'
     gp_filename = '/media/ntfs_2TB/Research/datasets/ukb/gp_clinical.txt'
     data_dict = pd.read_csv(showcase_file)
-    main_df = pd.read_csv(main_filename, nrows=2)
+    main_df = pd.read_csv(main_filename, nrows=1)
     #
     field_df = pd.DataFrame({'field_col': main_df.columns,
                              'field': ['eid'] + [int(x.split('-')[0]) for x in main_df.columns[1:]]})
@@ -86,7 +87,7 @@ def create_sqlite_db(db_filename: str, main_filename: str, gpc_filename: str, sh
     print("create table")
     tabs=dict(zip(['str', 'int', 'real', 'datetime'], ["VARCHAR", "INTEGER", "REAL", "REAL"]))
     for tab_name,field_type in tabs.items():
-            create_field_type_table(con,tab_name=tab_name, tab_type=field_type)
+            create_long_value_table(con,tab_name=tab_name, tab_type=field_type)
     #
     type_fields={}
     type_lookups=dict(zip(['str', 'int', 'real', 'datetime'], [['Categorical multiple', 'Categorical single', 'Text', 'Compound'],
@@ -95,10 +96,20 @@ def create_sqlite_db(db_filename: str, main_filename: str, gpc_filename: str, sh
                                                                 ['Date', 'Time']]))
     for tab_name,field_type in tabs.items():
         type_fields[tab_name] = field_df[(field_df['ukb_type'].isin(type_lookups[tab_name])) & (field_df['field_col'] != 'eid')]['field_col']
+
+    #Write fields to a table
+    field_tab_map = {item: k for k, v in type_fields.items() for item in v.to_list()}
+    field_tab_map['eid'] = None
+    field_df['tab'] = list(map(field_tab_map.get, field_df['field_col']))
+    field_df.to_sql("field_desc", con, if_exists='replace', index=False)
+
     #
     tf_eid= field_df[field_df['field_col'] == 'eid']['field_col']
     #
-    con.commit()
+
+
+
+
     #
     #step=1000
     #nrow= 525000
@@ -165,10 +176,35 @@ def isSQLite3(filename):
 
 
 
+#
+#
+# query_tuples: list of tuples, each with 3 entries: field, condition, value
+###
+def query_sqlite_db(con, query_tuples, field_table):
+    field_df = pd.read_sql('SELECT* from field_desc', con)
+
+    #Add the table for the field inop each query and turn in them into dictionaries to help readability
+    query_tuples = [list(q) + [field_df[field_df['field'] == q[0]]['tab'].iloc[0]] for q in query_tuples]
+    query_tuples = [dict(zip(('f','c','v','t'),q)) for q in query_tuples]
 
 
+    ''' select eid, {}
+    by eid
+    '''
 
-
+    a=con.execute('''
+                select eid, 
+                       max(distinct case when field=6072 then value end) as f6072,                             
+              from (select * from str where 
+                    field = 6072 and value = 1 or 
+                    field = 21000 
+              union 
+                    select * from real where 
+                    field = 5262 or 
+                    field = 5263 or 
+                    field = 5254 or 
+                    field = 5255)
+             GROUP BY eid LIMIT 10''').fetchall()
 
 
 
