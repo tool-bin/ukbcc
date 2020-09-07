@@ -4,6 +4,7 @@ from app import app
 import dash_html_components as html
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State, MATCH, ALL
+import dash_table
 import pandas as pd
 import json
 from apps import kw_search_app
@@ -64,6 +65,8 @@ add_new_term_modal = dbc.Modal(
 #
 # Keyword Search Tab
 #
+df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/solar.csv')
+
 tab = dbc.FormGroup(
     dbc.CardBody(
         [
@@ -77,9 +80,7 @@ tab = dbc.FormGroup(
                dbc.Button("Previous", color='primary', id={"name":"prev_button_terms","type":"nav_btn"}, style={"margin": "5px"}),
                dbc.Button("Next", color='primary', id={"name":"next_button_terms","type":"nav_btn"}, style={"margin": "5px"})
             ]),
-
-        ]
-    ),
+        ]),
     className="mt-3",
 )
 

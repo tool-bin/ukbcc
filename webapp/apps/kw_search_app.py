@@ -33,7 +33,7 @@ kw_search_group = dbc.FormGroup(
                     dbc.ModalHeader("Running search.."),
                     dbc.ModalBody(id="running_search_modalbody"),
                     dbc.ModalFooter(
-                        dbc.Button("Close", id="close_running_search_modal_btn", className="ml-auto")
+                        # dbc.Button("Close", id="close_running_search_modal_btn", className="ml-auto")
                     ),
                 ],
                 id="running_search_modal"),
@@ -63,16 +63,16 @@ def progress_search(n_click):
     Output("running_search_modal", "is_open"),
     # Output("running_search_row", "is_open"),
     [Input("submit_btn", "n_clicks"),
-    Input("close_running_search_modal_btn", "n_clicks"),
+    # Input("close_running_search_modal_btn", "n_clicks"),
     Input("kw_search", "modified_timestamp")],
     [State("running_search_modal", "is_open")]
 )
-def toggle_run_query_modal(n1, n2, n3, is_open):
+def toggle_run_query_modal(n1, n2, is_open):
     ctx = dash.callback_context
     if not ctx.triggered:
         raise PreventUpdate
 
-    if n1 or n2 or n3 or is_open:
+    if n1 or n2 or is_open:
         return not is_open
     return is_open
 #
@@ -173,29 +173,37 @@ def show_candidates(ts, candidate_df_json):
                     # dbc.Button("Return selected fields", id={'modal_ctrl':'none', 'name':'return_rows'})
                     ])
                 ])
-                ]
-                )
-                ), dash_table.DataTable(
+            ])
+    ), dash_table.DataTable(
                         id='kw_result_table',
-                        #css=[{'selector': 'table', 'rule': 'table-layout: fixed'}],
+                        css=[{'selector': '.dash-filter input', 'rule': 'text-align: left'}, {'selector': '.row', 'rule': 'margin: 0'}],
                         # style_cell={
                         #     'whiteSpace': 'normal',
                         #     'height': 'auto',
                         # },
+                        style_cell={
+                                'whiteSpace': 'normal',
+                                'height': 'auto',
+                                'text-align': 'left'
+                        },
+                        style_cell_conditional = [
+                                {'if': {'column_id':'Value'}, 'width': '50px'}
+                        ],
                         columns=[{"name": i, "id": i} for i in candidate_df.columns],
                         data=candidate_df.to_dict('records'),
                         row_selectable='multi',
                         filter_action='native',
-                        page_size=10,
+                        page_size=25,
                         fixed_rows={'headers': True},
-                        style_table={'overflowX': 'scroll', 'overflowY':'scroll'},
-                        style_cell_conditional=[
-                            {'if': {'column_id': 'Field'},   'width': '1%'},
-                            {'if': {'column_id': 'FieldID'}, 'width': '6%'},
-                            {'if': {'column_id': 'Coding'},  'width': '6%'},
-                            {'if': {'column_id': 'Value'},   'width': '8%'},
-                            {'if': {'column_id': 'Meaning'}, 'width': '40%', 'text-align': 'left'}
-                            ]
+                        # style_table={'overflowX': 'scroll', 'overflowY':'scroll'},
+                        # style_cell={'text-align':'left', 'overflow':'hidden', 'textOverFlow':'ellipsis', 'maxWidth':0},
+                        # style_cell_conditional=[
+                        #     {'if': {'column_id': 'Field'},   'width': '1%'},
+                        #     {'if': {'column_id': 'FieldID'}, 'width': '6%'},
+                        #     {'if': {'column_id': 'Coding'},  'width': '6%'},
+                        #     {'if': {'column_id': 'Value'},   'width': '8%'},
+                        #     {'if': {'column_id': 'Meaning'}, 'width': '40%'}
+                        #     ]
                     ), dbc.Button("Return selected fields", id={'modal_ctrl':'none', 'name':'return_rows'}, className="ml-auto", color='success')
     raise PreventUpdate
 
