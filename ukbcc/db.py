@@ -3,9 +3,6 @@ import pandas as pd
 import sqlite3
 from . import utils
 import progressbar
-from multiprocessing import Pool
-import math
-
 
 #TODO: Could refactor this whole thing to use pandas data frames
 # - rows are main_file fields, have columns for category, types (ukb, sql, pd)
@@ -39,46 +36,6 @@ def create_type_maps():
     return ukbtype_sqltype_map, ukbtype_pandastypes_map
 
 
-def populate_db(con, main_filename, dtypes, date_cols, type_fields, tf_eid, nrow, step):
-    #
-    # TODO: This is slow. I wonder whether we can parallelise this by having pd.read_csv spread across 3 workers
-    # and then having a single worker pushing to the DB. The problem is that SQLite is not made for parallelism,
-    # so we cannot write in parallel. Dask might be a way to do the reading in parallel but not sure how to hand off
-    # to another thread for writing.
-    global melt_frame
-    def melt_frame(chunk):
-        # HACK " tabs should be argument
-        tabs = dict(zip(['str', 'int', 'real', 'datetime'], ["VARCHAR", "INTEGER", "REAL", "REAL"]))
-        stmts = []
-        for tab_name, field_type in tabs.items():
-            # Convert to triples, remove nulls and then explode field
-            # print(i,t)
-            trips = chunk[type_fields[tab_name].append(tf_eid)].melt(id_vars='eid', value_vars=type_fields[tab_name])
-            trips = trips[trips['value'].notnull()]
-            trips['field'], trips['time'], trips['array'] = trips['variable'].str.split("[-.]", 2).str
-            trips = trips[['eid', 'field', 'time', 'value']]
-            if (tab_name == 'datetime'):
-                trips['value'] = pd.to_numeric(trips['value'])
-            #
-            # if not trips.shape[0]:
-            #    continue
-            # chunk_cat_df.to_sql(f'cat{cat}', con, if_exists="append", index=False, method='multi')
-            stmts.append((f'INSERT INTO {tab_name} values({",".join("?" * len(trips.columns))})',
-                         trips.values.tolist()))
-        return (stmts)
-
-    print("create table")
-    pool = Pool(processes=4)
-
-    with progressbar.ProgressBar(widgets=[progressbar.Percentage(), progressbar.Bar(), progressbar.ETA(), ],
-                                 max_value=math.ceil(nrow / step)) as bar:
-        chunks = pd.read_csv(main_filename, chunksize=step, dtype=dtypes, low_memory=False, encoding="ISO-8859-1",
-                             parse_dates=date_cols)
-        for i, insert_stmts in enumerate(pool.imap(melt_frame, chunks)):
-            x = [con.executemany(stmt[0],stmt[1]) for stmt in insert_stmts]
-            bar.update(i)
-    #
-    print('UKBCC database - finished populating')
 
 # TODO: do more checks on whether the files exist
 def create_sqlite_db(db_filename: str, main_filename: str, gpc_filename: str, showcase_file: str, step=5000, nrow=520000) -> sqlite3.Connection:
@@ -120,7 +77,6 @@ def create_sqlite_db(db_filename: str, main_filename: str, gpc_filename: str, sh
     ukbtype_sqltype_map, ukbtype_pandastypes_map = create_type_maps()
     field_df['sql_type'] = list(map(ukbtype_sqltype_map.get, field_df['ukb_type']))
     field_df['pd_type'] = list(map(ukbtype_pandastypes_map.get, field_df['ukb_type']))
-
     #
     #
     # Connect to db
@@ -148,7 +104,32 @@ def create_sqlite_db(db_filename: str, main_filename: str, gpc_filename: str, sh
     #nrow= 525000
     date_cols = field_df['field_col'][(field_df['ukb_type']=='Date') | (field_df['ukb_type']=='Time')].to_list()
     dtypes = dict(zip(field_df['field_col'], field_df['pd_type']))
-    x=populate_db(con, main_filename, dtypes, date_cols, type_fields, tf_eid, nrow, step)
+    #
+    # TODO: This is slow. I wonder whether we can parallelise this by having pd.read_csv spread across 3 workers
+    # and then having a single worker pushing to the DB. The problem is that SQLite is not made for parallelism,
+    # so we cannot write in parallel. Dask might be a way to do the reading in parallel but not sure how to hand off
+    # to another thread for writing. 
+    with progressbar.ProgressBar(widgets=[progressbar.Percentage(), progressbar.Bar(), progressbar.ETA(),], max_value=int(nrow/step)+1) as bar:
+        for i, chunk in enumerate(pd.read_csv(main_filename, chunksize=step, dtype=dtypes,low_memory=False, encoding = "ISO-8859-1", parse_dates=date_cols)):
+            for tab_name,field_type in tabs.items():
+                #Convert to triples, remove nulls and then explode field
+                #print(i,t)
+                trips = chunk[type_fields[tab_name].append(tf_eid)].melt(id_vars='eid', value_vars=type_fields[tab_name])
+                trips = trips[trips['value'].notnull()]
+                trips['field'],trips['time'],trips['array']=trips['variable'].str.split("[-.]", 2).str
+                trips = trips[['eid', 'field', 'time', 'value']]
+                if(tab_name=='datetime'):
+                    trips['value']=pd.to_numeric(trips['value'])
+                #
+                #if not trips.shape[0]:
+                #    continue
+                #chunk_cat_df.to_sql(f'cat{cat}', con, if_exists="append", index=False, method='multi')
+                x=con.executemany(f'INSERT INTO {tab_name} values({",".join("?" * len(trips.columns))})',
+                                trips.values.tolist())
+                bar.update(i)
+    #
+    con.commit()
+    print('UKBCC database - finished populting')
 
     print('Creating string index')
     con.execute('CREATE INDEX str_index ON str (field, value, time, eid)')
