@@ -198,40 +198,30 @@ def query_sqlite_db(db_filename, cohort_criteria):#query_tuples, field_table):
 	print(f'Done {datetime.now()}')
 
 	#print("cc:{}".format(cohort_criteria))
+	#print('generate main criteria')
 	main_criteria = {k: [('f'+vi[0],vi[1]) for vi in v if vi[0] in field_df['field'].values]
 					 for k, v in cohort_criteria.items()}
-	#print("mc:{}".format(main_criteria))
+
 	#Fit each condition to a template and derive a final filter
 	def join_field_vals(fs):
 		return [f"{f} {'is not NULL' if v=='nan' else '='+v}" for f,v in fs]
 
+	#print('generate selection criteria')
 	q={}
 	q['all_of'] = " AND ".join(join_field_vals(main_criteria['all_of']))
 	q['any_of'] =  "({})".format(" OR ".join(join_field_vals(main_criteria['any_of'])))
 	q['none_of'] = "NOT ({})".format(" OR ".join(join_field_vals(main_criteria['none_of'])))
 	selection_query = " AND ".join([qv for qk,qv in q.items() if main_criteria[qk]])
 
-	#print("selection_query:{}".format(selection_query))
-	#print("q:{}".format(q))
-	#print("mc2:{}".format(main_criteria))
-
+	#print('generate query_tuples {}'.format(cohort_criteria.values()))
 	#Add the table for the field inop each query and turn in them into dictionaries to help readability
-	query_tuples = [(int(vi[0]),vi[1]) for v in cohort_criteria.values() for vi in v]
-	#print(query_tuples)
-	#print(query_tuples[0][0])
-	#print(field_df['field'] == query_tuples[0][0])
-	#print(field_df[field_df['field'] == query_tuples[0][0]])
-	#print ([field_df[field_df['field'] == str(query_tuples[0][0])]['tab'].iloc[0]])
+	query_tuples = [(int(float(vi[0])),vi[1]) for v in cohort_criteria.values() for vi in v]
 	query_tuples = [list(qt) + [field_df[field_df['field'] == str(qt[0])]['tab'].iloc[0]] for qt in query_tuples]
 	query_tuples = [dict(zip(('field','val','tab'),q)) for q in query_tuples]
 
+	#print('generate column naming query')
 	#column naming query
-	#f=set([str(q['field']) for q in query_tuples])[0]
-	#print(f)
-	#field_df['field'] == f"'{f}'"
-
 	field_sql_map={f:field_df[field_df['field']==str(f)]['sql_type'].iloc[0] for f in set([q['field'] for q in query_tuples])}
-	print(field_sql_map)
 	col_names_q = ",".join([f"cast(max(distinct case when field={f} then value end) as {field_sql_map[f]}) as f{f}" for f in set([q['field'] for q in query_tuples])])
 
 	#Make query: select * from tab where field=f1 and value=v1 or field=f2 and value=v2 ...
@@ -242,15 +232,18 @@ def query_sqlite_db(db_filename, cohort_criteria):#query_tuples, field_table):
 												  " or ".join([f"field={q['field']} and value {'is not NULL' if q['val']=='nan' else '='+q['val']}" for q in qts])
 												  )
 
+	#print('derive unique tabs')
 	tabs = [t for t in field_df['tab'].iloc[1:].unique()]
 	#Look at the fields in each table, form into query, take union
 	union_q = "("+" union ".join(filter(len,[tab_select(tab, [qt for qt in query_tuples if qt['tab']==tab]) for tab in tabs])) + ")"
+
 	q = f'''select * from (
             select eid, {col_names_q}                                                   
           from {union_q}
          GROUP BY eid) where {selection_query}'''.strip('\n')
-	print(q)
-	print(f'Run query {datetime.now()}')
+
+
+	print(f'Run query {datetime.now()}\n {q}')
 	res = pd.read_sql(q, con)
 	print(f'Done {datetime.now()}')
 	return(res)
