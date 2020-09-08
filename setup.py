@@ -22,7 +22,7 @@ setup(
     long_description_content_type='text/markdown',
     url='https://github.com/tool-bin/ukbcc/',
     download_url='https://github.com/tool-bin/ukbcc/tarball/' + ukbcc.__version__,
-    license='unlicense',
+    license='APACHE 2',
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
@@ -46,10 +46,8 @@ setup(
         'nose >= 1.3.7',
         'coverage >= 5.1',
         'pypi-publisher >= 0.0.4',
-        # 'selenium == 3.141.0',
         'pandas >= 1.0.3',
         'requests >= 2.23.0',
-        # 'webdriver_manager == 3.2.1',
         'numpy >= 1.18',
         'dash >= 1.13.4',
         'dash-bootstrap-components >= 0.10.3'
