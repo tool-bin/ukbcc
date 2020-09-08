@@ -161,7 +161,8 @@ def _term_iterator(id: str, defined_terms: dict):
 #Submit a query
 @app.callback(
     [Output("query_results", "children"),
-    Output("cohort_id_results", "data")],
+    Output("cohort_id_results", "data"),
+    Output("cohort_id_results_timestamp", "data")],
     [Input("cohort_search_submit1", "n_clicks")],
     [State("defined_terms", "data"),
      State({"index":0, "name":"query_term_dropdown"}, 'value'),
@@ -201,7 +202,6 @@ def submit_cohort_query(n: int, defined_terms: dict, all_terms: list,
 
     """
     print('\nsubmit_cohort_query()')
-    print("kw search term {}".format(kw_search_terms))
     pp = pprint.PrettyPrinter(indent=4)
 
     ctx = dash.callback_context
@@ -209,6 +209,8 @@ def submit_cohort_query(n: int, defined_terms: dict, all_terms: list,
         raise PreventUpdate
     if n is None:
         raise PreventUpdate
+
+    timestamp = datetime.now().timestamp()
 
     #Put data in the right for for the ukbcc backend
     anys = []
@@ -266,4 +268,4 @@ def submit_cohort_query(n: int, defined_terms: dict, all_terms: list,
     output_text = html.P(f"Found {len(ids)} matching ids.")
     output_runquery = dbc.Row(dbc.Col([output_text,
                                        dbc.Button("Close", color='primary', id="run_query_close", style={"margin": "5px"})]))
-    return output_text, ids
+    return output_text, ids, timestamp

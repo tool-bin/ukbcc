@@ -20,6 +20,7 @@ app.layout = dbc.Container(
         dcc.Store(id="kw_search", storage_type='memory'),
         dcc.Store(id="kw_search_terms", storage_type='session'),
         dcc.Store(id="cohort_id_results", storage_type='memory'),
+        dcc.Store(id="cohort_id_results_timestamp", storage_type='memory'),
         dcc.Store(id="include_fields", storage_type='session'),
         dcc.Store(id="defined_terms", storage_type='session'),
         dcc.Store(id='selected_terms_data', storage_type='memory'),
@@ -77,23 +78,21 @@ def render_tab_content(active_tab: str):
         return config_app.tab
 
 
-# TODO: ask ben about "values" argument -- doesn't seem to be used
 @app.callback(
     Output("tabs", "active_tab"),
     [Input({'type': 'nav_btn', 'name': ALL}, "n_clicks"),
-    Input("cohort_id_results", "modified_timestamp")],
+    Input("cohort_id_results_timestamp", "modified_timestamp")],
     [State("cohort_id_results", "data")]
 )
-def tab_button_click_handler(values: str, results_returned: int, data: list):
+def tab_button_click_handler(values: str, cohort_id_results_timestamp: int, data: list):
     """Configure tab navigation for each tab page.
 
     Keyword arguments:
     ------------------
     values: str
-
-    results_returned: int
-        timestamp indicating when cohort_id_results storage was updated
-
+        indicates number of clicks on "nav_btn"
+    cohort_id_results_timestamp: int
+        timestamp indicating when cohort_id_results_timestamp storage was updated
     data: list
         data stored in cohort_id_results storage
 
@@ -105,6 +104,7 @@ def tab_button_click_handler(values: str, results_returned: int, data: list):
 
     """
     ctx = dash.callback_context
+    print("ctx {}".format(ctx.triggered))
     button_map={"next_button_config":"definitions",
                 "prev_button_terms": "config",
                 "next_button_terms": "query",
@@ -114,9 +114,9 @@ def tab_button_click_handler(values: str, results_returned: int, data: list):
                 }
 
     prop_id = ctx.triggered[0]['prop_id']
-    bad_prop = "cohort_id_results.modified_timestamp"
-    if results_returned:
-        if prop_id == bad_prop:
+    modified_timestamp_prop = "cohort_id_results_timestamp.modified_timestamp"
+    if cohort_id_results_timestamp:
+        if prop_id == modified_timestamp_prop:
             return "results"
         else:
             if ctx.triggered and ctx.triggered[0]['value']:

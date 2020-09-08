@@ -126,11 +126,11 @@ def alter_defined_term(n_clicks: int, modified_timestamp: int, defined_terms: di
     print("alter_defined_term()-defined_terms: {}".format(defined_terms))
 
     if ctx.triggered[0]['prop_id'] == 'selected_terms_data.modified_timestamp':
-        if select_row_dat[0] is None:
+        if select_row_data[0] is None:
             print( "alter_defined_term()- nothing to update")
             raise PreventUpdate
         print('alter_defined_term()- Append terms')
-        rows, derived_virtual_selected_rows = select_row_dat
+        rows, derived_virtual_selected_rows = select_row_data
 
         if derived_virtual_selected_rows is None:
             derived_virtual_selected_rows = []
@@ -233,7 +233,7 @@ def toggle_collapse(value: int, is_open: bool):
     [State("find_terms_modal", "is_open"),
      State("search_logic_state", "children")],
 )
-def toggle_new_term_modal(find_terms_click: int, return_terms_click: int, find_terms_is_open: bool, term_add_state: bool):
+def toggle_new_term_modal(find_terms_click: int, return_terms_click: int, is_open: bool, term_add_state: bool):
     """Toggle new terms modal.
 
     Keyword arguments:
@@ -242,7 +242,7 @@ def toggle_new_term_modal(find_terms_click: int, return_terms_click: int, find_t
         integer indicating number of clicks fo find_terms_modal_btn
     return_terms_click: int
         integer indicating number of clicks to return_terms_click
-    find_terms_is_open: bool
+    is_open: bool
         boolean indicating whether find_terms_modal is open
     term_add_state: bool
         boolean indicating whether to add a new term
