@@ -7,8 +7,10 @@ from dash.dependencies import Input, Output, State, MATCH, ALL
 import dash_core_components as dcc
 import pandas as pd
 import os
+import tableone
+from io import StringIO
 
-from ukbcc import query, utils
+from ukbcc import query, utils, db
 import pprint
 
 from datetime import datetime
@@ -219,18 +221,32 @@ def submit_cohort_query(n, defined_terms, all_terms, any_terms, none_terms, conf
     config['out_filename'] = "cohort_ids.txt"
 
 
-    print('\ncreate_queries {}'.format(print_time()))
-    queries = query.create_queries(cohort_criteria=cohort_criteria, main_filename=config['main_path'],
-                                   gpc_path=config['gp_path'])
-    pp.pprint(queries)
-    print('\nquery_databases {}'.format(print_time()))
-    ids = query.query_databases(cohort_criteria=cohort_criteria, queries=queries, main_filename=config['main_path'],
-                          write_dir=config['cohort_path'], gpc_path=config['gp_path'], out_filename=config['out_filename'], write=True)
+    print('\ncreate_queries query_sqlite_db {}'.format(print_time()))
+
+    db_filename = '/home/bwgoudey/Research2/GWAS/ukbcc/tmp/ukb.sqlite'
+
+    res = db.query_sqlite_db(db_filename, cohort_criteria)
+    ret = html.P(f"No matching ids found. Please change your criteria.")
+    if(res.shape[0]):
+        t1=tableone.TableOne(res)
+        ret=dbc.Table.from_dataframe(pd.read_csv(StringIO(t1.to_csv())), striped=True, bordered=True,
+                                 hover=True)
+
+    ids=res['eid'].to_list()
+    # #print("cohort_criteria: {}".format(cohort_criteria))
+    # queries = query.create_queries(cohort_criteria=cohort_criteria, main_filename=config['main_path'],
+    #                                gpc_path=config['gp_path'])
+    # pp.pprint(queries)
+    # print('\nquery_databases {}'.format(print_time()))
+    # ids = query.query_databases(cohort_criteria=cohort_criteria, queries=queries, main_filename=config['main_path'],
+    #                       write_dir=config['cohort_path'], gpc_path=config['gp_path'], out_filename=config['out_filename'], write=True)
     #print(ids)
     print('\nfinished query_databases {}'.format(print_time()))
 
     return dbc.Row(
                 dbc.Col([
-                    html.P(f"Found {len(ids)} matching ids.")
-                ])), html.P(f"Found {len(ids)} matching ids.")
+                    ret
+                ])
+            ),ret
+
     # return html.P(f"Found {len(ids)} matching ids.")
