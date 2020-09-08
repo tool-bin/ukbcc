@@ -8,10 +8,7 @@ import pandas as pd
 import dash_table
 import json
 
-#
-#
-# Keyword Search Tab
-#
+#Keyword search tab
 tab_include_content = dbc.FormGroup(
     dbc.CardBody(
         [
@@ -23,23 +20,27 @@ tab_include_content = dbc.FormGroup(
     className="mt-3",
 )
 
+@app.callback(
+    Output('include_fields_tab', 'children'),
+    [Input('kw_search', 'data')]
+    )
+def show_candidates(candidate_df_json: dict):
+    """Show selected terms for a phenotype.
 
-#
-#
-# Show_candidates as a big queryable table
-# Actually the plotly dash table looksk pretty average
-#
-@app.callback(Output('include_fields_tab', 'children'),
-             [Input('kw_search', 'data')]
-            )
-def show_candidates(candidate_df_json):
-    print('show_candidates')
-    #print(candidate_df_json)
-    print(type(candidate_df_json))
-    print(len(candidate_df_json))
-    if candidate_df_json is not None and len(candidate_df_json)>100:
+    Keyword arguments:
+    ------------------
+    candidate_df_json: dict
+        seleted terms from results returned by keyword search
+
+    Returns:
+    --------
+    :html objects
+        data_table object containing select terms results
+
+
+    """
+    if candidate_df_json and len(candidate_df_json)>100:
         candidate_df = pd.read_json(candidate_df_json)
-        print(candidate_df)
         return dbc.Row(
             dbc.Col([
                 dbc.Row([
@@ -56,10 +57,6 @@ def show_candidates(candidate_df_json):
                 )
             ]))
 
-
-
-
-
 @app.callback(
     [Output(component_id="include_table", component_property="selected_rows")],
     [Input({'type': 'select_btn', 'name': ALL}, "n_clicks")],
@@ -68,22 +65,33 @@ def show_candidates(candidate_df_json):
      State(component_id="include_table", component_property="derived_viewport_selected_rows"),
      State(component_id="include_table", component_property="derived_virtual_selected_rows")]
 )
-def select_all(n_clicks, rows, selected_rows, derived_viewport_indices, derived_virtual_indices):
-    print("Select All")
+def select_all(n_clicks: int, rows: dict, selected_rows: list, derived_viewport_indices: list, derived_virtual_indices: list):
+    """Select all terms from data table.
 
-    if rows is not None:
-        print("rows")
+    Keyword arguments:
+    ------------------
+    n_clicks: int
+        indicates how many times select_btn is clicked
+    rows: dict
+        data from keyword search
+    selected_rows: list
+        selected rows
+    derived_viewport_indices: list
+        currently showing row indices
+    derived_virtual_indices: list
+        virtual row indices
+
+    Returns:
+    --------
+    select_rows: list
+        selected rows
+
+    """
+
+    if rows:
         print(rows[min(1,len(rows)):min(10, len(rows))])
-    print("Before: Selected rows"),
-    print(selected_rows)
-    print("Before: derived_viewport_selected_rows")
-    print(derived_viewport_indices)
-    print("Before: derived_virtual_selected_rows")
-    print(derived_virtual_indices)
 
     ctx = dash.callback_context
-    print("\nIn select_all()")
-    print(ctx.triggered)
 
     #Figure out which button was pressed
     calling_button="select"
@@ -95,7 +103,4 @@ def select_all(n_clicks, rows, selected_rows, derived_viewport_indices, derived_
         select_rows= [[]]
     else:
         select_rows = [[i for i in range(len(rows))]]
-
-    print("After: Selected rows"),
-    print(select_rows)
     return select_rows

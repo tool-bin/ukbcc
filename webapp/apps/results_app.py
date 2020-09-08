@@ -20,13 +20,7 @@ cohort_ids_out = dbc.Form(
             dbc.Label("Cohort IDs File (path)", html_for={"type": "config_input","name":"cohort_ids_outfile"}),
             dbc.Input(placeholder="Name and path of the file to write cohort IDs to",
                                           type="text", id="cohort_ids_outfile", persistence=False, style={"margin": "5px"}),
-            dbc.FormText("Specify the name and path of file to write cohort IDs to e.g /data/cohort_ids.txt", color="secondary"),
-            dbc.FormFeedback(
-                    children="File saved successfully", id="valid_feedback", valid=True
-                ),
-            dbc.FormFeedback(
-                children="Invalid path or filename provided, please provide valid path and filename", id="invalid_feedback", valid=False
-            )
+            dbc.FormText("Specify the name and path of file to write cohort IDs to e.g /data/cohort_ids.txt", color="secondary")
         ],
         className='mr-3',
     ),
@@ -68,110 +62,71 @@ def toggle_modals(n1, n2, n3, is_open):
         return not is_open
     return is_open
 
-# @app.callback(
-#     [Output("cohort_ids_outfile", "valid"), Output("cohort_ids_outfile", "invalid")],
-#     [Input("email-input", "value")],
-# )
-# def check_validity(text):
-#     if text:
-#         is_gmail = text.endswith("@gmail.com")
-#         return is_gmail, not is_gmail
-#     return False, False
-
 @app.callback(
     [Output("save_cohort_ids_modal", "is_open"),
-    Output("save_id_status", "children"),
-    Output("cohort_ids_outfile", "valid"),
-    Output("cohort_ids_outfile", "invalid")],
+    Output("save_id_status", "children")],
     [Input("save_cohort_ids_modal_btn", "n_clicks"),
     Input("save_cohort_ids_button", "n_clicks"),
     Input("close_cohort_file_modal_btn", "n_clicks")],
-    # Input("cohort_ids_outfile", "value")],
-     # Input("", "n_clicks")],
     [State("config_store","data"),
     State("cohort_id_results", "data"),
     State("cohort_ids_outfile", "value"),
     State("save_cohort_ids_modal", "is_open")],
 )
-def save_cohort_ids(n1, n2, n3, config_init, cohort_ids, outfile, is_open):
-    print("outfile {}".format(outfile))
+def save_cohort_ids(n1: int, n2: int, n3: int, config_init: dict, cohort_ids: list, outfilename: str, is_open: bool):
+    """Handler to save cohort IDs to text file.
+
+    Keyword arguments:
+    ------------------
+    n1: int
+        indicates number of clicks of "save_cohort_ids_modal_btn"
+    n2: int
+        indicates number of clicks of "save_cohort_ids_btn"
+    n3: int
+        indicates number of clicks of "close_cohort_file_modal_btn"
+    config_init: dict
+        contains configuration file paths
+    cohort_ids: list
+        contains cohort IDs found after performing cohort search
+    outfilename: str
+        name of file to write cohort IDs to
+    is_open: bool
+        indicates with "save_cohort_ids_modal" is open
+
+    Returns:
+    --------
+    check: bool
+        indicates with "save_cohort_ids_modal" is open
+    write_out_status: str
+        indicates if cohort IDs file has been created
+
+    """
     ctx = dash.callback_context
-    # On initialisation, don't run this. Dictionary may not be populated yet
     if not ctx.triggered or not ctx.triggered[0]['value']:
         raise PreventUpdate
 
-    print("checking button clicks - save cohort ids modal {}, save to file button {}, close cohort ids modal {}".format(n1, n2, n3))
     write_out_status = ""
     if not cohort_ids:
         write_out_status = "No results have been returned, please run a cohort search by navigating to the Configure tab."
-        return False, write_out_status, False, False
-    if outfile:
-        print("outfile has been set to {}".format(outfile))
-        write_out_status = "Wrote cohort IDs successfully to {}".format(outfile)
+        return False, write_out_status
+    if outfilename:
+        write_out_status = "Wrote cohort IDs successfully to {}".format(outfilename)
         try:
-            outfile_path = Path(outfile)
-            print("outfile_path is {}".format(outfile_path))
-            os.path.exists(outfile_path.parent)
+            outfile_path = config_init['cohort_path']
+            os.path.exists(outfile_path)
         except FileNotFoundError as fe:
             write_out_status = "outfile path parent directory does not exists, caused following exception {}".format(fe)
-            print(write_out_status)
-        print("cohort id results {}".format(cohort_ids))
         if n2:
-            print("keeping modal open is close button has not been clicked")
             try:
+                outfile = os.path.join(outfile_path, outfilename)
                 utils.write_txt_file(outfile, cohort_ids)
             except Exception as e:
                 write_out_status = "failed to write cohort ids to file, caused following exception {}".format(e)
-            try:
-                os.path.exists(outfile_path)
-            except Exception as e:
-                write_out_status = "could not find cohort_ids file under path {}".format(outfile_path)
-    elif not outfile and n2:
-            write_out_status = "No path or filename provided, please input valid path and filename by clicking the Save cohort IDs button."
-    #     if n2:
-    #         wrjite_out_status = "No outfile name provided - please enter name in text box"
-    #         return True, "", False, True #write_out_status
-
+    elif not outfilename and n2:
+            write_out_status = "No path or filename provided, please provide valid path and filename by clicking the Save cohort IDs button."
     check = toggle_modals(n1, n2, n3, is_open)
-    print("check for toggel modals", check)
-    return check, write_out_status, False, False
-    # if n1:
-    #     return True, ""
-    # if n2:
-    #     return True, "Please provide the path and name of file to write cohort IDs to"
-    # if n3:
-    #     return False, ""
-        # check = toggle_modals(n1, n3, is_open)
-        # return check, ""
+    return check, write_out_status
 
-
-# @app.callback(
-#     Output("save_cohort_ids_modal", "is_open"),
-#     [Input("save_cohort_ids_button", "n_clicks"),
-#     Input("cohort_ids_outfile", "value")],
-#     [State("config_store", "data")]
-# )
-# def save_cohort_ids(button, config_input, config_init):
-#     ctx = dash.callback_context
-#     # On initialisation, don't run this. Dictionary may not be populated yet
-#     if not ctx.triggered or not ctx.triggered[0]['value']:
-#         raise PreventUpdate
-#
-#     config = config_init or {}
-#
-#     if ctx.triggered and ctx.inputs_list and ctx.inputs_list[0]:
-#         # Convert input set of patterns into a dictionary
-#         # Use the results to write config dict
-#         print("saving cohort ids {}".format(ctx.inputs_list))
-#
-#         for field in ctx.inputs_list[0]:
-#             config_id_dict = field
-#             # If we have a value for some path, add it
-#             if 'value' in config_id_dict:
-#                 config[config_id_dict['id']['name']]=config_id_dict['value']
-#         print("config in save cohorts ids {}".format(config))
-#     #     return config
-#     # return config
 
 @app.callback(
     [Output("history_results", "children")],
@@ -179,7 +134,22 @@ def save_cohort_ids(n1, n2, n3, config_init, cohort_ids, outfile, is_open):
     [State("cohort_id_results", "data"),
      State("config_store", "data")]
 )
-def return_results(results_returned, results, config):
+def return_results(results_returned: int, results: list, config: dict):
+    """Check whether results were returned from cohort search.
+
+    Keyword arguments:
+    ------------------
+    results_returned: int
+        timestamp for when "cohort_id_results" store was last updated
+    config: dict
+        contain configuration file paths
+
+    Returns:
+    --------
+    output_text: str
+        indicates whether results were returned by cohort search
+
+    """
     if results_returned:
         output_text = dbc.Col([html.P(f"Found {len(results)} matching ids.")])
     else:

@@ -18,35 +18,70 @@ main_path_input = dbc.FormGroup([
         dbc.Label("Main Dataset (path)", html_for={"type": "config_input","name":"main_path"}),
         dbc.Input(placeholder="Specify the name and path to main dataset file e.g /data/main.csv",
                                       type="text", id={"type": "config_input","name":"main_path"}, persistence=True, style={"margin": "5px"}),
-        dbc.FormText("Specify the name and path to main dataset file", color="secondary")
+        dbc.FormText("Specify the name and path to main dataset file", color="secondary"),
+        dbc.FormFeedback(
+                    "Path exists", valid=True
+                ),
+        dbc.FormFeedback(
+                    "Path does not exist, please check path",
+                    valid=False,
+                )
 ])
 
 gp_path_input = dbc.FormGroup([
         dbc.Label("GP Dataset (path)", html_for={"type": "config_input", "name":"gp_path"}),
         dbc.Input(placeholder="Specify the name and path to GP data file e.g /data/gp_clinical.txt", type="text", id={"type": "config_input", "name":"gp_path"}, persistence=True),
         #dbc.Input(type="file", id={"type": "file", "name": "gp_path"},),
-        dbc.FormText("Specify the name and path to GP data file", color="secondary")
+        dbc.FormText("Specify the name and path to GP data file", color="secondary"),
+        dbc.FormFeedback(
+                    "Path exists", valid=True
+                ),
+        dbc.FormFeedback(
+                    "Path does not exist, please check path",
+                    valid=False,
+                )
 ])
 
 showcase_path_input = dbc.FormGroup([
         dbc.Label("Showcase Dataset (path)", html_for={"type": "config_input", "name": "showcase_path"}),
         dbc.Input(placeholder="Specify the name and path to the showcase data csv file e.g /data/Data_Dictionary_Showcase.csv.", type="text", id={"type": "config_input", "name": "showcase_path"},
         persistence=True),
-        dbc.FormText("Path to data showcase csv file. This file can be downloaded here: https://biobank.ctsu.ox.ac.uk/~bbdatan/Data_Dictionary_Showcase.csv", color="secondary")
+        dbc.FormText("Path to data showcase csv file. This file can be downloaded here: https://biobank.ctsu.ox.ac.uk/~bbdatan/Data_Dictionary_Showcase.csv", color="secondary"),
+        dbc.FormFeedback(
+                    "Path exists", valid=True
+                ),
+        dbc.FormFeedback(
+                    "Path does not exist, please check path",
+                    valid=False,
+                )
 ])
 
 codings_path_input = dbc.FormGroup([
         dbc.Label("Codings Dataset (path)", html_for={"type": "config_input", "name":"codings_path"}),
         dbc.Input(placeholder="Specify the name and path to the readcodes csv file e.g /data/Codings_Showcase.csv.", type="text", id={"type": "config_input", "name": "codings_path"},
         persistence=True),
-        dbc.FormText("Path to read codes csv file, This file can be downloaded here: https://biobank.ctsu.ox.ac.uk/~bbdatan/Codings_Showcase.csv", color="secondary")
+        dbc.FormText("Path to read codes csv file, This file can be downloaded here: https://biobank.ctsu.ox.ac.uk/~bbdatan/Codings_Showcase.csv", color="secondary"),
+        dbc.FormFeedback(
+                    "Path exists", valid=True
+                ),
+        dbc.FormFeedback(
+                    "Path does not exist, please check path",
+                    valid=False,
+                )
 ])
 
 cohort_path_input = dbc.FormGroup([
-        dbc.Label("Directory for Output Files (path)", html_for={"type": "config_input", "name":"codings_path"}),
+        dbc.Label("Directory for Output Files (path)", html_for={"type": "config_input", "name":"cohort_path"}),
         dbc.Input(placeholder="Specify the directory to save the output files to e.g /data/ukbcc_output.", type="text", id={"type": "config_input", "name": "cohort_path"},
         persistence=True),
-        dbc.FormText("Directory path to save output files to", color="secondary")
+        dbc.FormText("Directory path to save output files to", color="secondary"),
+        dbc.FormFeedback(
+                    "Path exists", valid=True
+                ),
+        dbc.FormFeedback(
+                    "Path does not exist, please check path",
+                    valid=False,
+                )
 ])
 
 
@@ -61,124 +96,82 @@ tab = dbc.FormGroup(
                       cohort_path_input
                       ]),
 
-            dbc.Row([
-                dbc.Button("Check paths", color="success", id="open_checkpath_modal_btn", style={"margin": "5px"})
-                ]),
-            # dbc.Row([
-            #     dbc.Button("Write configuration to file", color="success", id="save_config_modal_btn")#,
-            #     #dbc.Input(placeholder="GP Path", type="text",disabled='true',        id={"type": "config_input", "name":"gp_path"}, persistence=True)
-            #     ]),
-            # dbc.Button("Load configuration from file", color="success", id="upload_config_btn"),
             dbc.Row([dbc.Button("Next", color='primary', id={"name":"next_button_config","type":"nav_btn"}, style={"margin": "5px"})]),
-
-            dbc.Modal(
-                [
-                    dbc.ModalHeader("Check paths"),
-                    dbc.ModalBody(id="pathcheck_modalbody", style={"overflow-wrap": "break-word"}),
-                    dbc.ModalFooter(
-                        dbc.Button("Close", id="close_checkpath_modal_btn", className="ml-auto", style={"margin": "5px"})
-                    ),
-                ],
-                id="checkpath_modal"),
-            dbc.Modal(
-                [
-                    dbc.ModalHeader(""),
-                    dbc.ModalBody(id="saveconfig_modalbody"),
-                    dbc.ModalFooter(
-                        dbc.Button("Close", id="close_saveconfig_modal_btn", className="ml-auto", style={"margin": "5px"})
-                    ),
-                ],
-                id="saveconfig_modal")
         ]
     ),
     className="mt-3",
 )
 
-def toggle_modals(n1, n2, is_open):
+def toggle_modals(n1: int, n2: int, is_open: bool):
     if n1 or n2:
         return not is_open
     return is_open
 
-# @app.callback(
-#     Output("saveconfig_modalbody", "children"),
-#     [Input("save_config_modal_btn", "n_clicks")],
-#     # Input({'type': 'config', 'name': ALL}, "value")]
-#     [State({'type': 'config', 'name': "main_path"}, "value"),
-#      State({'type': 'config', 'name': "gp_path"}, "value"),
-#      State({'type': 'config', 'name': "cohort_path"}, "value"),
-#      State({'type': 'config', 'name': "out_filename"}, "value")]
-#     # [State({"config_store"}, "data")]
-# )
-# def write_config_check(n_click, main_path, gp_path, cohort_path, out_filename):
-#
-#     ctx = dash.callback_context
-#     if not ctx.triggered:
-#         raise PreventUpdate
-#
-#     check = utils.write_config(cohort_path, main_path, gp_path, cohort_path, out_filename)
-#     return dbc.Row(
-#                 dbc.Col([
-#                     html.P(check)
-#                 ]))
+def check_path_exists(path: str):
+    if path:
+        is_path = os.path.exists(path)
+        return is_path, not is_path
+    return False, False
 
-# @app.callback(
-#     Output("saveconfig_modal", "is_open"),
-#     [Input("save_config_modal_btn", "n_clicks"),
-#      Input("close_saveconfig_modal_btn", "n_clicks")],
-#     [State("saveconfig_modal", "is_open")],
-# )
-# def check(n1, n2, is_open):
-#     check = toggle_modals(n1, n2, is_open)
-#     return check
-#
-# When we hit the check paths button, print a modal stating whether the given paths are reasonable
+
 @app.callback(
-    Output("pathcheck_modalbody", "children"),
-    [Input("open_checkpath_modal_btn", "n_clicks")],
-    [State({'type': 'config_input', 'name': "main_path"}, "value"),
-     State({'type': 'config_input', 'name': "gp_path"}, "value"),
-     State({'type': 'config_input', 'name': "codings_path"}, "value"),
-     State({'type': 'config_input', 'name': "showcase_path"}, "value"),
-     State({'type': 'config_input', 'name': "cohort_path"}, "value")]
-     # State({'type': 'config', 'name': "cohort_path"}, "value")]
+    [Output({'type': 'config_input', 'name': 'main_path'}, "valid"), Output({'type': 'config_input', 'name': 'main_path'}, "invalid"),
+    Output({'type': 'config_input', 'name': 'gp_path'}, "valid"), Output({'type': 'config_input', 'name': 'gp_path'}, "invalid"),
+    Output({'type': 'config_input', 'name': 'codings_path'}, "valid"), Output({'type': 'config_input', 'name': 'codings_path'}, "invalid"),
+    Output({'type': 'config_input', 'name': 'showcase_path'}, "valid"), Output({'type': 'config_input', 'name': 'showcase_path'}, "invalid"),
+    Output({'type': 'config_input', 'name': 'cohort_path'}, "valid"), Output({'type': 'config_input', 'name': 'cohort_path'}, "invalid")],
+    [Input({'type': 'config_input', 'name': "main_path"}, "value"),
+    Input({'type': 'config_input', 'name': "gp_path"}, "value"),
+    Input({'type': 'config_input', 'name': "codings_path"}, "value"),
+    Input({'type': 'config_input', 'name': "showcase_path"}, "value"),
+    Input({'type': 'config_input', 'name': "cohort_path"}, "value")]
 )
-def run_checkpath_modal_check(n_click, main_path, gp_path, codings_path, showcase_path, cohort_path):
-    if(not main_path):
-        main_path=''
-    if (not gp_path):
-        gp_path = ''
-    if (not codings_path):
-        codings_path = ''
-    if (not showcase_path):
-         showcase_path= ''
-    if (not cohort_path):
-         cohort_path= ''
-    val_map = {True:'exists', False:'does not exist', None:'does not exist'}
-    #BG: This is a bit verbose but I'm not too fussed at the moment.
-    return dbc.Row(
-                dbc.Col([
-                    html.P("Path to main data {} ({})".format(val_map[os.path.exists(main_path)], main_path)),
-                    html.P("Path to GP {} ({})".format(val_map[os.path.exists(gp_path)], gp_path)),
-                    html.P("Path to showcase data {} ({})".format(val_map[os.path.exists(showcase_path)], showcase_path)),
-                    html.P("Path to codings data {} ({})".format(val_map[os.path.exists(codings_path)], codings_path)),
-                    html.P("Path to write output files to {} ({})".format(val_map[os.path.exists(cohort_path)], cohort_path))
-                ]))
+def check_validity(main_path: str, gp_path: str, codings_path: str, showcase_path: str, cohort_path: str):
+    """Check path validity.
 
+    Keyword arguments:
+    ------------------
+    main_path: str
+        path to main dataset
+    gp_path: str
+        path to GP Clinical dataset
+    codings_path: str
+        path to codings dataset
+    showcase_path: str
+        path to showcase dataset
+    cohort_path: str
+        path to directory to write output files to
 
-# Open/close path check modal
-# Launch a modal which tells us whether the config paths exist
-# Called when we hit the check paths button or the lose button inside the modal itself.
-# TODO: Change the colour of the paths
-# TODO: Consider making the check happen automatically when the path is entered
-@app.callback(
-    Output("checkpath_modal", "is_open"),
-    [Input("open_checkpath_modal_btn", "n_clicks"),
-     Input("close_checkpath_modal_btn", "n_clicks")],
-    [State("checkpath_modal", "is_open")],
-)
-def check(n1, n2, is_open):
-    check = toggle_modals(n1, n2, is_open)
-    return check
+    Returns:
+    --------
+    main_valid: bool
+        whether main dataset path is valid
+    main_invalid: bool
+        whether main dataset path is invalid
+    gp_valid: bool
+        whether GP Clinical dataset path is valid
+    gp_invalid: bool
+        whether GP Clinical dataset path is invalid
+    codings_valid: bool
+        whether codings dataset path is valid
+    codings_invalid: bool
+        whether codings dataset path is invalid
+    showcase_valid: bool
+        whether showcase dataset path is valid
+    showcase_invalid: bool
+        whether showcase dataset path is invalid
+    cohort_valid: bool
+        whether cohort directory path is valid
+    cohort_invalid: bool
+        whether cohort directory path is invalid
+    """
+    main_valid, main_invalid = check_path_exists(main_path)
+    gp_valid, gp_invalid = check_path_exists(gp_path)
+    codings_valid, codings_invalid = check_path_exists(codings_path)
+    showcase_valid, showcase_invalid = check_path_exists(showcase_path)
+    cohort_valid, cohort_invalid = check_path_exists(cohort_path)
+    return main_valid, main_invalid, gp_valid, gp_invalid, codings_valid, codings_invalid, showcase_valid, showcase_invalid, cohort_valid, cohort_invalid
+
 
 # Save config input
 # Changes whenever one of the config fields is altered
@@ -186,10 +179,24 @@ def check(n1, n2, is_open):
               [Input({'type': 'config_input', 'name': ALL}, "value")],
               [State("config_store", "data")])
 #Data is a dict containing all stored data
-def save_config_handler(values, config_init):
+def save_config_handler(values: str, config_init: dict):
+    """Handler to save path configuration to config_store store.
+
+    Keyword arguments:
+    ------------------
+    values: str
+        path inputs
+    config_init: dict
+        config_store store
+
+    Returns:
+    --------
+    config: dict
+        config with updated input paths
+
+    """
     ctx = dash.callback_context
 
-    # On initialisation, don't run this. Dictionary may not be populated yet
     if not ctx.triggered or not ctx.triggered[0]['value']:
         raise PreventUpdate
 
@@ -197,15 +204,12 @@ def save_config_handler(values, config_init):
 
     # TODO: Make this readable from a config or .py file
     config['readcodes_path'] = "../data_files/readcodes.csv"
+    #temp name for file until specified later in the cohort search process
     config['out_filename'] = "cohort_ids.txt"
 
     if ctx.triggered and ctx.inputs_list and ctx.inputs_list[0]:
-        # Convert input set of patterns into a dictionary
-        # Use the results to write config dict
-        print(ctx.inputs_list)
         for field in ctx.inputs_list[0]:
             config_id_dict = field
-            # If we have a value for some path, add it
             if 'value' in config_id_dict:
                 config[config_id_dict['id']['name']]=config_id_dict['value']
         return config
