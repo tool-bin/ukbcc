@@ -13,10 +13,12 @@ from threading import Timer
 
 from dash.exceptions import PreventUpdate
 
+#Define storage for web-based interface
 app.layout = dbc.Container(
     [
         dcc.Store(id="config_store", storage_type='local'),
-        dcc.Store(id="kw_search", storage_type='session'),
+        dcc.Store(id="kw_search", storage_type='memory'),
+        dcc.Store(id="kw_search_terms", storage_type='session'),
         dcc.Store(id="cohort_id_results", storage_type='memory'),
         dcc.Store(id="include_fields", storage_type='session'),
         dcc.Store(id="defined_terms", storage_type='session'),
@@ -28,7 +30,7 @@ app.layout = dbc.Container(
             [
                 dbc.Tab(label="Configure", tab_id="config"),
                 dbc.Tab(label="Define Terms", tab_id="definitions"),
-                dbc.Tab(label="Cohort search", tab_id="query"),
+                dbc.Tab(label="Cohort Search", tab_id="query"),
                 #dbc.Tab(label="Exclude fields", tab_id="exclude"),
                 dbc.Tab(label="Results History", tab_id="results")
             ],
@@ -46,14 +48,21 @@ app.layout = dbc.Container(
     Output("tab-content", "children"),
     [Input("tabs", "active_tab")]
 )
-def render_tab_content(active_tab):
-    """
-    This callback takes the 'active_tab' property as input, as well as the
-    stored graphs, and renders the tab content depending on what the value of
-    'active_tab' is.
+def render_tab_content(active_tab: str):
+    """Render tabs.
+
+    Keyword arguments:
+    ------------------
+    active_tab: str
+        string indicating which tab is currently selected
+
+    Returns:
+    --------
+    selected tab content: dbc.Tab object
+        selected tab content (defaults to config_tab)
+
     """
     if active_tab:
-        print("active tab is {}".format(active_tab))
         if active_tab == "config":
             return config_app.tab
         elif active_tab == "definitions":
@@ -67,22 +76,35 @@ def render_tab_content(active_tab):
     else:
         return config_app.tab
 
-    #return active_tab#html.P("Click config to start")
 
-#
-#
-# Handle next/previous tab buttons
-#
+# TODO: ask ben about "values" argument -- doesn't seem to be used
 @app.callback(
     Output("tabs", "active_tab"),
     [Input({'type': 'nav_btn', 'name': ALL}, "n_clicks"),
     Input("cohort_id_results", "modified_timestamp")],
     [State("cohort_id_results", "data")]
 )
-def tab_button_click_handler(values, results_returned, data):
+def tab_button_click_handler(values: str, results_returned: int, data: list):
+    """Configure tab navigation for each tab page.
+
+    Keyword arguments:
+    ------------------
+    values: str
+
+    results_returned: int
+        timestamp indicating when cohort_id_results storage was updated
+
+    data: list
+        data stored in cohort_id_results storage
+
+
+    Returns:
+    --------
+    selected tab: str
+        selected tab string
+
+    """
     ctx = dash.callback_context
-    print("ctx in tab click handler {}".format(ctx.triggered))
-    #TODO: Why not make a dictionary of the fields and automate this mapping. But I'm so lazy...
     button_map={"next_button_config":"definitions",
                 "prev_button_terms": "config",
                 "next_button_terms": "query",
@@ -91,35 +113,26 @@ def tab_button_click_handler(values, results_returned, data):
                 "prev_button_results": "query"
                 }
 
-    print("results returned  {}".format(results_returned))
-    # print("results timestamp {}".format(results_timestamp))
     prop_id = ctx.triggered[0]['prop_id']
     bad_prop = "cohort_id_results.modified_timestamp"
-    print("prop id {}".format(prop_id))
     if results_returned:
         if prop_id == bad_prop:
-            print("check results returned")
             return "results"
         else:
             if ctx.triggered and ctx.triggered[0]['value']:
                 button_id_dict_str = ctx.triggered[0]['prop_id'].split('.')[0]
-                print("button id {}".format(button_id_dict_str))
                 button_id_dict=json.loads(button_id_dict_str)
                 return button_map[button_id_dict["name"]]
     else:
         if ctx.triggered and ctx.triggered[0]['value']:
-            # print("ctx not triggered {}".format(ctx.triggered))
-            # raise PreventUpdate
             button_id_dict_str = ctx.triggered[0]['prop_id'].split('.')[0]
-            print("button id {}".format(button_id_dict_str))
             button_id_dict=json.loads(button_id_dict_str)
             return button_map[button_id_dict["name"]]
 
-port = 8050 # default port
+port = 8050 #default port
 
 def open_browser():
 	webbrowser.open_new("http://localhost:{}".format(port))
 
 if __name__ == '__main__':
-    #Timer(1, open_browser).start();
     app.run_server(debug=True, use_reloader=True, dev_tools_props_check=False, dev_tools_ui=True)
