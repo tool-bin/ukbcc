@@ -27,7 +27,7 @@ def construct_search_df(showcase_filename: str, coding_filename: str, readcode_f
     readcodes = pd.read_csv(readcode_filename, dtype=str)
 
     print("construct_search_df(): finished reading files")
-    
+
     showcase_excerpt = showcase[['Field', 'FieldID', 'Coding']]
 
     #print(1)

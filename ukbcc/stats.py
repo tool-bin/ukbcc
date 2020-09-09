@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from . import utils
 import os
+import plotly.express as px
 
 
 def compute_stats(main_filename: str, eids: list, showcase_filename: str, coding_filename: str,
@@ -118,9 +119,12 @@ def compute_stats(main_filename: str, eids: list, showcase_filename: str, coding
             statistics_dict[field_dict[col]['name']]['stats_table'] = translation_df[col].describe().to_dict()
         elif col_type in ['Categorical multiple', 'Text', 'Compound']:
             statistics_dict[field_dict[col]['name']]['type'] = 'NA'
-            statistics_dict[field_dict[col]['name']]['status'] = f'ERROR: stats on {col_type} data currently not supported'
+            statistics_dict[field_dict[col]['name']]['data_type'] = col_type
+            statistics_dict[field_dict[col]['name']][
+                'status'] = f'ERROR: stats on {col_type} data currently not supported'
             statistics_dict[field_dict[col]['name']]['stats_table'] = pd.DataFrame().to_dict()
         else:
+            statistics_dict[field_dict[col]['name']]['data_type'] = col_type
             statistics_dict[field_dict[col]['name']]['type'] = 'Value count'
             statistics_dict[field_dict[col]['name']]['status'] = 'success'
             statistics_dict[field_dict[col]['name']]['stats_table'] = translation_df[col].value_counts(normalize=False).to_dict()
@@ -128,7 +132,80 @@ def compute_stats(main_filename: str, eids: list, showcase_filename: str, coding
     # rename columns to make them more readable
     translation_df = translation_df.rename(columns=name_dict)
     if write_out:
-        utils.write_dictionary(statistics_dict, os.path.join(out_path, 'stats_dictionary.json'))
+        utils.write_dictionary(statistics_dict, os.path.join(out_path, 'stats_dict.json'))
         translation_df.to_csv(os.path.join(out_path, 'stats_fields.csv'))
 
     return statistics_dict, translation_df
+
+
+def create_report(translation_df: pd.DataFrame, out_path: str):
+    """Creates html report in out_path.
+
+    Keyword arguments:
+    ------------------
+    translation_df: pd.DataFrame
+        dataframe containing only the columns that need should be displayed in the stats report. Likely the output of
+        compute_stats.
+    out_path: str
+        path where report.html gets stored.
+    """
+
+    if "Unnamed: 0" in translation_df.columns:
+        translation_df = translation_df.drop("Unnamed: 0", axis=1)
+
+    divs = translation_df.describe(include='all').to_html(classes='mystyle')
+
+    for col in translation_df.columns:
+        div_title = f"""<h2 style="font-family: sans-serif">{col}</h2>"""
+        if np.issubdtype(translation_df[col].dtype, np.number):
+            div_table = pd.DataFrame(pd.to_numeric(translation_df[col], errors='coerce').describe()).to_html(
+                classes='mystyle')
+        elif np.issubdtype(translation_df[col].dtype, np.datetime64):
+            div_table = pd.DataFrame(pd.to_datetime(translation_df[col], errors='coerce').describe()).to_html(
+                classes='mystyle')
+        else:
+            div_table = pd.DataFrame(translation_df[col].describe()).to_html(classes='mystyle')
+        div_plot = px.bar(translation_df[col].value_counts(normalize=False).reset_index(), x="index", y=col,
+                          title=col).to_html()
+
+        divs = divs + div_title + div_plot + div_table
+
+    html = """\
+    <html>
+        <style>
+            table {{
+                border: 0
+            }}
+
+            .mystyle {{
+                font-size: 11pt;
+                font-family: Arial;
+                border-collapse: collapse;
+                border: white;
+            }}
+
+            .mystyle td, th {{
+                padding: 5px;
+            }}
+
+            .mystyle tr:nth-child(even) {{
+                background: #E3E3E3;
+            }}
+            .mystyle tr:hover {{
+                background: silver;
+            }}
+        </style>
+        <head>
+            <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+        </head>
+        <body>
+            <h1 style="font-family: sans-serif">Summary Statistics</h1>
+            <div style="padding: 1em">
+            {}
+            </div>
+        </body>
+    </html>
+    """.format(divs)
+
+    with open(os.path.join(out_path, 'report.html'), 'w') as f:
+        f.write(html)
