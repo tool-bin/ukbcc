@@ -16,8 +16,7 @@ from ukbcc import query, utils
 
 db_path_input = dbc.FormGroup([
         dbc.Label("SQLite Database (path)", html_for={"type": "config_input","name":"db_path"}),
-        dbc.Input(placeholder="Specify the name and path to sqlite database e.g /data/ukb_sql.sqlite"),
-                                      type="text", id={"type": "config_input","name":"db_path"}, persistence=True, style={"margin": "5px"}),
+        dbc.Input(placeholder="Specify the name and path to sqlite database e.g /data/ukb_sql.sqlite", type="text", id={"type": "config_input","name":"db_path"}, persistence=True, style={"margin": "5px"}),
         dbc.FormText("Specify the name and path to SQLite database file", color="secondary"),
         dbc.FormFeedback(
                     "Path exists", valid=True
