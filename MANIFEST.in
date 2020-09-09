@@ -1,2 +1,3 @@
 include README.md
 include bin/ukbcc
+include data_files/readcodes.csv

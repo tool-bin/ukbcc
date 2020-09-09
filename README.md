@@ -1,14 +1,18 @@
 ukbcc
 ===============================
 
-version number: 0.1.16
-
 authors: Isabell Kiral, Nathalie Willems, Benjamin Goudey
 
 Overview
 --------
 
 Tool for curation of UK Biobank data to generate cohorts. The tool can filter the main and associated datasets (e.g GP Clinical data) based on search terms provided by the user. It can be used interactively through a command line interface, or imported as a module and integrated into a broader pipeline. Additional functionality, such as automatically downloading large data files (bulk data) is also supported.
+
+
+Known Issues
+------------
+Currently there are known issues in running very long and complex queries (e.g > 800 datafield:value combinations), resulting in errors from the pandas library. We are working on these issues, and will update subsequent releases with these bug fixes soon.
+
 
 Prerequisites
 --------
@@ -34,11 +38,7 @@ Installation
 
 Installing using pip (or pip3):
 
-    $ pip3 install git+shh://git@github.com:tool-bin/ukbcc.git
-
-Installing using pip (pip3) from particular branch
-
-    $ pip3 install git+shh://git@github.com:tool-bin/ukbcc.git@branchname
+    $ pip3 install ukbcc
 
 
 Or clone the repo:
@@ -62,7 +62,7 @@ In order to make full use of this module, you will need to download the followin
 * `main_dataset.csv`: The main dataset as downloaded from UK Biobank. Please follow UKBB instructions to obtain this file.
 * `showcase.csv` and `codings.csv`: Files that can be found in the data_files directory within this repo in their current version. A function is provided to download potentially updated files from the UKBB server. These files contain descriptions of columns in the main dataset as well as associated codes.
 * `readcodes.csv`: A file linking readcodes to descriptions for the 'gp_clinical' table in the UKBB data portal. This file can be found in the data_files directory within this repo.
-* `gp_clinical.txt`: The full general practioner (GP) clinical data that forms part of the primary care dataset. The full table (gp_clinical) can be downloaded from the UKBB data portal website. A function is provided to download this dataset automatically by executing the **`ukbcc`** command. Downloading this file is optional, but will provide the most comprehensive search for participants to generate cohorts. Instructions are provided below.
+* `gp_clinical.txt`: The full general practioner (GP) clinical data that forms part of the primary care dataset. The full table (gp_clinical) can be downloaded from the UKBB data portal website. Downloading this file is optional, but will provide the most comprehensive search for participants to generate cohorts. Instructions are provided below.
 <!-- * [`lookupCodeDescriptions.csv`](https://github.ibm.com/aur-genomics/modellingScripts/blob/master/isabell/cohortPipeline/lookupCodeDescriptions.csv): A file that maps descriptions to codes for the following formats: ICD9, ICD10, read_2, read_3.
 * [`coding19.tsv`](https://github.ibm.com/aur-genomics/modellingScripts/blob/master/isabell/cohortPipeline/coding19.tsv): A file that maps the `node_id`s from the main dataset to ICD10 codes.    -->
 
@@ -162,6 +162,7 @@ It is recommended the user leverage the `interactive mode` if using the ukbcc mo
 
 To learn about how to use modules in this package in your existing pipeline, see example-module notebook in the examples directory in this repo.
 
+
 Contributing
 ------------
 
@@ -173,4 +174,7 @@ Citation
 ------------
 
 If you found this tool useful in your work, please use the following citation:
---INSERT CITATION--
+
+**UKBCC: a cohort curation package for UK Biobank**\
+Isabell Kiral, Nathalie Willems, Benjamin Goudey\
+bioRxiv 2020.07.12.199810; doi: https://doi.org/10.1101/2020.07.12.199810

@@ -4,7 +4,8 @@
 geckodriver.log
 # 
 prototype_notebooks/credentials.py
-credentials.py 
+credentials.conf
+config.conf
 tests.py
 # Jupyter lab
 .ipynb_checkpoints
