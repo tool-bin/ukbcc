@@ -138,11 +138,11 @@ def search_kw_button(_: int, config: dict, search_terms: list, kw_search: dict):
 
     #If we haven't clicked submit and we have a previous value, return the previous value
     if len(ctx.triggered) and ctx.triggered[0]['value'] is None and kw_search is not None:
-        return kw_search
+        return (kw_search), ()
 
     #Show error if we haven't set any config
     if not config:
-        return "Config has not been set. Missing all fields"
+        return ("Config has not been set. Missing all fields"), ()
 
     #Show error if we are missing fields
     required_config = set(['main_path', 'gp_path', 'readcodes_path', 'codings_path', 'showcase_path'])
@@ -185,13 +185,13 @@ def search_kw_button(_: int, config: dict, search_terms: list, kw_search: dict):
     return (candidate_df.to_json()), (search_terms)
 
 # Show candidate search terms
-@app.callback([Output('kw_search_output_select', 'children'),
-               Output('kw_search_output', 'children'),
-               Output('find_terms_modalfooter', 'children')],
-               # Output("kw_fields_output", "children")],
-             [Input('kw_search', 'modified_timestamp')],
-              [State('kw_search', 'data')]
-            )
+@app.callback(
+    [Output('kw_search_output_select', 'children'),
+    Output('kw_search_output', 'children'),
+    Output('find_terms_modalfooter', 'children')],
+   [Input('kw_search', 'modified_timestamp')],
+   [State('kw_search', 'data')]
+)
 def show_candidates(ts, candidate_df_json):
     if not ts:
         raise PreventUpdate
@@ -220,7 +220,7 @@ def show_candidates(ts, candidate_df_json):
                         style_cell_conditional = [
                                 {'if': {'column_id':'Value'}, 'width': '50px'}
                         ],
-                        columns=[{"name": i, "id": i} for i in candidate_df.columns],
+                            columns=[{"name": i, "id": i} for i in candidate_df.columns],
                         data=candidate_df.to_dict('records'),
                         row_selectable='multi',
                         filter_action='native',
