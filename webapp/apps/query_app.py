@@ -162,8 +162,7 @@ def _term_iterator(id: str, defined_terms: dict):
 
 #Submit a query
 @app.callback(
-    [Output("query_results", "children"),
-    Output("cohort_id_results", "data"),
+    [Output("cohort_id_results", "data"),
     Output("cohort_id_results_timestamp", "data")],
     [Input("cohort_search_submit1", "n_clicks")],
     [State("defined_terms", "data"),
@@ -277,4 +276,4 @@ def submit_cohort_query(n: int, defined_terms: dict, all_terms: list,
                                        dbc.Button("Close", color='primary', id="run_query_close", style={"margin": "5px"})]))
 
     print("IDs: {}".format(ids))
-    return output_runquery, ids, timestamp
+    return ids, timestamp
