@@ -179,7 +179,7 @@ def show_candidates(ts, candidate_df_json):
                         id='kw_result_table',
                         #css=[{'selector': 'table', 'rule': 'table-layout: fixed'}],
                         # style_cell={
-                        #     'whiteSpace': 'normal',
+                        #     'whiteSpace': 'normal',       
                         #     'height': 'auto',
                         # },
                         columns=[{"name": i, "id": i} for i in candidate_df.columns],
