@@ -52,11 +52,7 @@ none_dropdown = dbc.FormGroup(
     ]
 )
 
-
-#
-#
-# Keyword Search Tab
-#
+#Keyword Search Tab
 tab = dbc.FormGroup(
     dbc.CardBody(
         [
@@ -75,7 +71,7 @@ tab = dbc.FormGroup(
             dbc.Modal(
                 [
                     dbc.ModalHeader("Running query..."),
-                    dbc.ModalBody(id="run_query"),
+                    dbc.ModalBody(id="run_query", children="Please wait, this could take some time.."),
                     # dbc.Row(dbc.Col(id="status_message"))),
                     # dbc.Row(dbc.Col(id="query_output"))),
                     dbc.ModalFooter(
@@ -88,15 +84,10 @@ tab = dbc.FormGroup(
     className="mt-3",
 )
 
-@app.callback(
-    Output("run_query", "children"),
-    [Input("cohort_search_submit1", "n_clicks")]
-)
-def update_run_query_modal(n_click):
-    return dbc.Row(
-                dbc.Col([
-                    html.P("Please wait, this could take some time...")
-                ]))
+def toggle_modal(n1, n2, is_open):
+    if n1 or n2:
+        return not is_open
+    return is_open
 
 @app.callback(
     Output("run_query_modal", "is_open"),
@@ -105,6 +96,7 @@ def update_run_query_modal(n_click):
     [State("run_query_modal", "is_open")]
 )
 def toggle_run_query_modal(n1, n2, is_open):
+<<<<<<< HEAD
 
     ctx = dash.callback_context
     print("toggle_run_query_modal ctx: {}".format(ctx.triggered))
@@ -119,18 +111,39 @@ def toggle_run_query_modal(n1, n2, is_open):
 #
 # When we load the derived terms update, so does the list of searchable terms
 #
+=======
+    check = toggle_modal(n1, n2, is_open)
+    return check
+
+#When we load the derived terms update, so does the list of searchable terms
+>>>>>>> ui
 @app.callback(
     Output({"index":MATCH, "name":"query_term_dropdown"}, 'options'),
     [Input({"index":MATCH, "name":"query_term_dropdown"}, 'value')],
     [State('defined_terms', 'data')]
 )
-def set_querable_terms(active_tab, defined_terms):
+def set_querable_terms(active_tab: str, defined_terms: dict):
+    """Returns queried terms.
+
+    Keyword arguments:
+    ------------------
+    active_tab: str
+        string indicating which tab is currently selected
+    defined_terms: dict
+        selected terms
+
+    Returns:
+    --------
+    opts: list
+        selected phenotype to search
+
+    """
     # If we have no defined terms, sop this callback
     if (defined_terms is None):
         print(defined_terms)
         raise PreventUpdate
 
-    opts=[ {'label': val['name'][0], 'value': key} for key,val in defined_terms.items()]
+    opts=[{'label': val['name'][0], 'value': key} for key,val in defined_terms.items()]
     return(opts)
 
 
@@ -161,33 +174,53 @@ def _term_iterator(id: str, defined_terms: dict):
     terms['FieldID'] = terms['FieldID'].astype(str)
     terms['Value'] = terms['Value'].astype(str)
     rand_terms = rand_terms + [tuple(x) for x in terms[['FieldID', 'Value']].values]
+    rand_terms_decoded = rand_terms_decoded + [tuple(x) for x in terms[['Field', 'Meaning']].values]
     return rand_terms, rand_terms_decoded
 
-# switch to history/results tab
-# @app.callback(Output('tabs', 'active_tab'),
-#           [Input('query_results', 'modified_timestamp')])
-# def switch_tab(results, *params):
-#     print("inside switch tabs")
-#     if results:
-#         print("clicks {}".format(clicks))
-#         return history_app.tab
-#
-# Submit a query
-#
+#Submit a query
 @app.callback(
-    [Output("run_query_modal", "children"),
-    Output("query_results", "children"),
-    Output("cohort_id_results", "data")],
+    [Output("query_results", "children"),
+    Output("cohort_id_results", "data"),
+    Output("cohort_id_results_timestamp", "data")],
     [Input("cohort_search_submit1", "n_clicks")],
     [State("defined_terms", "data"),
      State({"index":0, "name":"query_term_dropdown"}, 'value'),
      State({"index":1, "name":"query_term_dropdown"}, 'value'),
      State({"index":2, "name":"query_term_dropdown"}, 'value'),
-     State("config_store", "data")]
+     State("config_store", "data"),
+     State("kw_search_terms", "data")]
 )
-def submit_cohort_query(n, defined_terms, all_terms, any_terms, none_terms, config):
+def submit_cohort_query(n: int, defined_terms: dict, all_terms: list,
+                        any_terms: list, none_terms: list, config: dict,
+                        kw_search_terms: list):
+    """Run cohort search.
+
+    Keyword arguments:
+    ------------------
+    n: int
+        indicates number of clicks of cohort search button
+    defined_terms: dict
+        phenotypes
+    all_terms: list
+        phenotypes for all participants
+    any_terms: list
+        phenotypes for any participants
+    none_terms: list
+        phenotypes for none of the participants
+    config: dict
+        path configuration
+    kw_search_terms: list
+        search terms
+
+    Returns:
+    --------
+    output_text: html object
+        specifies length of IDs returned from search
+    ids: list
+        contains IDs returned from search
+
+    """
     print('\nsubmit_cohort_query()')
-    print(n)
     pp = pprint.PrettyPrinter(indent=4)
 
     ctx = dash.callback_context
@@ -195,6 +228,8 @@ def submit_cohort_query(n, defined_terms, all_terms, any_terms, none_terms, conf
         raise PreventUpdate
     if n is None:
         raise PreventUpdate
+
+    timestamp = datetime.now().timestamp()
 
     #Put data in the right for for the ukbcc backend
     anys = []
@@ -204,7 +239,7 @@ def submit_cohort_query(n, defined_terms, all_terms, any_terms, none_terms, conf
     nones_decoded = []
     alls_decoded = []
 
-    print("defined terms {}".format(defined_terms))
+    # print("defined terms {}".format(defined_terms))
 
     if all_terms:
         for id in all_terms:
@@ -218,34 +253,28 @@ def submit_cohort_query(n, defined_terms, all_terms, any_terms, none_terms, conf
         for id in none_terms:
             nones, nones_decoded = _term_iterator(id, defined_terms)
 
-    print("any terms {}, all terms {}, none terms {}".format(anys, alls, nones))
-
-    # TODO - HACK
-    cohort_criteria = {
-        "all_of": alls,
-        "any_of": anys,
-        "none_of": nones
-    }
-
-    cohort_criteria_decoded = {
-        "all_of": alls_decoded,
-        "any_of": anys_decoded,
-        "none_of": nones_decoded
-    }
-
-    print("cohort decoded {}".format(cohort_criteria_decoded))
+    cohort_dictionaries = {"encoded": {"all_of": alls, "any_of": anys, "none_of": nones},
+                           "decoded": {"all_of": alls_decoded, "any_of": anys_decoded, "none_of": nones_decoded}}
 
     outpath = config['cohort_path']
-    cohort_out = os.path.join(outpath, "cohort_dictionary.txt")
+    if kw_search_terms:
+        term_outfile = os.path.join(outpath, 'search_terms.txt')
+        utils.write_txt_file(term_outfile, kw_search_terms)
+        if os.path.exists(term_outfile):
+            print(f"successfully saved search terms to file {term_outfile}")
+        else:
+            print(f"could not save search terms to file {term_outfile}")
 
-    utils.write_dictionary(cohort_criteria_decoded, cohort_out)
+    for k, v in cohort_dictionaries.items():
+        name = "cohort_dictionary_" + k + ".txt"
+        cohort_out = os.path.join(outpath, name)
+        utils.write_dictionary(v, cohort_out)
+        if os.path.exists(cohort_out):
+            print(f"successfully saved {k} cohort dictionary to {cohort_out}")
+        else:
+            print(f"could not save {k} cohort dictionary to {cohort_out}")
 
-    if os.path.exists(cohort_out):
-        print(f"successfully saved cohort dictionary to {cohort_out}")
-    else:
-        print(f"could not save cohort dictionary to {cohort_out}")
-
-
+<<<<<<< HEAD
     print('\ncreate_queries query_sqlite_db {}'.format(print_time()))
 
     db_filename = '/home/bwgoudey/Research2/GWAS/ukbcc/tmp/ukb.sqlite'
@@ -268,3 +297,19 @@ def submit_cohort_query(n, defined_terms, all_terms, any_terms, none_terms, conf
     print("IDs: {}".format(ids))
     return output_runquery, output_text, ids
     # return html.P(f"Found {len(ids)} matching ids.")
+=======
+    print('\ncreate_queries {}'.format(print_time()))
+    queries = query.create_queries(cohort_criteria=cohort_dictionaries['encoded'], main_filename=config['main_path'],
+                                   gpc_path=config['gp_path'])
+    pp.pprint(queries)
+    print('\nquery_databases {}'.format(print_time()))
+    ids = query.query_databases(cohort_criteria=cohort_dictionaries['encoded'], queries=queries, main_filename=config['main_path'],
+                          write_dir=config['cohort_path'], gpc_path=config['gp_path'], out_filename=config['out_filename'], write=False)
+    print('\nfinished query_databases {}'.format(print_time()))
+
+    footer = dbc.ModalFooter(dbc.Button("Close", id="close_run_query_btn_new", className="ml-auto", style={"margin": "5px"}))
+    output_text = html.P(f"Found {len(ids)} matching ids.")
+    output_runquery = dbc.Row(dbc.Col([output_text,
+                                       dbc.Button("Close", color='primary', id="run_query_close", style={"margin": "5px"})]))
+    return output_text, ids, timestamp
+>>>>>>> ui

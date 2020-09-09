@@ -4,6 +4,7 @@ from app import app
 import dash_html_components as html
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State, MATCH, ALL
+import dash_table
 import pandas as pd
 import json
 from apps import kw_search_app
@@ -19,12 +20,11 @@ def get_random_string(length):
     letters = string.ascii_lowercase
     return ''.join(random.choice(letters) for i in range(length))
 
-#get_curr_time
+#Get current time
+#TODO: is this still necessary?
 print_time = lambda: datetime.now().strftime("%H:%M:%S")
 
-#
-# Modal for keyword search to find fields of interest
-#
+#Modal for keyword search to find fields of interest
 add_new_phenotype_modal = dbc.Modal(
                 [
                     dbc.ModalHeader("What should the new phenotype be called?"),
@@ -44,9 +44,7 @@ add_new_phenotype_modal = dbc.Modal(
                 style={'maxWidth': '1600px', 'width': '90%'})
 
 
-#
-# Modal for keyword search to find fields of interest
-#
+#Modal for keyword search to find fields of interest
 add_new_term_modal = dbc.Modal(
                 [
                     dbc.ModalHeader("Find fields"),
@@ -59,11 +57,7 @@ add_new_term_modal = dbc.Modal(
                 size="xl",
                 style={'maxWidth': '1600px', 'width': '90%'})
 
-
-#
-#
-# Keyword Search Tab
-#
+#Keyword search tab
 tab = dbc.FormGroup(
     dbc.CardBody(
         [
@@ -77,19 +71,14 @@ tab = dbc.FormGroup(
                dbc.Button("Previous", color='primary', id={"name":"prev_button_terms","type":"nav_btn"}, style={"margin": "5px"}),
                dbc.Button("Next", color='primary', id={"name":"next_button_terms","type":"nav_btn"}, style={"margin": "5px"})
             ]),
-
-        ]
-    ),
+        ]),
     className="mt-3",
 )
 
 
-#
-#
 # When we make a new term, launch a modal which allows us to enter a name
 # Use the name to setup the data 'defined_term's storage
 # 'defined_term's storage  then populates the list of pre-defined terms
-#
 @app.callback(
     Output("defined_terms", "data"),
     [Input({'modal_ctrl':ALL,  'name': ALL}, "n_clicks"),
@@ -97,14 +86,34 @@ tab = dbc.FormGroup(
     [State("defined_terms", "data"),
      State({"name":"name_input",'type':ALL}, "value"),
      State("search_logic_state", "children"),
-     State('selected_terms_data', 'data')
-     #State('kw_result_table', 'derived_virtual_data'),
-     #State('kw_result_table', 'derived_virtual_selected_rows')
-     ]
-)
-def alter_defined_term(n_clicks, modified_timestamp, defined_terms, name,term_add_state, select_row_dat):#, rows, derived_virtual_selected_rows):
+     State('selected_terms_data', 'data')]
+    )
+def alter_defined_term(n_clicks: int, modified_timestamp: int, defined_terms: dict,
+                       name: str, term_add_state: bool, select_row_data: list):
+    """Create phenotypes with search terms.
+
+    Keyword arguments:
+    ------------------
+    n_clicks: int
+        integer indicating number of clicks of "modal_ctrl" button
+    modified_timestamp: int
+        integer indicating timestamp for when defined_terms data store was updated
+    defined_terms: dict
+        dict of defined terms from defined_terms data store
+    name: str
+        name to store phenotype under
+    term_add_state: bool
+        boolean specifying whether to add new term
+    select_row_data: list
+        list of selected rows
+
+    Returns:
+    --------
+    defined_terms: dict
+        return dictionary of defined terms for the specified phenotype
+
+    """
     ctx = dash.callback_context
-    print('alter_defined_term()- Creating term1')
     print('alter_defined_term()- modified_timestamp {}'.format(modified_timestamp))
 
     if (not ctx.triggered):
@@ -117,11 +126,11 @@ def alter_defined_term(n_clicks, modified_timestamp, defined_terms, name,term_ad
     print("alter_defined_term()-defined_terms: {}".format(defined_terms))
 
     if ctx.triggered[0]['prop_id'] == 'selected_terms_data.modified_timestamp':
-        if select_row_dat[0] is None:
+        if select_row_data[0] is None:
             print( "alter_defined_term()- nothing to update")
             raise PreventUpdate
         print('alter_defined_term()- Append terms')
-        rows, derived_virtual_selected_rows = select_row_dat
+        rows, derived_virtual_selected_rows = select_row_data
 
         if derived_virtual_selected_rows is None:
             derived_virtual_selected_rows = []
@@ -129,9 +138,6 @@ def alter_defined_term(n_clicks, modified_timestamp, defined_terms, name,term_ad
         selected_df = pd.DataFrame(rows).iloc[derived_virtual_selected_rows]
         defined_terms[term_add_state[0]][term_add_state[1]].append(selected_df.to_json())
         return defined_terms
-
-
-
 
     calling_ctx = json.loads(ctx.triggered[0]['prop_id'].split('.')[0])
 
@@ -146,27 +152,35 @@ def alter_defined_term(n_clicks, modified_timestamp, defined_terms, name,term_ad
     elif (calling_ctx["modal_ctrl"] == 'new_term' and calling_ctx["name"] == 'submit'):
         print('alter_defined_term()- Creating term')
         defined_terms[get_random_string(16)]={'name':name, 'any':[]}
-
     return defined_terms
-
-
 
 @app.callback(
     Output("defined_term_rows", "children"),
-    [Input("defined_terms", "modified_timestamp")], #See https://dash.plotly.com/dash-core-components/store
+    [Input("defined_terms", "modified_timestamp")],
     [State("defined_terms", "data")]
 )
-def populate_defined_terms(_, defined_terms):
-    #If we have no defined terms, sop this callback
-    if(defined_terms is None):
-        print(defined_terms)
+def populate_defined_terms(defined_terms_timestamp: int, defined_terms: dict):
+    """Populate defined terms input.
+
+    Keyword arguments:
+    ------------------
+    defined_terms_timestamp: int
+        integer indicating timestamp for when defined_terms store was updated
+    defined_terms: dict
+        dictionary with selected defined terms
+
+    Returns:
+    --------
+    defined_fields: html objects
+        html object containing phenotype and selected fields
+
+    """
+    if not defined_terms:
         raise PreventUpdate
 
     defined_fields=[]
     for idx, (id,v) in enumerate(defined_terms.items()):
         n_any_terms = len(defined_terms[id]['any'])
-
-
 
         tab_any_terms = pd.concat([pd.read_json(x) for x in defined_terms[id]['any']]+[pd.DataFrame()])
         print("populate_defined_terms - tab_any_terms: {}".format(tab_any_terms))
@@ -197,28 +211,20 @@ def populate_defined_terms(_, defined_terms):
     return (defined_fields)
 
 
-#
-#
 # Open/close collapse terms
-# Note the use of inex here rather than name
-#
 @app.callback(
     Output({"index": MATCH,'type':'collapse'}, "is_open"),
     [Input({"index": MATCH,'type':'expand'}, "n_clicks")],
     [State({"index": MATCH,'type':'collapse'}, "is_open")],
 )
-def toggle_collapse(value, is_open):
+def toggle_collapse(value: int, is_open: bool):
     if value:
         return not is_open
     return is_open
 
 
-#
-#
 # Open/close find_terms_modal modal
-# Modal is launched whenever a find_terms_modal_btn button (which are dynamically created) is pressed
 # TODO: can't close if there isn't a term added to the new term modal. Requires determining what the calling button is
-#
 @app.callback(
     [Output("find_terms_modal", "is_open"),
      Output("search_logic_state", "children")],
@@ -227,11 +233,31 @@ def toggle_collapse(value, is_open):
     [State("find_terms_modal", "is_open"),
      State("search_logic_state", "children")],
 )
-def toggle_new_term_modal(x, y, is_open, term_add_state):
+def toggle_new_term_modal(find_terms_click: int, return_terms_click: int, is_open: bool, term_add_state: bool):
+    """Toggle new terms modal.
+
+    Keyword arguments:
+    ------------------
+    find_terms_click: int
+        integer indicating number of clicks fo find_terms_modal_btn
+    return_terms_click: int
+        integer indicating number of clicks to return_terms_click
+    is_open: bool
+        boolean indicating whether find_terms_modal is open
+    term_add_state: bool
+        boolean indicating whether to add a new term
+
+    Returns:
+    --------
+    is_open: bool
+        boolean indicating whether to open find_terms_modal
+    term_add_state_new: bool
+        boolean indicating whether to add a new term
+
+    """
 
     ctx = dash.callback_context
 
-    #If nothing pressed
     if not ctx.triggered:
         raise PreventUpdate
 
@@ -251,16 +277,28 @@ def toggle_new_term_modal(x, y, is_open, term_add_state):
     return is_open,term_add_state_new
 
 
-#
-#
-# Open/close add_new_phenotype_modal modal
-# Modal is launched whenever a add_new_phenotype_modal button (which are dynamicaaly created) is pressed
+#Open/close add_new_phenotype_modal modal
 @app.callback(
     Output("new_phenotype_modal", "is_open"),
     [Input({'modal_ctrl':'new_term', 'name': ALL}, "n_clicks")],
     [State("new_phenotype_modal", "is_open")],
 )
-def toggle_new_phenotype_modal(values, is_open):
+def toggle_new_phenotype_modal(modal_button: int, is_open: bool):
+    """Toggle new phenotype modal.
+
+    Keyword arguments:
+    ------------------
+    modal_button: int
+        integer indicating number of clicks for modal_ctrl_button
+    is_open: bool
+        boolean indicating whether new phenotype modal is created
+
+    Returns:
+    --------
+    is_open: bool
+        boolean determining whether to show new phenotype modal
+
+    """
     #If nothing pressed
     ctx = dash.callback_context
     if(not ctx.triggered):
