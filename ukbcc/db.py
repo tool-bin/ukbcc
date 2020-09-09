@@ -72,7 +72,7 @@ def populate_gp(con, gpc_filename, nrow, step):
 	field_df_new['pd_type'] = 'object'
 	field_df_new['tab'] = 'str'
 	field_df = field_df.append(field_df_new)
-	field_df.to_sql('SELECT * from field_desc', con)
+	field_df.to_sql('SELECT * from field_desc', con, if_exists='replace', index=False)
 	con.commit()
 	return field_df
 
@@ -138,6 +138,12 @@ def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str
 
 	#
 	tf_eid= field_df[field_df['field_col'] == 'eid']['field_col']
+
+
+	field_df=populate_gp(con, gp_clin_filename, 123662422*1.05, 20000)
+
+
+
 	#
 	#step=1000
 	#nrow= 525000
@@ -155,6 +161,8 @@ def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str
 				#print(i,t)
 				trips = chunk[type_fields[tab_name].append(tf_eid)].melt(id_vars='eid', value_vars=type_fields[tab_name])
 				trips = trips[trips['value'].notnull()]
+
+				#This is constant if we have it in the row before?
 				trips['field'],trips['time'],trips['array']=trips['variable'].str.split("[-.]", 2).str
 				trips = trips[['eid', 'field', 'time', 'value']]
 				if(tab_name=='datetime'):
@@ -170,7 +178,6 @@ def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str
 	con.commit()
 	print('UKBCC database - finished populting')
 
-	field_df=populate_gp(con, gp_clin_filename, 123662422*1.05, 20000)
 
 	print('Creating string index')
 	con.execute('CREATE INDEX str_index ON str (field, value, time, eid)')
