@@ -38,6 +38,7 @@ setup(
     keywords='',
     packages=find_packages(),
     include_package_data=True,
+    package_data = {'': ['data_files/readcodes.csv']},
     zip_safe=False,
     install_requires=[
         'sphinx >= 3.0.3',
@@ -45,12 +46,11 @@ setup(
         'nose >= 1.3.7',
         'coverage >= 5.1',
         'pypi-publisher >= 0.0.4',
-        'selenium == 3.141.0',
         'pandas >= 1.0.3',
         'requests >= 2.23.0',
-        'webdriver_manager == 3.2.1',
         'numpy >= 1.18',
-        'plotly >= 4.3'
+        'dash >= 1.13.4',
+        'dash-bootstrap-components >= 0.10.3'
     ],
     python_requires='>=3.6'
 )

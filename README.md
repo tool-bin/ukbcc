@@ -44,7 +44,9 @@ Installing using pip (or pip3):
 Or clone the repo:
 
     $ git clone https://github.com/tool-bin/ukbcc.git
-    $ python setup.py install
+    $ python3 setup.py install
+
+NB: We strongly recommend using a virtual environment when installing this package and its dependencies. Please see this link for further information: https://docs.python.org/3/tutorial/venv.html
 
 Usage
 --------
@@ -53,8 +55,7 @@ There are two ways to use with this module:
 1. Running the module from the command line and leveraging the *`interactive mode`* features to dynamically generate cohorts on the fly.
 2. Importing the module into an existing pipeline, and using the functions developed to interact with the UKBB databases.
 
-There is more detailed information in [our paper](https://doi.org/10.1101/2020.07.12.199810).
-
+There is more detailed information in [our paper](https://www.biorxiv.org/content/10.1101/2020.07.12.199810v1), if you're interested.
 
 ### Downloads
 In order to make full use of this module, you will need to download the following files:
@@ -79,7 +80,31 @@ The GP clinical dataset can be downloaded directly from the UK Biobank showcase 
 
 ## Interactive mode
 
-In order to use the *`interactive mode`* functionality, the module can simple be called from the command line.
+There are two ways to run *`interactive mode`*:
+1. Through a web-based interface
+2. Through a command-line interface
+
+### Web-based interface
+
+Currently, to use the web-based interface, you will need to clone this repository (ui branch) and build the package locally.
+
+In order to run the web-based interface, please run the following commands:
+1. Navigate to the **"webapp"** folder
+2. Execute:
+
+    $ python index.py
+
+3. The above command will setup the web-based interface and generates a web address where this can be accessed:
+
+![Alt text](images/web_setup.png?raw=true "Start web-interface")
+
+4. Paste the generated web address into a web browser.
+5. Follow the web page instructions to use the tool.
+
+
+### Command-line interface
+
+In order to use the command-line interface functionality, the module can simple be called from the command line.
 
 1. To start the configuration process, type:
 ```shell

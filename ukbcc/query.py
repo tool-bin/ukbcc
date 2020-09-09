@@ -1,7 +1,7 @@
 import pandas as pd
 import os
-from selenium import webdriver
-import requests
+#from selenium import webdriver
+#import requests
 from . import utils
 import io
 import time
@@ -195,7 +195,7 @@ def _query_main_data(main_filename: str, keys: list, query: str, delimiter: str=
     delimiter: str
         delimiter to use to read the main_filename file
     return_df: bool
-        determines whether the full dataframe is returned 
+        determines whether the full dataframe is returned
 
     Returns:
     --------

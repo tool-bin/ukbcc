@@ -25,19 +25,31 @@ def construct_search_df(showcase_filename: str, coding_filename: str, readcode_f
     showcase = pd.read_csv(showcase_filename, dtype=str)
     codings = pd.read_csv(coding_filename, dtype=str)
     readcodes = pd.read_csv(readcode_filename, dtype=str)
+
+    print("construct_search_df(): finished reading files")
+    
     showcase_excerpt = showcase[['Field', 'FieldID', 'Coding']]
 
+    #print(1)
     readcodes = readcodes.query("type == 'read_2' or type == 'read_3'").rename(
         columns={"type": "Coding", "code": "Value", "description": "Meaning"})
+    #print(1.5)
     readcodes['Field'] = 'gp_clinical, ' + readcodes.Coding
     readcodes['FieldID'] = readcodes.Coding
     readcodes = readcodes.drop(["Unnamed: 0"], axis=1)
+    #print(2)
 
     searchable_df = showcase_excerpt.merge(codings, how='outer', on="Coding")
+    #print(3)
     searchable_df = pd.concat([searchable_df, readcodes])
+    #print(4)
 
     searchable_df.Coding = searchable_df.Coding.astype('str')
+    #print(5)
     searchable_df.FieldID = searchable_df.FieldID.astype('str')
+    #print(6)
+
+    #print("construct_search_df(): returning")
 
     return searchable_df
 
