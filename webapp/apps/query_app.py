@@ -64,7 +64,7 @@ tab = dbc.FormGroup(
             html.P("Define the properties of a cohort, based on the defined terms and show results", className="card-text"),
             dbc.Form(
                 dbc.FormGroup([all_dropdown, any_dropdown, none_dropdown,
-                               dbc.Button("Submit", color="success", id='cohort_search_submit1')])
+                               dbc.Button("Submit", color="success", id='cohort_search_submit1', style={"margin": "5px"})])
             ),
             dbc.Row(dbc.Col(id='query_results'), align='center'),
             dbc.Row([
@@ -105,6 +105,14 @@ def update_run_query_modal(n_click):
     [State("run_query_modal", "is_open")]
 )
 def toggle_run_query_modal(n1, n2, is_open):
+
+    ctx = dash.callback_context
+    print("toggle_run_query_modal ctx: {}".format(ctx.triggered))
+    print("toggle_run_query_modal n1: {}".format(n1))
+    print("toggle_run_query_modal n2: {}".format(n2))
+    if not ctx.triggered or ctx.triggered[0]['prop_id']=='.':
+        raise PreventUpdate
+
     if n1 or n2:
         return not is_open
     return is_open
@@ -142,22 +150,34 @@ def _term_iterator(id: str, defined_terms: dict):
     Returns:
     --------
     rand_terms: list
-        list of tuples of field, value combinations
+        list of tuples of encoded field, value combinations
+    decoded_terms: list
+        list of tuples of decoded field, value combinations
 
     """
     rand_terms = []
+    rand_terms_decoded = []
     terms = pd.concat([pd.read_json(x) for x in defined_terms[id]['any']] + [pd.DataFrame()])
     terms['FieldID'] = terms['FieldID'].astype(str)
     terms['Value'] = terms['Value'].astype(str)
     rand_terms = rand_terms + [tuple(x) for x in terms[['FieldID', 'Value']].values]
-    return rand_terms
+    return rand_terms, rand_terms_decoded
 
+# switch to history/results tab
+# @app.callback(Output('tabs', 'active_tab'),
+#           [Input('query_results', 'modified_timestamp')])
+# def switch_tab(results, *params):
+#     print("inside switch tabs")
+#     if results:
+#         print("clicks {}".format(clicks))
+#         return history_app.tab
 #
 # Submit a query
 #
 @app.callback(
     [Output("run_query_modal", "children"),
-    Output("query_results", "children")],
+    Output("query_results", "children"),
+    Output("cohort_id_results", "data")],
     [Input("cohort_search_submit1", "n_clicks")],
     [State("defined_terms", "data"),
      State({"index":0, "name":"query_term_dropdown"}, 'value'),
@@ -170,6 +190,9 @@ def submit_cohort_query(n, defined_terms, all_terms, any_terms, none_terms, conf
     print(n)
     pp = pprint.PrettyPrinter(indent=4)
 
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        raise PreventUpdate
     if n is None:
         raise PreventUpdate
 
@@ -177,26 +200,23 @@ def submit_cohort_query(n, defined_terms, all_terms, any_terms, none_terms, conf
     anys = []
     nones = []
     alls = []
+    anys_decoded = []
+    nones_decoded = []
+    alls_decoded = []
 
     print("defined terms {}".format(defined_terms))
 
     if all_terms:
-        print("all terms! {}".format(all_terms))
         for id in all_terms:
-            print("id {}".format(id))
-            alls = _term_iterator(id, defined_terms)
+            alls, alls_decoded = _term_iterator(id, defined_terms)
 
     if any_terms:
-        print("any terms! {}".format(any_terms))
         for id in any_terms:
-            print("id {}".format(id))
-            anys = _term_iterator(id, defined_terms)
+            anys, anys_decoded = _term_iterator(id, defined_terms)
 
     if none_terms:
-        print("none terms! {}".format(none_terms))
         for id in none_terms:
-            print("id {}".format(id))
-            nones = _term_iterator(id, defined_terms)
+            nones, nones_decoded = _term_iterator(id, defined_terms)
 
     print("any terms {}, all terms {}, none terms {}".format(anys, alls, nones))
 
@@ -207,18 +227,23 @@ def submit_cohort_query(n, defined_terms, all_terms, any_terms, none_terms, conf
         "none_of": nones
     }
 
+    cohort_criteria_decoded = {
+        "all_of": alls_decoded,
+        "any_of": anys_decoded,
+        "none_of": nones_decoded
+    }
+
+    print("cohort decoded {}".format(cohort_criteria_decoded))
+
     outpath = config['cohort_path']
     cohort_out = os.path.join(outpath, "cohort_dictionary.txt")
 
-    utils.write_dictionary(cohort_criteria, cohort_out)
+    utils.write_dictionary(cohort_criteria_decoded, cohort_out)
 
     if os.path.exists(cohort_out):
         print(f"successfully saved cohort dictionary to {cohort_out}")
     else:
         print(f"could not save cohort dictionary to {cohort_out}")
-
-    #TODO: HACK FOR OUTPUT FILE
-    config['out_filename'] = "cohort_ids.txt"
 
 
     print('\ncreate_queries query_sqlite_db {}'.format(print_time()))
@@ -227,26 +252,19 @@ def submit_cohort_query(n, defined_terms, all_terms, any_terms, none_terms, conf
 
     res = db.query_sqlite_db(db_filename, cohort_criteria)
     ret = html.P(f"No matching ids found. Please change your criteria.")
-    if(res.shape[0]):
+    if res.shape[0]:
         t1=tableone.TableOne(res)
         ret=dbc.Table.from_dataframe(pd.read_csv(StringIO(t1.to_csv())), striped=True, bordered=True,
                                  hover=True)
 
     ids=res['eid'].to_list()
-    # #print("cohort_criteria: {}".format(cohort_criteria))
-    # queries = query.create_queries(cohort_criteria=cohort_criteria, main_filename=config['main_path'],
-    #                                gpc_path=config['gp_path'])
-    # pp.pprint(queries)
-    # print('\nquery_databases {}'.format(print_time()))
-    # ids = query.query_databases(cohort_criteria=cohort_criteria, queries=queries, main_filename=config['main_path'],
-    #                       write_dir=config['cohort_path'], gpc_path=config['gp_path'], out_filename=config['out_filename'], write=True)
-    #print(ids)
     print('\nfinished query_databases {}'.format(print_time()))
 
-    return dbc.Row(
-                dbc.Col([
-                    ret
-                ])
-            ),ret
+    footer = dbc.ModalFooter(dbc.Button("Close", id="close_run_query_btn_new", className="ml-auto", style={"margin": "5px"}))
+    output_text = html.P(ret)
+    output_runquery = dbc.Row(dbc.Col([output_text,
+                                       dbc.Button("Close", color='primary', id="run_query_close", style={"margin": "5px"})]))
 
+    print("IDs: {}".format(ids))
+    return output_runquery, output_text, ids
     # return html.P(f"Found {len(ids)} matching ids.")

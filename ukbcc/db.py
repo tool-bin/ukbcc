@@ -197,17 +197,17 @@ def query_sqlite_db(db_filename, cohort_criteria):#query_tuples, field_table):
 	field_df = pd.read_sql('SELECT * from field_desc', con)
 	print(f'Done {datetime.now()}')
 
-	#print("cc:{}".format(cohort_criteria))
-	#print('generate main criteria')
-	main_criteria = {k: [('f'+vi[0],vi[1]) for vi in v if vi[0] in field_df['field'].values]
+	print("generate main criteria: {}".format(cohort_criteria))
+	main_criteria = {k: [('f'+str(int(float(vi[0]))),vi[1]) for vi in v if str(int(float(vi[0]))) in field_df['field'].values]
 					 for k, v in cohort_criteria.items()}
 
 	#Fit each condition to a template and derive a final filter
 	def join_field_vals(fs):
 		return [f"{f} {'is not NULL' if v=='nan' else '='+v}" for f,v in fs]
 
-	#print('generate selection criteria')
+	print(f'generate selection criteria {main_criteria}')
 	q={}
+
 	q['all_of'] = " AND ".join(join_field_vals(main_criteria['all_of']))
 	q['any_of'] =  "({})".format(" OR ".join(join_field_vals(main_criteria['any_of'])))
 	q['none_of'] = "NOT ({})".format(" OR ".join(join_field_vals(main_criteria['none_of'])))
@@ -215,9 +215,9 @@ def query_sqlite_db(db_filename, cohort_criteria):#query_tuples, field_table):
 
 	#print('generate query_tuples {}'.format(cohort_criteria.values()))
 	#Add the table for the field inop each query and turn in them into dictionaries to help readability
-	query_tuples = [(int(float(vi[0])),vi[1]) for v in cohort_criteria.values() for vi in v]
-	query_tuples = [list(qt) + [field_df[field_df['field'] == str(qt[0])]['tab'].iloc[0]] for qt in query_tuples]
-	query_tuples = [dict(zip(('field','val','tab'),q)) for q in query_tuples]
+	query_tuples = [(int(float(vi[0])), vi[1]) for v in cohort_criteria.values() for vi in v]
+	query_tuples = [list(qt) + [field_df[field_df['field'] == str(int(float(qt[0])))]['tab'].iloc[0]] for qt in query_tuples]
+	query_tuples = [dict(zip(('field', 'val', 'tab'),q)) for q in query_tuples]
 
 	#print('generate column naming query')
 	#column naming query
