@@ -52,7 +52,7 @@ setup(
         'numpy >= 1.18',
         'dash >= 1.13.4',
         'dash-bootstrap-components >= 0.10.3', 
-        'progressbar >= 2.5' 
+        'progressbar2 >= 3.0' 
         
     ],
     python_requires='>=3.6'
