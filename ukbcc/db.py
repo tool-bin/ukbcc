@@ -1,9 +1,9 @@
 
 import pandas as pd
 import sqlite3
-from . import utils
 import progressbar
 from datetime import datetime
+
 
 # Create a table for a given category ('cat')
 def create_long_value_table(con, tab_name, tab_type):
@@ -35,8 +35,50 @@ def create_type_maps():
 
 
 
+def populate_gp(con, gpc_filename, nrow, step):
+	#nrow=123662422#Is t actually a constant?
+	with progressbar.ProgressBar(widgets=[progressbar.Percentage(), progressbar.Bar(), progressbar.ETA(),], max_value=int(nrow/step)+1) as bar:
+		for i, chunk in enumerate(pd.read_csv(gpc_filename, chunksize=step, low_memory=False, encoding = "ISO-8859-1", delimiter='\t')):
+			#print(chunk.iloc[1:3])
+			chunk['read_2'] = chunk.read_2.combine_first(chunk.read_3)
+
+			#To have field as the read2/3 and value as value1/2/3
+			#trips = chunk.melt(id_vars=['eid', 'read_2', 'event_dt'],
+			#		   value_vars=['value1', 'value2', 'value3'])
+			#trips = trips[trips['value'].notnull()].drop(columns=['variable'])
+			#trips = trips.rename(columns={'read_2': 'field', 'event_dt': 'time'})[['eid', 'field', 'time', 'value']]
+
+			#To have field as data_provider and value as read2/3
+			trips = chunk.rename(columns={'data_provider': 'field', 'event_dt': 'time', 'read_2':'value'})[['eid', 'field', 'time', 'value']]
+			trips = trips[trips['value'].notnull()]
+			trips['field'] = 'read_' + trips['field'].astype(str)
+
+			x=con.executemany(f'INSERT INTO {"str"} values({",".join("?" * len(trips.columns))})',
+							  trips.values.tolist())
+			bar.update(i)
+	#
+	con.commit()
+	print('UKBCC database - finished populating')
+
+	#TODO: Separate into own function
+	field_df = pd.read_sql('SELECT * from field_desc', con)
+	field_df_new = pd.DataFrame({
+			'field_col': ['read_2','read_3'],
+			'field':['read_2','read_3'],
+			'category': ['read_2','read_3']
+			})
+	field_df_new['ukb_type'] = 'Text'
+	field_df_new['sql_type'] = 'VARCHAR'
+	field_df_new['pd_type'] = 'object'
+	field_df_new['tab'] = 'str'
+	field_df = field_df.append(field_df_new)
+	field_df.to_sql('SELECT * from field_desc', con)
+	con.commit()
+	return field_df
+
+
 # TODO: do more checks on whether the files exist
-def create_sqlite_db(db_filename: str, main_filename: str, gpc_filename: str, showcase_file: str, step=5000, nrow=520000) -> sqlite3.Connection:
+def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str, showcase_file: str, step=5000, nrow=520000) -> sqlite3.Connection:
 	"""Returns basic statistics for given columns and a translated dataframe.
 
 	Keyword arguments:
@@ -45,9 +87,9 @@ def create_sqlite_db(db_filename: str, main_filename: str, gpc_filename: str, sh
 		path and filename of db to create
 	main_filename: str
 		path and filename of main dataset
-	gp_clinical_file: list[str]
-		list of eids
-	search_df: str
+	gpc_filename: str
+		path and filename of gp_clinical table dataset
+	showcase_file: str
 		path and filename of showcase file
 
 	Returns:
@@ -56,12 +98,6 @@ def create_sqlite_db(db_filename: str, main_filename: str, gpc_filename: str, sh
 		Connection to the written database
 
 	"""
-
-	#Read in files
-	#db_filename='./tmp/ukb.sqlite'
-	#showcase_file = '/media/ntfs_2TB/Research/datasets/ukb/showcase.csv'
-	#main_filename = '/media/ntfs_2TB/Research/datasets/ukb/ukb41268.csv'
-	gp_filename = '/media/ntfs_2TB/Research/datasets/ukb/gp_clinical.txt'
 	data_dict = pd.read_csv(showcase_file)
 	main_df = pd.read_csv(main_filename, nrows=1)
 	#
@@ -94,7 +130,7 @@ def create_sqlite_db(db_filename: str, main_filename: str, gpc_filename: str, sh
 	for tab_name,field_type in tabs.items():
 		type_fields[tab_name] = field_df[(field_df['ukb_type'].isin(type_lookups[tab_name])) & (field_df['field_col'] != 'eid')]['field_col']
 
-	#Write fields to a table
+	#Write fields to a table in the database
 	field_tab_map = {item: k for k, v in type_fields.items() for item in v.to_list()}
 	field_tab_map['eid'] = None
 	field_df['tab'] = list(map(field_tab_map.get, field_df['field_col']))
@@ -102,11 +138,6 @@ def create_sqlite_db(db_filename: str, main_filename: str, gpc_filename: str, sh
 
 	#
 	tf_eid= field_df[field_df['field_col'] == 'eid']['field_col']
-	#
-
-
-
-
 	#
 	#step=1000
 	#nrow= 525000
@@ -138,6 +169,8 @@ def create_sqlite_db(db_filename: str, main_filename: str, gpc_filename: str, sh
 	#
 	con.commit()
 	print('UKBCC database - finished populting')
+
+	field_df=populate_gp(con, gp_clin_filename, 123662422*1.05, 20000)
 
 	print('Creating string index')
 	con.execute('CREATE INDEX str_index ON str (field, value, time, eid)')
@@ -190,9 +223,10 @@ def isSQLite3(filename):
 #                field = 5255)
 #         GROUP BY eid LIMIT 10''').fetchall()
 ###
-def query_sqlite_db(db_filename, cohort_criteria):#query_tuples, field_table):
+def query_sqlite_db(db_filename: str, cohort_criteria: pd.DataFrame):
 	print(f'Open database {datetime.now()}')
 	con = sqlite3.connect(database=db_filename)
+
 	print(f'Read field info {datetime.now()}')
 	field_df = pd.read_sql('SELECT * from field_desc', con)
 	print(f'Done {datetime.now()}')
