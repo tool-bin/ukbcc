@@ -277,4 +277,4 @@ def submit_cohort_query(n: int, defined_terms: dict, all_terms: list,
                                        dbc.Button("Close", color='primary', id="run_query_close", style={"margin": "5px"})]))
 
     print("IDs: {}".format(ids))
-    return output_runquery, output_text, ids
+    return output_runquery, ids, timestamp
