@@ -14,11 +14,11 @@ from ukbcc import query, utils
 # Configuration Tab
 # TODO: Use form group https://dash-bootstrap-components.opensource.faculty.ai/docs/components/form/
 
-main_path_input = dbc.FormGroup([
-        dbc.Label("Main Dataset (path)", html_for={"type": "config_input","name":"main_path"}),
-        dbc.Input(placeholder="Specify the name and path to main dataset file e.g /data/main.csv",
-                                      type="text", id={"type": "config_input","name":"main_path"}, persistence=True, style={"margin": "5px"}),
-        dbc.FormText("Specify the name and path to main dataset file", color="secondary"),
+db_path_input = dbc.FormGroup([
+        dbc.Label("SQLite Database (path)", html_for={"type": "config_input","name":"db_path"}),
+        dbc.Input(placeholder="Specify the name and path to sqlite database e.g /data/ukb_sql.sqlite"),
+                                      type="text", id={"type": "config_input","name":"db_path"}, persistence=True, style={"margin": "5px"}),
+        dbc.FormText("Specify the name and path to SQLite database file", color="secondary"),
         dbc.FormFeedback(
                     "Path exists", valid=True
                 ),
@@ -89,7 +89,7 @@ tab = dbc.FormGroup(
     dbc.CardBody(
         [
             html.H3("Settings", className="card-text"),
-            dbc.Form([main_path_input,
+            dbc.Form([db_path_input,
                       gp_path_input,
                       showcase_path_input,
                       codings_path_input,
@@ -115,23 +115,23 @@ def check_path_exists(path: str):
 
 
 @app.callback(
-    [Output({'type': 'config_input', 'name': 'main_path'}, "valid"), Output({'type': 'config_input', 'name': 'main_path'}, "invalid"),
+    [Output({'type': 'config_input', 'name': 'db_path'}, "valid"), Output({'type': 'config_input', 'name': 'db_path'}, "invalid"),
     Output({'type': 'config_input', 'name': 'gp_path'}, "valid"), Output({'type': 'config_input', 'name': 'gp_path'}, "invalid"),
     Output({'type': 'config_input', 'name': 'codings_path'}, "valid"), Output({'type': 'config_input', 'name': 'codings_path'}, "invalid"),
     Output({'type': 'config_input', 'name': 'showcase_path'}, "valid"), Output({'type': 'config_input', 'name': 'showcase_path'}, "invalid"),
     Output({'type': 'config_input', 'name': 'cohort_path'}, "valid"), Output({'type': 'config_input', 'name': 'cohort_path'}, "invalid")],
-    [Input({'type': 'config_input', 'name': "main_path"}, "value"),
+    [Input({'type': 'config_input', 'name': "db_path"}, "value"),
     Input({'type': 'config_input', 'name': "gp_path"}, "value"),
     Input({'type': 'config_input', 'name': "codings_path"}, "value"),
     Input({'type': 'config_input', 'name': "showcase_path"}, "value"),
     Input({'type': 'config_input', 'name': "cohort_path"}, "value")]
 )
-def check_validity(main_path: str, gp_path: str, codings_path: str, showcase_path: str, cohort_path: str):
+def check_validity(db_path: str, gp_path: str, codings_path: str, showcase_path: str, cohort_path: str):
     """Check path validity.
 
     Keyword arguments:
     ------------------
-    main_path: str
+    db_path: str
         path to main dataset
     gp_path: str
         path to GP Clinical dataset
@@ -165,7 +165,7 @@ def check_validity(main_path: str, gp_path: str, codings_path: str, showcase_pat
     cohort_invalid: bool
         whether cohort directory path is invalid
     """
-    main_valid, main_invalid = check_path_exists(main_path)
+    main_valid, main_invalid = check_path_exists(db_path)
     gp_valid, gp_invalid = check_path_exists(gp_path)
     codings_valid, codings_invalid = check_path_exists(codings_path)
     showcase_valid, showcase_invalid = check_path_exists(showcase_path)

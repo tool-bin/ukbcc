@@ -259,7 +259,7 @@ def submit_cohort_query(n: int, defined_terms: dict, all_terms: list,
 
     print('\ncreate_queries query_sqlite_db {}'.format(print_time()))
 
-    db_filename = '/home/bwgoudey/Research2/GWAS/ukbcc/tmp/ukb.sqlite'
+    db_filename = config['db_path']
 
     res = db.query_sqlite_db(db_filename, cohort_dictionaries['encoded'])
     ret = html.P(f"No matching ids found. Please change your criteria.")
