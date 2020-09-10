@@ -1,4 +1,3 @@
-
 import pandas as pd
 import sqlite3
 import progressbar
@@ -230,7 +229,7 @@ def isSQLite3(filename):
 #                field = 5255)
 #         GROUP BY eid LIMIT 10''').fetchall()
 ###
-def query_sqlite_db(db_filename: str, cohort_criteria: pd.DataFrame):
+def query_sqlite_db(db_filename: str, cohort_criteria: dict):
 	print(f'Open database {datetime.now()}')
 	con = sqlite3.connect(database=db_filename)
 
@@ -239,7 +238,9 @@ def query_sqlite_db(db_filename: str, cohort_criteria: pd.DataFrame):
 	print(f'Done {datetime.now()}')
 
 	print("generate main criteria: {}".format(cohort_criteria))
-	main_criteria = {k: [('f'+str(int(float(vi[0]))),vi[1]) for vi in v if str(int(float(vi[0]))) in field_df['field'].values]
+	# main_criteria = {k: [('f'+str(int(float(vi[0]))),vi[1]) for vi in v if str(int(float(vi[0]))) in field_df['field'].values]
+	# 				 for k, v in cohort_criteria.items()}
+	main_criteria = {k: [('f'+str(vi[0]),vi[1]) for vi in v if str(vi[0]) in field_df['field'].values]
 					 for k, v in cohort_criteria.items()}
 
 	#Fit each condition to a template and derive a final filter
@@ -279,7 +280,7 @@ def query_sqlite_db(db_filename: str, cohort_criteria: pd.DataFrame):
 	union_q = "("+" union ".join(filter(len,[tab_select(tab, [qt for qt in query_tuples if qt['tab']==tab]) for tab in tabs])) + ")"
 
 	q = f'''select * from (
-            select eid, {col_names_q}                                                   
+            select eid, {col_names_q}
           from {union_q}
          GROUP BY eid) where {selection_query}'''.strip('\n')
 
@@ -288,9 +289,3 @@ def query_sqlite_db(db_filename: str, cohort_criteria: pd.DataFrame):
 	res = pd.read_sql(q, con)
 	print(f'Done {datetime.now()}')
 	return(res)
-
-
-
-
-
-
