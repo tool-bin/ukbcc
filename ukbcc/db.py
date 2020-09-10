@@ -264,7 +264,7 @@ def query_sqlite_db(db_filename: str, cohort_criteria: dict):
 	print('generate column naming query')
 	#column naming query
 	field_sql_map={f:field_df[field_df['field']== f]['sql_type'].iloc[0] for f in set([q['field'] for q in query_tuples])}
-	col_names_q = ",".join([f"cast(max(distinct case when field={f} then value end) as {field_sql_map[f]}) as f{f}" for f in set([q['field'] for q in query_tuples])])
+	col_names_q = ",".join([f"cast(max(distinct case when field='{f}' then value end) as {field_sql_map[f]}) as 'f{f}'" for f in set([q['field'] for q in query_tuples])])
 
 	#Make query: select * from tab where field=f1 and value=v1 or field=f2 and value=v2 ...
 	def tab_select(tab, qts):
