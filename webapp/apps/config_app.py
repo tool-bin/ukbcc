@@ -6,6 +6,7 @@ from dash.dependencies import Input, Output, State, MATCH, ALL
 import dash_bootstrap_components as dbc
 from dash.exceptions import PreventUpdate
 
+import wget
 import os
 import json
 import ukbcc
@@ -109,10 +110,10 @@ tab = dbc.FormGroup(
     dbc.CardBody(
         [
             html.H3("Settings", className="card-text"),
-            html.H1("File Paths", className="card-text"),
+            html.H4("File Paths", className="card-text"),
             dbc.Form([main_path_input,
                       gp_path_input]),
-            html.H1("Directory Paths", className="card-text"),
+            html.H4("Directory Paths", className="card-text"),
             dbc.Form([aux_dir_input,
                       cohort_path_input]),
             aux_file_download_modal,
@@ -239,47 +240,54 @@ def save_config_handler(values: str, n_click: int, config_init: dict):
             if 'value' in config_id_dict:
                 config[config_id_dict['id']['name']]=config_id_dict['value']
 
-        aux_dir_path = config['aux_dir_path']
-        output_text = "Auxillary files exists"
-        for k,v in aux_files.items():
-            print(f"checking if {k} exists")
-            file_path = os.path.join(aux_dir_path, v["file"])
-            aux_files[k]['file_path'] = file_path
-            if not os.path.exists(file_path):
-                wget.download(v["url"], file_path)
-                output_text = f"Downloading auxillary files to {aux_dir_path}"
-            if os.path.exists(file_path):
-                new_k = k + '_path'
-                config[new_k] = file_path
-            else:
-                # raise FileNotFoundError(f'{k} file {file_path} did not download, please check')
-                output_text = f"{k} file did not download to {file_path}, please check."
+        required_config = set(['main_path', 'gp_path', 'aux_dir_path', 'cohort_path'])
+        existing_config_fields=set(config.keys())
+        missing_config_fields = required_config.difference(existing_config_fields)
+        if len(missing_config_fields)!=0:
+            print("Config has not been set. Missing fields: {}".format(', '.join([str(x) for x in missing_config_fields])))
+            raise PreventUpdate
+        else:
+            aux_dir_path = config['aux_dir_path']
+            output_text = "Auxillary files exists"
+            for k,v in aux_files.items():
+                print(f"checking if {k} exists")
+                file_path = os.path.join(aux_dir_path, v["file"])
+                aux_files[k]['file_path'] = file_path
+                if not os.path.exists(file_path):
+                    wget.download(v["url"], file_path)
+                    output_text = f"Downloading auxillary files to {aux_dir_path}"
+                if os.path.exists(file_path):
+                    new_k = k + '_path'
+                    config[new_k] = file_path
+                else:
+                    # raise FileNotFoundError(f'{k} file {file_path} did not download, please check')
+                    output_text = f"{k} file did not download to {file_path}, please check."
         return config, output_text
     return config
 
-@app.callback(
-    Output("aux_file_modal", "is_open"),
-    [Input({"name": "next_button_config", "type": "nav_btn"}, "n_clicks")],
-    [State("aux_file_modal", "is_open")]
-)
-def toggle_aux_file_modal(n1: int, is_open: bool):
-    """Toggle the "aux_file_modal".
-
-    Keyword arguments:
-    ------------------
-    n_click: int
-        int specifying the number of times the "submit_btn" is clicked
-
-    Returns:
-    --------
-    is_open: bool
-         boolean specifying whether or not to show "aux_file_modal"
-
-    """
-    ctx = dash.callback_context
-    if not ctx.triggered:
-        raise PreventUpdate
-
-    if n1 or n2 or is_open:
-        return not is_open
-    return is_open
+# @app.callback(
+#     Output("aux_file_modal", "is_open"),
+#     [Input({"name": "next_button_config", "type": "nav_btn"}, "n_clicks")],
+#     [State("aux_file_modal", "is_open")]
+# )
+# def toggle_aux_file_modal(n1: int, is_open: bool):
+#     """Toggle the "aux_file_modal".
+#
+#     Keyword arguments:
+#     ------------------
+#     n_click: int
+#         int specifying the number of times the "submit_btn" is clicked
+#
+#     Returns:
+#     --------
+#     is_open: bool
+#          boolean specifying whether or not to show "aux_file_modal"
+#
+#     """
+#     ctx = dash.callback_context
+#     if not ctx.triggered:
+#         raise PreventUpdate
+#
+#     if n1 or n2 or is_open:
+#         return not is_open
+#     return is_open
