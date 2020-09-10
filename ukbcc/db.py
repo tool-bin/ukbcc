@@ -3,6 +3,7 @@ import sqlite3
 import progressbar
 from datetime import datetime
 import re
+import numpy as np
 
 # Create a table for a given category ('cat')
 def create_long_value_table(con, tab_name, tab_type):
@@ -20,8 +21,8 @@ def create_type_maps():
 	ukbtypes = ['Date', 'Categorical multiple', 'Integer',
 				'Categorical single', 'Text',
 				'Time', 'Continuous', 'Compound']
-	sqltypes = ['NUMERIC', 'VARCHAR', 'INTEGER',
-				'VARCHAR', 'VARCHAR',
+	sqltypes = ['NUMERIC', 'INTEGER', 'INTEGER',
+				'INTEGER', 'VARCHAR',
 				'NUMERIC', 'REAL', 'VARCHAR']
 	#pandastypes can only have strings integers and floats in read_csv
 	pandastypes = ['object', 'object', 'Int64',
@@ -108,8 +109,8 @@ def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str
 		create_long_value_table(con,tab_name=tab_name, tab_type=field_type)
 
 	type_fields={}
-	type_lookups=dict(zip(['str', 'int', 'real', 'datetime'], [['Categorical multiple', 'Categorical single', 'Text', 'Compound'],
-															   ['Integer'],
+	type_lookups=dict(zip(['str', 'int', 'real', 'datetime'], [['Text', 'Compound'],
+																   ['Categorical multiple', 'Categorical single', 'Integer'],
 															   ['Continuous'],
 															   ['Date', 'Time']]))
 	for tab_name,field_type in tabs.items():
@@ -117,6 +118,7 @@ def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str
 
 	#Write fields to a table in the database
 	field_tab_map = {item: k for k, v in type_fields.items() for item in v.to_list()}
+	print(field_tab_map['6119-0.0'])
 	field_tab_map['eid'] = None
 	field_df['tab'] = list(map(field_tab_map.get, field_df['field_col']))
 	field_df.to_sql("field_desc", con, if_exists='replace', index=False)
@@ -125,14 +127,17 @@ def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str
 	tf_eid= field_df[field_df['field_col'] == 'eid']['field_col']
 
 
-	populate_gp(con, gp_clin_filename, 123662422*1.05, 20000)
+	#populate_gp(con, gp_clin_filename, 123662422*1.05, 20000)
 
 
 
 	#
 	#step=1000
 	#nrow= 525000
+	fn_dict={'object':np.object, 'float':np.float, 'int64':np.int64}
+
 	date_cols = field_df['field_col'][(field_df['ukb_type']=='Date') | (field_df['ukb_type']=='Time')].to_list()
+	#dtypes_dict = dict(zip(field_df['field_col'].to_list(), map(fn_dict.get, field_df['pd_type'].to_list())))
 	dtypes_dict = dict(zip(field_df['field_col'].to_list(), field_df['pd_type'].to_list()))
 	dtypes = list(map(dtypes_dict.get, main_df.columns.to_list()))
 	#print(dtypes)
@@ -142,7 +147,7 @@ def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str
 	# so we cannot write in parallel. Dask might be a way to do the reading in parallel but not sure how to hand off
 	# to another thread for writing.
 	with progressbar.ProgressBar(widgets=[progressbar.Percentage(), progressbar.Bar(), progressbar.ETA(),], max_value=int(nrow/step)+1) as bar:
-		for i, chunk in enumerate(pd.read_csv(main_filename, chunksize=step, low_memory=False, encoding = "ISO-8859-1", parse_dates=date_cols)):
+		for i, chunk in enumerate(pd.read_csv(main_filename, chunksize=step, low_memory=False, encoding = "ISO-8859-1",dtype=dtypes_dict, parse_dates=date_cols)):
 		#for i, chunk in enumerate(pd.read_csv(main_filename, chunksize=step, low_memory=False, encoding="ISO-8859-1",	parse_dates=date_cols)):
 			for tab_name,field_type in tabs.items():
 				#Convert to triples, remove nulls and then explode field
