@@ -257,7 +257,8 @@ def query_sqlite_db(db_filename: str, cohort_criteria: dict):
 
 	#print('generate query_tuples {}'.format(cohort_criteria.values()))
 	#Add the table for the field inop each query and turn in them into dictionaries to help readability
-	query_tuples = [(int(float(vi[0])), vi[1]) for v in cohort_criteria.values() for vi in v]
+	# query_tuples = [(int(float(vi[0])), vi[1]) for v in cohort_criteria.values() for vi in v]
+	query_tuples = [(vi[0], vi[1]) for v in cohort_criteria.values() for vi in v]
 	query_tuples = [list(qt) + [field_df[field_df['field'] == str(int(float(qt[0])))]['tab'].iloc[0]] for qt in query_tuples]
 	query_tuples = [dict(zip(('field', 'val', 'tab'),q)) for q in query_tuples]
 
