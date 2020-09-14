@@ -132,6 +132,53 @@ def save_cohort_ids(n1: int, n2: int, n3: int, config_init: dict, cohort_ids: li
     check = toggle_modals(n1, n2, n3, is_open)
     return check, write_out_status
 
+def _create_table(table_dictionary: dict, c: int):
+    """Create data_table object from json-encoded table.
+
+    Keyword Arguments:
+    ------------------
+    table_dictionary: dict
+        dictionary containing table contents
+    c: int
+        counter to assign ID to table object
+
+    Returns:
+    --------
+    table: html.Div
+        html.Div object containing data_table object
+    """
+    df = pd.DataFrame.from_dict(table_dictionary)
+    table = html.Div([dash_table.DataTable(
+        id=f'table_{c}',
+        columns=[{"name": i, "id": i} for i in df.columns],
+        css=[{'selector': '.dash-filter input', 'rule': 'text-align: left'}, {'selector': '.row', 'rule': 'margin: 0'}],
+        style_cell={
+                'whiteSpace': 'normal',
+                'height': 'auto',
+                'text-align': 'left'
+        },
+        data=df.to_dict('records'))])
+    return table
+
+def _create_graph(graph_dictionary: dict, c: int):
+    """Create Graph object from json-encoded plotly object.
+
+    Keyword Arguments:
+    ------------------
+    graph_dictionary: dict
+        dictionary containing json-encoded plotly object
+    c: int
+        counter to assign id to graph object
+
+    Returns:
+    --------
+    table: html.Div
+        html.Div object containing Graph object
+    """
+    fig = plotly.io.from_json(graph_dictionary)
+    fig_report = html.Div([dcc.Graph(id=f'graph_{c}', figure=fig)])
+    return fig_report
+
 
 @app.callback(
     [Output("history_results", "children"),
@@ -170,23 +217,16 @@ def return_results(results_returned: int, results: list, cohort_id_report: dict,
     stats_report = []
     if cohort_id_report:
         c = 0
+        print(f"length of tables {len(cohort_id_report['tables'])}, length of graphs {len(cohort_id_report['graphs'])}")
+        overview = cohort_id_report['tables'].pop(0)
+        table = _create_table(overview, c)
+        stats_report.append(table)
         for t, g in zip(cohort_id_report['tables'], cohort_id_report['graphs']):
             print(f"iterating through report dictionary {c}")
-            df = pd.DataFrame.from_dict(t)
-            table = html.Div([dash_table.DataTable(
-                id=f'table_{c}',
-                columns=[{"name": i, "id": i} for i in df.columns],
-                css=[{'selector': '.dash-filter input', 'rule': 'text-align: left'}, {'selector': '.row', 'rule': 'margin: 0'}],
-                style_cell={
-                        'whiteSpace': 'normal',
-                        'height': 'auto',
-                        'text-align': 'left'
-                },
-                data=df.to_dict('records'))])
-            stats_report.append(table)
-            fig = plotly.io.from_json(g)
-            fig_report = html.Div([dcc.Graph(id=f'graph_{c}', figure=fig)])
+            table = _create_table(t, c)
+            fig_report = _create_graph(g, c)
             stats_report.append(fig_report)
+            stats_report.append(table)
             c += 1
     final = html.Div(stats_report)
     return [output_text], [final]

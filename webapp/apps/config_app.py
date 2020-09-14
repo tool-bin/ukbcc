@@ -18,10 +18,10 @@ main_path_input = dbc.FormGroup([
                                       type="text", id={"type": "config_input","name":"main_path"}, persistence=True, style={"margin": "5px"}),
         dbc.FormText("Specify the name and path to main dataset file", color="secondary"),
         dbc.FormFeedback(
-                    "Path exists", valid=True
+                    "File exists", valid=True
                 ),
         dbc.FormFeedback(
-                    "Path does not exist, please check path",
+                    "File does not exist, please check path",
                     valid=False,
                 )
 ])
@@ -32,46 +32,62 @@ gp_path_input = dbc.FormGroup([
         #dbc.Input(type="file", id={"type": "file", "name": "gp_path"},),
         dbc.FormText("Specify the name and path to GP data file", color="secondary"),
         dbc.FormFeedback(
-                    "Path exists", valid=True
+                    "File exists", valid=True
                 ),
         dbc.FormFeedback(
-                    "Path does not exist, please check path",
+                    "File does not exist, please check path",
                     valid=False,
                 )
 ])
 
-aux_dir_input = dbc.FormGroup([
-        dbc.Label("Directory for Auxillary Files", html_for={"type": "config_input", "name": "aux_dir_path"}),
-        dbc.Input(placeholder="Specify the directory where the auxillary files should be stored e.g /data/aux_files", type="text", id={"type": "config_input", "name": "aux_dir_path"},
+showcase_path_input = dbc.FormGroup([
+        dbc.Label("Showcase Dataset File", html_for={"type": "config_input", "name": "showcase_path"}),
+        dbc.Input(placeholder="specify the name and path to the showcase data csv file e.g /data/data_dictionary_showcase.csv.", type="text", id={"type": "config_input", "name": "showcase_path"},
         persistence=True),
-        dbc.FormText("Directory path to save auxillary files to. Please see the README to learn more about the auxillary files", color="secondary"),
+        dbc.FormText("Path to data showcase csv file. this file can be downloaded here: https://biobank.ctsu.ox.ac.uk/~bbdatan/Data_Dictionary_Showcase.csv", color="secondary"),
         dbc.FormFeedback(
-                    "Path exists", valid=True
+                    "File exists", valid=True
                 ),
         dbc.FormFeedback(
-                    "Path does not exist, please check path",
+                    "File does not exist, please check path",
                     valid=False,
                 )
 ])
-# showcase_path_input = dbc.formgroup([
-#         dbc.label("showcase dataset (path)", html_for={"type": "config_input", "name": "showcase_path"}),
-#         dbc.input(placeholder="specify the name and path to the showcase data csv file e.g /data/data_dictionary_showcase.csv.", type="text", id={"type": "config_input", "name": "showcase_path"},
-#         persistence=true),
-#         dbc.formtext("path to data showcase csv file. this file can be downloaded here: https://biobank.ctsu.ox.ac.uk/~bbdatan/data_dictionary_showcase.csv", color="secondary"),
-#         dbc.formfeedback(
-#                     "path exists", valid=true
-#                 ),
-#         dbc.formfeedback(
-#                     "path does not exist, please check path",
-#                     valid=false,
-#                 )
-# ])
-#
-# codings_path_input = dbc.FormGroup([
-#         dbc.Label("Codings Dataset (path)", html_for={"type": "config_input", "name":"codings_path"}),
-#         dbc.Input(placeholder="Specify the name and path to the readcodes csv file e.g /data/Codings_Showcase.csv.", type="text", id={"type": "config_input", "name": "codings_path"},
+
+codings_path_input = dbc.FormGroup([
+        dbc.Label("Codings Dataset File", html_for={"type": "config_input", "name":"codings_path"}),
+        dbc.Input(placeholder="Specify the name and path to the codings csv file e.g /data/Codings_Showcase.csv.", type="text", id={"type": "config_input", "name": "codings_path"},
+        persistence=True),
+        dbc.FormText("Path to codings csv file, This file can be downloaded here: https://biobank.ctsu.ox.ac.uk/~bbdatan/Codings_Showcase.csv", color="secondary"),
+        dbc.FormFeedback(
+                    "File exists", valid=True
+                ),
+        dbc.FormFeedback(
+                    "File does not exist, please check path",
+                    valid=False,
+                )
+])
+
+
+readcodes_path_input = dbc.FormGroup([
+        dbc.Label("Readcodes Dataset File", html_for={"type": "config_input", "name":"readcodes_path"}),
+        dbc.Input(placeholder="Specify the name and path to the readcodes csv file e.g /data/Codings_Showcase.csv.", type="text", id={"type": "config_input", "name": "readcodes_path"},
+        persistence=True),
+        dbc.FormText("Path to readcodes csv file, This file can be downloaded here: https://raw.githubusercontent.com/tool-bin/ukbcc/master/data_files/readcodes.csv", color="secondary"),
+        dbc.FormFeedback(
+                    "File exists", valid=True
+                ),
+        dbc.FormFeedback(
+                    "File does not exist, please check path",
+                    valid=False,
+                )
+])
+
+# aux_dir_input = dbc.FormGroup([
+#         dbc.Label("Directory for Auxillary Files", html_for={"type": "config_input", "name": "aux_dir_path"}),
+#         dbc.Input(placeholder="Specify the directory where the auxillary files should be stored e.g /data/aux_files", type="text", id={"type": "config_input", "name": "aux_dir_path"},
 #         persistence=True),
-#         dbc.FormText("Path to read codes csv file, This file can be downloaded here: https://biobank.ctsu.ox.ac.uk/~bbdatan/Codings_Showcase.csv", color="secondary"),
+#         dbc.FormText("Directory path to save auxillary files to. Please see the README to learn more about the auxillary files", color="secondary"),
 #         dbc.FormFeedback(
 #                     "Path exists", valid=True
 #                 ),
@@ -82,29 +98,19 @@ aux_dir_input = dbc.FormGroup([
 # ])
 
 cohort_path_input = dbc.FormGroup([
-        dbc.Label("Directory for Output Files (path)", html_for={"type": "config_input", "name":"cohort_path"}),
+        dbc.Label("Directory for Output Files", html_for={"type": "config_input", "name":"cohort_path"}),
         dbc.Input(placeholder="Specify the directory to save the output files to e.g /data/ukbcc_output.", type="text", id={"type": "config_input", "name": "cohort_path"},
         persistence=True),
         dbc.FormText("Directory path to save output files to", color="secondary"),
         dbc.FormFeedback(
-                    "Path exists", valid=True
+                    "Directory exists", valid=True
                 ),
         dbc.FormFeedback(
-                    "Path does not exist, please check path",
+                    "Directory does not exist, please check path",
                     valid=False,
                 )
 ])
 
-
-aux_file_download_modal = dbc.Modal(
-                [
-                    dbc.ModalHeader("Auxillary files"),
-                    dbc.ModalBody(id='aux_file_modalbody'),
-                    dbc.ModalFooter(
-                        dbc.Button("Close", id='aux_modal_close', className="ml-auto")
-                    ),
-                ],
-                id="aux_file_modal")
 
 tab = dbc.FormGroup(
     dbc.CardBody(
@@ -112,11 +118,12 @@ tab = dbc.FormGroup(
             html.H3("Settings", className="card-text"),
             html.H4("File Paths", className="card-text"),
             dbc.Form([main_path_input,
-                      gp_path_input]),
+                      gp_path_input,
+                      showcase_path_input,
+                      codings_path_input,
+                      readcodes_path_input]),
             html.H4("Directory Paths", className="card-text"),
-            dbc.Form([aux_dir_input,
-                      cohort_path_input]),
-            aux_file_download_modal,
+            dbc.Form([cohort_path_input]),
             dbc.Row([dbc.Button("Next", color='primary', id={"name":"next_button_config","type":"nav_btn"}, style={"margin": "5px"})]),
         ]
     ),
@@ -138,14 +145,18 @@ def check_path_exists(path: str):
 @app.callback(
     [Output({'type': 'config_input', 'name': 'main_path'}, "valid"), Output({'type': 'config_input', 'name': 'main_path'}, "invalid"),
     Output({'type': 'config_input', 'name': 'gp_path'}, "valid"), Output({'type': 'config_input', 'name': 'gp_path'}, "invalid"),
-    Output({'type': 'config_input', 'name': 'aux_dir_path'}, "valid"), Output({'type': 'config_input', 'name': 'aux_dir_path'}, "invalid"),
+    Output({'type': 'config_input', 'name': 'showcase_path'}, "valid"), Output({'type': 'config_input', 'name': 'showcase_path'}, "invalid"),
+    Output({'type': 'config_input', 'name': 'codings_path'}, "valid"), Output({'type': 'config_input', 'name': 'codings_path'}, "invalid"),
+    Output({'type': 'config_input', 'name': 'readcodes_path'}, "valid"), Output({'type': 'config_input', 'name': 'readcodes_path'}, "invalid"),
     Output({'type': 'config_input', 'name': 'cohort_path'}, "valid"), Output({'type': 'config_input', 'name': 'cohort_path'}, "invalid")],
     [Input({'type': 'config_input', 'name': "main_path"}, "value"),
     Input({'type': 'config_input', 'name': "gp_path"}, "value"),
-    Input({'type': 'config_input', 'name': "aux_dir_path"}, "value"),
+    Input({'type': 'config_input', 'name': "showcase_path"}, "value"),
+    Input({'type': 'config_input', 'name': "codings_path"}, "value"),
+    Input({'type': 'config_input', 'name': "readcodes_path"}, "value"),
     Input({'type': 'config_input', 'name': "cohort_path"}, "value")]
 )
-def check_validity(main_path: str, gp_path: str, aux_dir_path: str, cohort_path: str):
+def check_validity(main_path: str, gp_path: str, showcase_path: str, codings_path: str, readcodes_path: str, cohort_path: str):
     """Check path validity.
 
     Keyword arguments:
@@ -181,9 +192,11 @@ def check_validity(main_path: str, gp_path: str, aux_dir_path: str, cohort_path:
     """
     main_valid, main_invalid = check_path_exists(main_path)
     gp_valid, gp_invalid = check_path_exists(gp_path)
-    aux_valid, aux_invalid = check_path_exists(aux_dir_path)
+    showcase_valid, showcase_invalid = check_path_exists(showcase_path)
+    codings_valid, codings_invalid = check_path_exists(codings_path)
+    readcodes_valid,readcodes_invalid = check_path_exists(readcodes_path)
     cohort_valid, cohort_invalid = check_path_exists(cohort_path)
-    return main_valid, main_invalid, gp_valid, gp_invalid, aux_valid, aux_invalid, cohort_valid, cohort_invalid
+    return main_valid, main_invalid, gp_valid, gp_invalid, showcase_valid, showcase_invalid, codings_valid, codings_invalid, readcodes_valid, readcodes_invalid, cohort_valid, cohort_invalid
 
 
 # Save config input
@@ -222,26 +235,11 @@ def save_config_handler(values: str, n_click: int, config_init: dict):
     #temp name for file until specified later in the cohort search process
     config['out_filename'] = "cohort_ids.txt"
 
-    # add paths for auxillary files
-    showcase_file = "Data_Dictionary_Showcase.csv"
-    codings_file = "Codings_Showcase.csv"
-    readcodes_file = "readcodes.csv"
-
     if ctx.triggered and ctx.inputs_list and ctx.inputs_list[0]:
         for field in ctx.inputs_list[0]:
             config_id_dict = field
             if 'value' in config_id_dict:
                 config[config_id_dict['id']['name']]=config_id_dict['value']
-        if 'aux_dir_path' in config.keys():
-            print("aux_dir_path key exists")
-            showcase_path = os.path.join(config['aux_dir_path'], showcase_file)
-            codings_path = os.path.join(config['aux_dir_path'], codings_file)
-            readcodes_path = os.path.join(config['aux_dir_path'], readcodes_file)
-            config['showcase_path'] = showcase_path
-            config['codings_path'] = codings_path
-            config['readcodes_path'] = readcodes_path
-        else:
-            print("aux dir path no provided")
         return config
     return config
 
