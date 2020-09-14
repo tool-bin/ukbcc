@@ -46,7 +46,7 @@ Or clone the repo:
     $ git clone https://github.com/tool-bin/ukbcc.git
     $ python3 setup.py install
 
-NB: We strongly recommend using a virtual environment when installing this package and its dependencies. Please see this link for further information: https://docs.python.org/3/tutorial/venv.html
+**NB**: We strongly recommend using a virtual environment when installing this package and its dependencies. Please see this link for further information: https://docs.python.org/3/tutorial/venv.html
 
 Usage
 --------
@@ -89,7 +89,7 @@ There are two ways to run *`interactive mode`*:
 
 In order to use the web-based interface, please run the following command from the command line:
 
-  $ ukbcc
+    $ ukbcc
 
 The above command will setup the web-based interface and generates a web address where this can be accessed:
 
