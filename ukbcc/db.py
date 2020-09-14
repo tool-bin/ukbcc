@@ -61,6 +61,29 @@ def populate_gp(con, gpc_filename, nrow, step):
 	print('UKBCC database - finished populating GP clinical')
 
 
+def create_tab_fields_map(tabs,field_df):
+	tab_fields={}
+	type_lookups=dict(zip(['str', 'int', 'real', 'datetime'], [['Text', 'Compound'],
+																   ['Categorical multiple', 'Categorical single', 'Integer'],
+															   ['Continuous'],
+															   ['Date', 'Time']]))
+	for tab_name,field_type in tabs.items():
+		tab_fields[tab_name] = field_df[(field_df['ukb_type'].isin(type_lookups[tab_name])) & (field_df['field_col'] != 'eid')]['field_col']
+
+	return (tab_fields)
+
+def create_field_df(main_df, data_dict, ukbtype_sqltype_map, ukbtype_pandastypes_map):
+
+	field_df = pd.DataFrame({'field_col': main_df.columns,
+							 'field': ['eid'] + [str(x.split('-')[0]) for x in main_df.columns[1:]]})
+	field_df['category'] = [-1]+list(map(dict(zip(data_dict['FieldID'], data_dict['Category'])).get, field_df['field'][1:]))
+	field_df['ukb_type']=list(map(dict(zip(['eid']+data_dict['FieldID'].to_list(),
+										   ['Integer']+data_dict['ValueType'].to_list())).get, field_df['field']))
+
+	field_df['sql_type'] = list(map(ukbtype_sqltype_map.get, field_df['ukb_type']))
+	field_df['pd_type'] = list(map(ukbtype_pandastypes_map.get, field_df['ukb_type']))
+	return(field_df)
+
 
 # TODO: do more checks on whether the files exist
 def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str, showcase_file: str, step=5000, nrow=520000) -> sqlite3.Connection:
@@ -86,17 +109,12 @@ def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str
 	data_dict = pd.read_csv(showcase_file)
 	data_dict['FieldID'] = list(map(str, data_dict['FieldID']))
 	main_df = pd.read_csv(main_filename, nrows=1)
-		#
-	field_df = pd.DataFrame({'field_col': main_df.columns,
-							 'field': ['eid'] + [str(x.split('-')[0]) for x in main_df.columns[1:]]})
-	field_df['category'] = [-1]+list(map(dict(zip(data_dict['FieldID'], data_dict['Category'])).get, field_df['field'][1:]))
-	field_df['ukb_type']=list(map(dict(zip(['eid']+data_dict['FieldID'].to_list(),
-										   ['Integer']+data_dict['ValueType'].to_list())).get, field_df['field']))
 	#
 	#Map types that come with UKB to other forms
 	ukbtype_sqltype_map, ukbtype_pandastypes_map = create_type_maps()
-	field_df['sql_type'] = list(map(ukbtype_sqltype_map.get, field_df['ukb_type']))
-	field_df['pd_type'] = list(map(ukbtype_pandastypes_map.get, field_df['ukb_type']))
+
+	field_df = create_field_df(main_df, data_dict, ukbtype_sqltype_map, ukbtype_pandastypes_map)
+
 	#
 	#
 	# Connect to db
@@ -105,19 +123,13 @@ def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str
 	# Create a table for every sqltype
 	print("create table")
 	tabs=dict(zip(['str', 'int', 'real', 'datetime'], ["VARCHAR", "INTEGER", "REAL", "REAL"]))
+	tab_field=create_tab_fields_map(tabs,field_df)
+
 	for tab_name,field_type in tabs.items():
 		create_long_value_table(con,tab_name=tab_name, tab_type=field_type)
 
-	type_fields={}
-	type_lookups=dict(zip(['str', 'int', 'real', 'datetime'], [['Text', 'Compound'],
-																   ['Categorical multiple', 'Categorical single', 'Integer'],
-															   ['Continuous'],
-															   ['Date', 'Time']]))
-	for tab_name,field_type in tabs.items():
-		type_fields[tab_name] = field_df[(field_df['ukb_type'].isin(type_lookups[tab_name])) & (field_df['field_col'] != 'eid')]['field_col']
-
 	#Write fields to a table in the database
-	field_tab_map = {item: k for k, v in type_fields.items() for item in v.to_list()}
+	field_tab_map = {item: k for k, v in tab_fields.items() for item in v.to_list()}
 	print(field_tab_map['6119-0.0'])
 	field_tab_map['eid'] = None
 	field_df['tab'] = list(map(field_tab_map.get, field_df['field_col']))
@@ -126,9 +138,7 @@ def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str
 	#
 	tf_eid= field_df[field_df['field_col'] == 'eid']['field_col']
 
-
-	#populate_gp(con, gp_clin_filename, 123662422*1.05, 20000)
-
+	populate_gp(con, gp_clin_filename, 123662422*1.05, 20000)
 
 
 	#
@@ -151,7 +161,7 @@ def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str
 		#for i, chunk in enumerate(pd.read_csv(main_filename, chunksize=step, low_memory=False, encoding="ISO-8859-1",	parse_dates=date_cols)):
 			for tab_name,field_type in tabs.items():
 				#Convert to triples, remove nulls and then explode field
-				trips = chunk[type_fields[tab_name].append(tf_eid)].melt(id_vars='eid', value_vars=type_fields[tab_name])
+				trips = chunk[tab_fields[tab_name].append(tf_eid)].melt(id_vars='eid', value_vars=tab_fields[tab_name])
 				trips = trips[trips['value'].notnull()]
 
 				#This is constant if we have it in the row before?
