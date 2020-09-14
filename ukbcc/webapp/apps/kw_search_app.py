@@ -1,5 +1,5 @@
 import dash
-from app import app
+from ukbcc.webapp.app import app
 
 import dash_html_components as html
 from dash.dependencies import Input, Output, State, MATCH, ALL

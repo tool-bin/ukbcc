@@ -1,5 +1,5 @@
 import dash
-from app import app
+from ukbcc.webapp.app import app
 
 import dash_html_components as html
 import dash_bootstrap_components as dbc
@@ -87,9 +87,6 @@ def select_all(n_clicks: int, rows: dict, selected_rows: list, derived_viewport_
         selected rows
 
     """
-
-    if rows:
-        print(rows[min(1,len(rows)):min(10, len(rows))])
 
     ctx = dash.callback_context
 

@@ -1,5 +1,5 @@
 import dash
-from app import app
+from ukbcc.webapp.app import app
 
 import dash_html_components as html
 import dash_bootstrap_components as dbc
@@ -212,19 +212,20 @@ def return_results(results_returned: int, results: list, cohort_id_report: dict,
     """
     if results_returned:
         output_text = dbc.Col([html.P(f"Found {len(results)} matching ids.")])
+        stats_report = []
+        if cohort_id_report:
+            c = 0
+            overview = cohort_id_report['tables'].pop(0)
+            table = _create_table(overview, c)
+            stats_report.append(table)
+            for t, g in zip(cohort_id_report['tables'], cohort_id_report['graphs']):
+                table = _create_table(t, c)
+                fig_report = _create_graph(g, c)
+                stats_report.append(fig_report)
+                stats_report.append(table)
+                c += 1
+        final = html.Div(stats_report)
     else:
         output_text = dbc.Col([html.P("No results, please run a cohort search by navigating to the Configure tab.")])
-    stats_report = []
-    if cohort_id_report:
-        c = 0
-        overview = cohort_id_report['tables'].pop(0)
-        table = _create_table(overview, c)
-        stats_report.append(table)
-        for t, g in zip(cohort_id_report['tables'], cohort_id_report['graphs']):
-            table = _create_table(t, c)
-            fig_report = _create_graph(g, c)
-            stats_report.append(fig_report)
-            stats_report.append(table)
-            c += 1
-    final = html.Div(stats_report)
+        final = []
     return [output_text], [final]

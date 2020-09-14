@@ -6,8 +6,8 @@ from dash.dependencies import Input, Output, State, MATCH, ALL
 import dash_bootstrap_components as dbc
 import json
 
-from app import app
-from apps import config_app, kw_search_app, include_kw_app, definitions_app, query_app, results_app
+from .app import app
+from .apps import config_app, kw_search_app, include_kw_app, definitions_app, query_app, results_app
 import webbrowser
 from threading import Timer
 
@@ -105,7 +105,6 @@ def tab_button_click_handler(values: str, cohort_id_results_timestamp: int, data
 
     """
     ctx = dash.callback_context
-    print("ctx {}".format(ctx.triggered))
     button_map={"next_button_config":"definitions",
                 "prev_button_terms": "config",
                 "next_button_terms": "query",
@@ -135,5 +134,10 @@ port = 8050 #default port
 def open_browser():
 	webbrowser.open_new("http://localhost:{}".format(port))
 
+def main():
+    Timer(1, open_browser).start();
+    app.run_server(debug=False, use_reloader=False, dev_tools_props_check=False, dev_tools_ui=False, port=port)
+    # gunicorn -w 4 webapp:main
+
 if __name__ == '__main__':
-    app.run_server(debug=True, use_reloader=True, dev_tools_props_check=False, dev_tools_ui=True)
+    main()

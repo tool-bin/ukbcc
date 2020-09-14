@@ -1,4 +1,4 @@
-from app import app
+from ukbcc.webapp.app import app
 
 import dash
 import dash_html_components as html
