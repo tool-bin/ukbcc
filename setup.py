@@ -29,16 +29,14 @@ setup(
         'Natural Language :: English',
         'Intended Audience :: Science/Research'
     ],
-    scripts=['bin/ukbcc'],
-    entry_points={
-        'console_scripts': [
-            'ukbcc_alt = ukbcc.main:main',
-        ],
-    },
+    scripts=['bin/ukbcc_cli', 'bin/ukbcc'],
+    # entry_points={
+    #     'console_scripts': [
+    #         'ukbcc_alt = ukbcc.main:main',
+    #     ],
+    # },
     keywords='',
     packages=find_packages(),
-    include_package_data=True,
-    package_data = {'': ['data_files/readcodes.csv']},
     zip_safe=False,
     install_requires=[
         'sphinx >= 3.0.3',
