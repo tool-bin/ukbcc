@@ -171,30 +171,22 @@ def search_kw_button(_: int, config: dict, search_terms: list, kw_search: dict):
     search_terms = search_terms.split(';')
     print(f'Search terms: {search_terms}')
 
-    aux_dir_path = config['aux_dir_path']
+    # aux_dir_path = config['aux_dir_path']
     # showcase_file = "Data_Dictionary_Showcase.csv"
     # codings_file = "Codings_Showcase.csv"
     # readcodes_file = "readcodes.csv"
     #
-    # showcase_url = "https://biobank.ctsu.ox.ac.uk/~bbdatan/Data_Dictionary_Showcase.csv"
-    # readcodes_url = "https://raw.githubusercontent.com/tool-bin/ukbcc/master/data_files/readcodes.csv"
-    # codings_url = "https://biobank.ctsu.ox.ac.uk/~bbdatan/Codings_Showcase.csv"
-    #
-    # aux_files = {"showcase": {"file": showcase_file, "url":showcase_url},
-    #              "codings": {"file": codings_file, "url": codings_url},
-    #              "readcodes": {"file": readcodes_file, "url": readcodes_url}}
-    #
-    # for k,v in aux_files.items():
-    #     print(f"checking if {k} exists")
-    #     file_path = os.path.join(aux_dir_path, v["file"])
-    #     aux_files[k]['file_path'] = file_path
+    # files = [showcase_file, codings_file, readcodes_file]
+    # for file in files:
+    #     print(f"checking if {file} exists")
+    #     file_path = os.path.join(aux_dir_path, file)
     #     if not os.path.exists(file_path):
-    #         wget.download(v["url"], file_path)
+    #         output_text = html.P("Auxillary files are still downloading, please wait..")
+    #         return (output_text), (search_terms)
     #     if os.path.exists(file_path):
-    #         new_k = k + '_path'
-    #         config[new_k] = file_path
+    #         print(f"Aux file {file} found")
     #     else:
-    #         raise FileNotFoundError(f'{k} file {file_path} did not download, please check')
+    #         raise FileNotFoundError(f'{file} did not download to {file_path}, please check')
 
     coding_filename = config['codings_path']
     showcase_filename = config['showcase_path']

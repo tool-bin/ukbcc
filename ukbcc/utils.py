@@ -178,6 +178,29 @@ def quick_filter_df(main_filename: str, eids: list) -> pd.DataFrame:
 
     return filtered_df
 
+def filter_df_columns(main_filename: str, column_keys: list, eids: list):
+    """Filters main dataset using a list of columns and a list of eids.
+
+    Keyword arguments:
+    ------------------
+    main_filename: str
+        file location of the main dataset file
+    column_keys: list
+        list of columns (datafields) to load from the main dataset
+    eids: list[str]
+        list of cohort ids
+
+    Returns:
+    --------
+    filtered_df: pd.DataFrame
+        filtered main dataframe
+
+    """
+    if 'eid' not in column_keys:
+        column_keys.append('eid')
+    main_df = pd.read_csv(main_filename, usecols=column_keys)
+    main_df_filtered = main_df.set_index('eid').iloc[main_df.set_index('eid').index.isin(eids)]
+    return main_df_filtered
 
 def write_txt_file(output_file: str, eids: list):
     with open(output_file, "w") as f:
@@ -198,7 +221,7 @@ def filter_main_df(main_filename: str, column_keys: list, values: list, eids: li
         -> pd.DataFrame:
     """Returns bulk dataframe.
 
-    Creates a bulk file where the first column corresponds to eid and the second column to datafield_array_index. The list of column_keys and values are expected to match for each entry.
+    Filters the main dataset based on a list of columns and their corresponding values.
 
     Keyword arguments:
     ------------------

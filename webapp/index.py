@@ -21,6 +21,7 @@ app.layout = dbc.Container(
         dcc.Store(id="kw_search_terms", storage_type='session'),
         dcc.Store(id="cohort_id_results", storage_type='memory'),
         dcc.Store(id="cohort_id_results_timestamp", storage_type='memory'),
+        dcc.Store(id="cohort_id_report", storage_type='session'),
         dcc.Store(id="include_fields", storage_type='session'),
         dcc.Store(id="defined_terms", storage_type='session'),
         dcc.Store(id='selected_terms_data', storage_type='memory'),

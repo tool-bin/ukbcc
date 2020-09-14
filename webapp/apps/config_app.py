@@ -188,8 +188,7 @@ def check_validity(main_path: str, gp_path: str, aux_dir_path: str, cohort_path:
 
 # Save config input
 # Changes whenever one of the config fields is altered
-@app.callback([Output("config_store", "data"),
-               Output("aux_file_modalbody", "children")],
+@app.callback(Output("config_store", "data"),
               [Input({'type': 'config_input', 'name': ALL}, "value"),
               Input({"name": "next_button_config", "type": "nav_btn"}, "n_clicks")],
               [State("config_store", "data")]
@@ -218,6 +217,57 @@ def save_config_handler(values: str, n_click: int, config_init: dict):
         raise PreventUpdate
 
     config = config_init or {}
+    # TODO: Make this readable from a config or .py file
+    # config['readcodes_path'] = "../data_files/readcodes.csv"
+    #temp name for file until specified later in the cohort search process
+    config['out_filename'] = "cohort_ids.txt"
+
+    # add paths for auxillary files
+    showcase_file = "Data_Dictionary_Showcase.csv"
+    codings_file = "Codings_Showcase.csv"
+    readcodes_file = "readcodes.csv"
+
+    if ctx.triggered and ctx.inputs_list and ctx.inputs_list[0]:
+        for field in ctx.inputs_list[0]:
+            config_id_dict = field
+            if 'value' in config_id_dict:
+                config[config_id_dict['id']['name']]=config_id_dict['value']
+        if 'aux_dir_path' in config.keys():
+            print("aux_dir_path key exists")
+            showcase_path = os.path.join(config['aux_dir_path'], showcase_file)
+            codings_path = os.path.join(config['aux_dir_path'], codings_file)
+            readcodes_path = os.path.join(config['aux_dir_path'], readcodes_file)
+            config['showcase_path'] = showcase_path
+            config['codings_path'] = codings_path
+            config['readcodes_path'] = readcodes_path
+        else:
+            print("aux dir path no provided")
+        return config
+    return config
+
+@app.callback(
+    Output("aux_file_modal", "children"),
+    [Input({"name": "next_button_config", "type": "nav_btn"}, "n_clicks")],
+    [State("config_store", "data")]
+)
+def toggle_aux_file_download(n_click: int, config: dict):
+    """Toggle the "aux_file_modal".
+
+    Keyword arguments:
+    ------------------
+    n_click: int
+        int specifying the number of times the "submit_btn" is clicked
+
+    Returns:
+    --------
+    is_open: bool
+         boolean specifying whether or not to show "aux_file_modal"
+
+    """
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        raise PreventUpdate
+
     showcase_file = "Data_Dictionary_Showcase.csv"
     codings_file = "Codings_Showcase.csv"
     readcodes_file = "readcodes.csv"
@@ -229,65 +279,26 @@ def save_config_handler(values: str, n_click: int, config_init: dict):
     aux_files = {"showcase": {"file": showcase_file, "url":showcase_url},
                  "codings": {"file": codings_file, "url": codings_url},
                  "readcodes": {"file": readcodes_file, "url": readcodes_url}}
-    # TODO: Make this readable from a config or .py file
-    # config['readcodes_path'] = "../data_files/readcodes.csv"
-    #temp name for file until specified later in the cohort search process
-    config['out_filename'] = "cohort_ids.txt"
 
-    if ctx.triggered and ctx.inputs_list and ctx.inputs_list[0]:
-        for field in ctx.inputs_list[0]:
-            config_id_dict = field
-            if 'value' in config_id_dict:
-                config[config_id_dict['id']['name']]=config_id_dict['value']
-
-        required_config = set(['main_path', 'gp_path', 'aux_dir_path', 'cohort_path'])
-        existing_config_fields=set(config.keys())
-        missing_config_fields = required_config.difference(existing_config_fields)
-        if len(missing_config_fields)!=0:
-            print("Config has not been set. Missing fields: {}".format(', '.join([str(x) for x in missing_config_fields])))
-            raise PreventUpdate
-        else:
-            aux_dir_path = config['aux_dir_path']
-            output_text = "Auxillary files exists"
-            for k,v in aux_files.items():
-                print(f"checking if {k} exists")
-                file_path = os.path.join(aux_dir_path, v["file"])
-                aux_files[k]['file_path'] = file_path
-                if not os.path.exists(file_path):
-                    wget.download(v["url"], file_path)
-                    output_text = f"Downloading auxillary files to {aux_dir_path}"
-                if os.path.exists(file_path):
-                    new_k = k + '_path'
-                    config[new_k] = file_path
-                else:
-                    # raise FileNotFoundError(f'{k} file {file_path} did not download, please check')
-                    output_text = f"{k} file did not download to {file_path}, please check."
-        return config, output_text
-    return config
-
-# @app.callback(
-#     Output("aux_file_modal", "is_open"),
-#     [Input({"name": "next_button_config", "type": "nav_btn"}, "n_clicks")],
-#     [State("aux_file_modal", "is_open")]
-# )
-# def toggle_aux_file_modal(n1: int, is_open: bool):
-#     """Toggle the "aux_file_modal".
-#
-#     Keyword arguments:
-#     ------------------
-#     n_click: int
-#         int specifying the number of times the "submit_btn" is clicked
-#
-#     Returns:
-#     --------
-#     is_open: bool
-#          boolean specifying whether or not to show "aux_file_modal"
-#
-#     """
-#     ctx = dash.callback_context
-#     if not ctx.triggered:
-#         raise PreventUpdate
-#
-#     if n1 or n2 or is_open:
-#         return not is_open
-#     return is_open
+    required_config = set(['main_path', 'gp_path', 'aux_dir_path', 'cohort_path'])
+    existing_config_fields=set(config.keys())
+    missing_config_fields = required_config.difference(existing_config_fields)
+    if len(missing_config_fields)!=0:
+        print("Config has not been set. Missing fields: {}".format(', '.join([str(x) for x in missing_config_fields])))
+        raise PreventUpdate
+    else:
+        aux_dir_path = config['aux_dir_path']
+        output_text = "Auxillary files exists"
+        for k,v in aux_files.items():
+            print(f"checking if {k} exists")
+            file_path = os.path.join(aux_dir_path, v["file"])
+            aux_files[k]['file_path'] = file_path
+            if not os.path.exists(file_path):
+                wget.download(v["url"], file_path)
+                output_text = f"Downloading auxillary files to {aux_dir_path}"
+            if os.path.exists(file_path):
+                print(f"{k} file exists")
+            else:
+                raise FileNotFoundError(f'{k} file {file_path} did not download, please check')
+                output_text = f"{k} file did not download to {file_path}, please check."
+    return output_text
