@@ -83,20 +83,6 @@ readcodes_path_input = dbc.FormGroup([
                 )
 ])
 
-# aux_dir_input = dbc.FormGroup([
-#         dbc.Label("Directory for Auxillary Files", html_for={"type": "config_input", "name": "aux_dir_path"}),
-#         dbc.Input(placeholder="Specify the directory where the auxillary files should be stored e.g /data/aux_files", type="text", id={"type": "config_input", "name": "aux_dir_path"},
-#         persistence=True),
-#         dbc.FormText("Directory path to save auxillary files to. Please see the README to learn more about the auxillary files", color="secondary"),
-#         dbc.FormFeedback(
-#                     "Path exists", valid=True
-#                 ),
-#         dbc.FormFeedback(
-#                     "Path does not exist, please check path",
-#                     valid=False,
-#                 )
-# ])
-
 cohort_path_input = dbc.FormGroup([
         dbc.Label("Directory for Output Files", html_for={"type": "config_input", "name":"cohort_path"}),
         dbc.Input(placeholder="Specify the directory to save the output files to e.g /data/ukbcc_output.", type="text", id={"type": "config_input", "name": "cohort_path"},
@@ -180,11 +166,16 @@ def check_validity(main_path: str, gp_path: str, showcase_path: str, codings_pat
         whether GP Clinical dataset path is valid
     gp_invalid: bool
         whether GP Clinical dataset path is invalid
-    aux_valid: bool
-        whether auxillary directory path is valid
-    aux_invalid: bool
-        whether auxillary directory path is invalid
-        whether showcase dataset path is invalid
+    showcase_valid: bool
+        whether showcase file path is valid
+    showcase_invalid: bool
+        whether showcase file path is invalid
+    codings_valid: bool
+        whether codings file path is valid
+    codings_invalid: bool
+        whether codings file path is invalid
+    readcodes_valid: bool
+        whether readcodes file path is valid
     cohort_valid: bool
         whether cohort directory path is valid
     cohort_invalid: bool
@@ -241,62 +232,3 @@ def save_config_handler(values: str, n_click: int, config_init: dict):
             if 'value' in config_id_dict:
                 config[config_id_dict['id']['name']]=config_id_dict['value']
         return config
-    return config
-
-@app.callback(
-    Output("aux_file_modal", "children"),
-    [Input({"name": "next_button_config", "type": "nav_btn"}, "n_clicks")],
-    [State("config_store", "data")]
-)
-def toggle_aux_file_download(n_click: int, config: dict):
-    """Toggle the "aux_file_modal".
-
-    Keyword arguments:
-    ------------------
-    n_click: int
-        int specifying the number of times the "submit_btn" is clicked
-
-    Returns:
-    --------
-    is_open: bool
-         boolean specifying whether or not to show "aux_file_modal"
-
-    """
-    ctx = dash.callback_context
-    if not ctx.triggered:
-        raise PreventUpdate
-
-    showcase_file = "Data_Dictionary_Showcase.csv"
-    codings_file = "Codings_Showcase.csv"
-    readcodes_file = "readcodes.csv"
-
-    showcase_url = "https://biobank.ctsu.ox.ac.uk/~bbdatan/Data_Dictionary_Showcase.csv"
-    readcodes_url = "https://raw.githubusercontent.com/tool-bin/ukbcc/master/data_files/readcodes.csv"
-    codings_url = "https://biobank.ctsu.ox.ac.uk/~bbdatan/Codings_Showcase.csv"
-
-    aux_files = {"showcase": {"file": showcase_file, "url":showcase_url},
-                 "codings": {"file": codings_file, "url": codings_url},
-                 "readcodes": {"file": readcodes_file, "url": readcodes_url}}
-
-    required_config = set(['main_path', 'gp_path', 'aux_dir_path', 'cohort_path'])
-    existing_config_fields=set(config.keys())
-    missing_config_fields = required_config.difference(existing_config_fields)
-    if len(missing_config_fields)!=0:
-        print("Config has not been set. Missing fields: {}".format(', '.join([str(x) for x in missing_config_fields])))
-        raise PreventUpdate
-    else:
-        aux_dir_path = config['aux_dir_path']
-        output_text = "Auxillary files exists"
-        for k,v in aux_files.items():
-            print(f"checking if {k} exists")
-            file_path = os.path.join(aux_dir_path, v["file"])
-            aux_files[k]['file_path'] = file_path
-            if not os.path.exists(file_path):
-                wget.download(v["url"], file_path)
-                output_text = f"Downloading auxillary files to {aux_dir_path}"
-            if os.path.exists(file_path):
-                print(f"{k} file exists")
-            else:
-                raise FileNotFoundError(f'{k} file {file_path} did not download, please check')
-                output_text = f"{k} file did not download to {file_path}, please check."
-    return output_text

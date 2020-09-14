@@ -42,11 +42,7 @@ def compute_stats(main_filename: str, eids: list, showcase_filename: str, coding
     else:
         write_out = True
 
-    # get relevant columns
-    # translation_df = utils.quick_filter_df(main_filename=main_filename, eids=eids)
     translation_df = utils.filter_df_columns(main_filename=main_filename, column_keys=column_keys, eids=eids)
-    # translation_df = translation_df.filter(items=column_keys)
-    print(f"shape of translation df {translation_df.shape}")
 
     # create dictionary that contains all codes
     field_dict = dict()

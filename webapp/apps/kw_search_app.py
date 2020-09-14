@@ -157,48 +157,19 @@ def search_kw_button(_: int, config: dict, search_terms: list, kw_search: dict):
     # Run the search
     # Show error if we haven't set any search terms
     if not search_terms or len(search_terms)==0:
-        print("No search terms")
         raise PreventUpdate
-    # if search_terms is None:
-    #     print('No search terms')
-    #     raise PreventUpdate
-    #
-    # if len(search_terms)==0:
-    #     print('No search terms')
-    #     raise PreventUpdate
 
     #TODO: Why is delimiter semicolon, we use comma in command-line version
     search_terms = search_terms.split(';')
-    print(f'Search terms: {search_terms}')
-
-    # aux_dir_path = config['aux_dir_path']
-    # showcase_file = "Data_Dictionary_Showcase.csv"
-    # codings_file = "Codings_Showcase.csv"
-    # readcodes_file = "readcodes.csv"
-    #
-    # files = [showcase_file, codings_file, readcodes_file]
-    # for file in files:
-    #     print(f"checking if {file} exists")
-    #     file_path = os.path.join(aux_dir_path, file)
-    #     if not os.path.exists(file_path):
-    #         output_text = html.P("Auxillary files are still downloading, please wait..")
-    #         return (output_text), (search_terms)
-    #     if os.path.exists(file_path):
-    #         print(f"Aux file {file} found")
-    #     else:
-    #         raise FileNotFoundError(f'{file} did not download to {file_path}, please check')
 
     coding_filename = config['codings_path']
     showcase_filename = config['showcase_path']
     readcode_filename = config['readcodes_path']
 
-    print('Constructing search')
     search_df = ukbcc_filter.construct_search_df(showcase_filename=showcase_filename,
                                            coding_filename=coding_filename,
                                            readcode_filename=readcode_filename)
-    print('Searching keyword')
     candidate_df = ukbcc_filter.construct_candidate_df(searchable_df=search_df, search_terms=search_terms)
-    print('Done searching keyword')
     if not search_terms:
         search_terms = []
     return (candidate_df.to_json()), (search_terms)
