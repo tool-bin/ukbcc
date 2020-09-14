@@ -37,11 +37,12 @@ tab = dbc.FormGroup(
             html.H3("Cohort Search Results", className="card-text"),
             # html.P("Please find the results of your cohort search below", className="card-text"),
             dbc.Row(id='history_results', align='center'),
-            html.Div(id='history_results_report'),
             html.Div([
                 dbc.Button("Save cohort IDs", color='success', id="save_cohort_ids_modal_btn", style={"margin": "5px"})
             ]),
             dbc.Row(dbc.Col(id='save_id_status'), align='center'),
+            html.H3("Cohort Search Results Report", className="card-text"),
+            html.Div(id='history_results_report'),
             html.Div([
                dbc.Button("Previous", color='primary', id={"name":"prev_button_results","type":"nav_btn"}, style={"margin": "5px"}),
             ]),
@@ -166,10 +167,8 @@ def return_results(results_returned: int, results: list, cohort_id_report: dict,
         output_text = dbc.Col([html.P(f"Found {len(results)} matching ids.")])
     else:
         output_text = dbc.Col([html.P("No results, please run a cohort search by navigating to the Configure tab.")])
+    stats_report = []
     if cohort_id_report:
-        # stats_tables = []
-        # stats_graphs = []
-        stats_report = []
         c = 0
         for t, g in zip(cohort_id_report['tables'], cohort_id_report['graphs']):
             print(f"iterating through report dictionary {c}")
@@ -177,65 +176,17 @@ def return_results(results_returned: int, results: list, cohort_id_report: dict,
             table = html.Div([dash_table.DataTable(
                 id=f'table_{c}',
                 columns=[{"name": i, "id": i} for i in df.columns],
+                css=[{'selector': '.dash-filter input', 'rule': 'text-align: left'}, {'selector': '.row', 'rule': 'margin: 0'}],
+                style_cell={
+                        'whiteSpace': 'normal',
+                        'height': 'auto',
+                        'text-align': 'left'
+                },
                 data=df.to_dict('records'))])
             stats_report.append(table)
             fig = plotly.io.from_json(g)
             fig_report = html.Div([dcc.Graph(id=f'graph_{c}', figure=fig)])
             stats_report.append(fig_report)
             c += 1
-
-        # for k, v in cohort_id_report.items():
-        #     print("iterating through figures")
-        #     if "tables" in k:
-        #         print("creating data table")
-        #         for t in v:
-        #             df = pd.DataFrame.from_dict(t)
-        #             table = html.Div([dash_table.DataTable(
-        #                 id=f'table_{tc}',
-        #                 columns=[{"name": i, "id": i} for i in df.columns],
-        #                 data=df.to_dict('records'))])
-        #             stats_tables.append(table)
-        #             tc += 1
-        #     elif "graphs" in k:
-        #         print("creating graph")
-        #         for g in v:
-        #             # fig = pd.DataFrame.from_dict(g)
-        #             fig = plotly.io.from_json(g)
-        #             fig_report = html.Div([dcc.Graph(id=f'graph_{gc}', figure=fig)])
-        #             gc += 1
-        #             stats_graphs.append(fig_report)
-        # stats_report = [stats_tables, stats_graphs]
-        # stats_report = zip(stats_tables, stats_graphs)
-        final = html.Div(stats_report)
-
-      # for i in range(n_clicks):
-      #       row = html.Div([
-      #               html.Div([
-      #                   dcc.Dropdown(
-      #                       id='film-{}'.format(i),
-      #                       placeholder='Film',
-      #                       options=[{'label':i, 'value':i} for i in [1, 2, 3, 4]])
-      #                   ],
-      #                   style= {
-      #                       'width':'30%',
-      #                       'display':'table-cell'
-      #                   }
-      #               ),
-      #               html.Div([
-      #                   dcc.Input(id='thickness-{}'.format(i),placeholder="Layer {}".format(i), type='text')
-      #                   ],
-      #                   style={
-      #                       'width':'67%',
-      #                       'display':'table-cell'
-      #                   }
-      #               )
-      #           ], className="row")
-      #       rows.append(row)
-      #
-      #       return html.Div([
-      #                   html.Div(list(reversed(rows))), # reversed to put base layer at 0
-      #                   ])
-
-    else:
-        stats_report = []
+    final = html.Div(stats_report)
     return [output_text], [final]
