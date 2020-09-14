@@ -154,6 +154,7 @@ def _term_iterator(id: str, defined_terms: dict):
     rand_terms = []
     rand_terms_decoded = []
     terms = pd.concat([pd.read_json(x) for x in defined_terms[id]['any']] + [pd.DataFrame()])
+    print("terms: ".format( terms))
     terms['FieldID'] = terms['FieldID'].astype(str)
     terms['Value'] = terms['Value'].astype(str)
     rand_terms = rand_terms + [tuple(x) for x in terms[['FieldID', 'Value']].values]
@@ -221,7 +222,7 @@ def submit_cohort_query(n: int, defined_terms: dict, all_terms: list,
     nones_decoded = []
     alls_decoded = []
 
-    # print("defined terms {}".format(defined_terms))
+    print("defined terms {}".format(defined_terms))
 
     if all_terms:
         for id in all_terms:
@@ -237,7 +238,7 @@ def submit_cohort_query(n: int, defined_terms: dict, all_terms: list,
 
     cohort_dictionaries = {"encoded": {"all_of": alls, "any_of": anys, "none_of": nones},
                            "decoded": {"all_of": alls_decoded, "any_of": anys_decoded, "none_of": nones_decoded}}
-
+    print('1')
     outpath = config['cohort_path']
     if kw_search_terms:
         term_outfile = os.path.join(outpath, 'search_terms.txt')

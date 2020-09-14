@@ -201,7 +201,7 @@ def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str
 			'field':['read_2','read_3'],
 			'category': ['read_2','read_3']
 			})
-	field_df_new['ukb_type'] = 'Text'
+	field_df_new['ukb_type'] = 'Categorical multiple'
 	field_df_new['sql_type'] = 'VARCHAR'
 	field_df_new['pd_type'] = 'object'
 	field_df_new['tab'] = 'str'
@@ -252,16 +252,19 @@ def query_sqlite_db(db_filename: str, cohort_criteria: dict):
 
 	#Fit each condition to a template and derive a final filter
 	def join_field_vals(fs):
-		return ['"{}" {}'.format(f,'is not NULL' if v=='nan' else '="{}"'.format(v)) for f,v in fs]
+		return ['"{}" {}'.format(f,'is not NULL' if v=='nan' else '={}'.format(v)) for f,v in fs]
 
 	print(f'generate selection criteria')
 	q={}
 
-	q['all_of'] =  " AND ".join(join_field_vals(main_criteria['all_of']))
+	#q['all_of'] =  " AND ".join(join_field_vals(main_criteria['all_of']))#field_df[field_df['field']=='read_2']['ukb_type'].iloc[0]=='Categorical multiple'
+	q['all_of'] =  " AND ".join(join_field_vals([(f'{k}_{v}', v) for k, v in main_criteria['all_of']]))
 	print('1')
-	q['any_of'] =  "({})".format(" OR ".join(join_field_vals(main_criteria['any_of'])))
+	#q['any_of'] =  "({})".format(" OR ".join(join_field_vals(main_criteria['any_of'])))
+	q['any_of'] ="({})".format(" OR ".join(join_field_vals([(f'{k}_{v}', v) for k, v in main_criteria['any_of']])))
 	print('2')
-	q['none_of'] = "NOT ({})".format(" OR ".join(join_field_vals(main_criteria['none_of'])))
+	#q['none_of'] = "NOT ({})".format(" OR ".join(join_field_vals(main_criteria['none_of'])))
+	q['none_of'] = "NOT ({})".format(" OR ".join(join_field_vals([(f'{k}_{v}', v) for k, v in main_criteria['none_of']])))
 	print('3')
 	selection_query = " AND ".join([qv for qk,qv in q.items() if main_criteria[qk]])
 
@@ -279,16 +282,18 @@ def query_sqlite_db(db_filename: str, cohort_criteria: dict):
 	print('generate column naming query')
 	#column naming query
 	field_sql_map={f:field_df[field_df['field']== f]['sql_type'].iloc[0] for f in set([q['field'] for q in query_tuples])}
-	col_names_q = ",".join([f"cast(max(distinct case when field='{f}' then value end) as {field_sql_map[f]}) as 'f{f}'" for f in set([q['field'] for q in query_tuples])])
+	#col_names_q = ",".join([f"cast(max(distinct case when field='{f}' then value end) as {field_sql_map[f]}) as 'f{f}'" for f in set([q['field'] for q in query_tuples])])
+	col_names_q = ",".join([f"max(distinct case when field='{q['field']}' and value ='{q['val']}' then value end) as 'f{q['field']}_{q['val']}'" for q in query_tuples])
+
 
 	#Make query: select * from tab where field=f1 and value=v1 or field=f2 and value=v2 ...
 	def tab_select(tab, qts):
 		if not qts :
 			return ""
 		return 'select * from {} where {}'.format(tab,
-												  " or ".join(['field="{}" and value {}'.format(
+												  " or ".join(["field='{}' and value {}".format(
 													  q['field'],
-													  'is not NULL' if q['val']=='nan' else '="{}"'.format(q['val']) ) for q in qts]) #TODO: duplicates join_field_vals
+													  'is not NULL' if q['val']=='nan' else "='{}'".format(q['val']) ) for q in qts]) #TODO: duplicates join_field_vals
 												  )
 
 	#print('derive unique tabs')
