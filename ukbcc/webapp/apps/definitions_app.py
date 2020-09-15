@@ -266,23 +266,6 @@ def toggle_new_term_modal(find_terms_click: int, return_terms_click: int, is_ope
     if('type' in calling_ctx and calling_ctx['type']=='find_terms_modal_btn'):
         term_add_state_new = calling_ctx["name"].rsplit('_', 1)
 
-        aux_dir_path = config['aux_dir_path']
-        showcase_file = "Data_Dictionary_Showcase.csv"
-        codings_file = "Codings_Showcase.csv"
-        readcodes_file = "readcodes.csv"
-
-        files = [showcase_file, codings_file, readcodes_file]
-        for file in files:
-            print(f"checking if {file} exists")
-            file_path = os.path.join(aux_dir_path, file)
-            if not os.path.exists(file_path):
-                print(f"in definitions app, {file_path} does not exist")
-                term_add_state_new = html.P("Auxillary files are still downloading, please wait..")
-            # if os.path.exists(file_path):
-            #     print(f"Aux file {file} found")
-            # else:
-            #     raise FileNotFoundError(f'{file} did not download to {file_path}, please check')
-
     if ctx.triggered[0]['value']:
         return not is_open,term_add_state_new
 

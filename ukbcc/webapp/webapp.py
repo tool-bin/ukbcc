@@ -136,7 +136,7 @@ def open_browser():
 
 def main():
     Timer(1, open_browser).start();
-    app.run_server(debug=False, use_reloader=False, dev_tools_props_check=False, dev_tools_ui=False, port=port)
+    app.run_server(debug=True, use_reloader=False, dev_tools_props_check=False, dev_tools_ui=False, port=port)
     # gunicorn -w 4 webapp:main
 
 if __name__ == '__main__':
