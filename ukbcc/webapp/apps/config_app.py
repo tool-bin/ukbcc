@@ -6,7 +6,6 @@ from dash.dependencies import Input, Output, State, MATCH, ALL
 import dash_bootstrap_components as dbc
 from dash.exceptions import PreventUpdate
 
-import wget
 import os
 import json
 import ukbcc

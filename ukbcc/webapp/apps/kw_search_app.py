@@ -9,7 +9,6 @@ import pandas as pd
 import dash_table
 from ukbcc import filter as ukbcc_filter
 import json
-import wget
 import configparser
 from dash.exceptions import PreventUpdate
 
