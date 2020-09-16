@@ -123,7 +123,7 @@ def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str
 	# Create a table for every sqltype
 	print("create table")
 	tabs=dict(zip(['str', 'int', 'real', 'datetime'], ["VARCHAR", "INTEGER", "REAL", "REAL"]))
-	tab_field=create_tab_fields_map(tabs,field_df)
+	tab_fields=create_tab_fields_map(tabs,field_df)
 
 	for tab_name,field_type in tabs.items():
 		create_long_value_table(con,tab_name=tab_name, tab_type=field_type)
