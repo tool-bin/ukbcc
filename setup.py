@@ -42,7 +42,6 @@ setup(
         'sphinx >= 3.0.3',
         'sphinx_rtd_theme >= 0.4.3',
         'nose >= 1.3.7',
-        'wget >= 3.2',
         'coverage >= 5.1',
         'pypi-publisher >= 0.0.4',
         'pandas >= 1.0.3',
