@@ -21,8 +21,8 @@ def create_type_maps():
 	ukbtypes = ['Date', 'Categorical multiple', 'Integer',
 				'Categorical single', 'Text',
 				'Time', 'Continuous', 'Compound']
-	sqltypes = ['NUMERIC', 'INTEGER', 'INTEGER',
-				'INTEGER', 'VARCHAR',
+	sqltypes = ['NUMERIC', 'VARCHAR', 'INTEGER',
+				'VARCHAR', 'VARCHAR',
 				'NUMERIC', 'REAL', 'VARCHAR']
 	#pandastypes can only have strings integers and floats in read_csv
 	pandastypes = ['object', 'object', 'Int64',
@@ -63,8 +63,8 @@ def populate_gp(con, gpc_filename, nrow, step):
 
 def create_tab_fields_map(tabs,field_df):
 	tab_fields={}
-	type_lookups=dict(zip(['str', 'int', 'real', 'datetime'], [['Text', 'Compound'],
-																   ['Categorical multiple', 'Categorical single', 'Integer'],
+	type_lookups=dict(zip(['str', 'int', 'real', 'datetime'], [['Text', 'Compound','Categorical multiple', 'Categorical single'],
+																   ['Integer'],
 															   ['Continuous'],
 															   ['Date', 'Time']]))
 	for tab_name,field_type in tabs.items():
