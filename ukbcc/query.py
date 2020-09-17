@@ -117,13 +117,11 @@ def query_databases(cohort_criteria: dict, queries: dict, main_filename: str, wr
                 continue
             if database == 'gp_clinical' and gpc_path:
                 query = queries['gp_clinical'][logicKey]
-                print("Querying gp_clinical table with: " + query)
                 pgc_eids = _query_main_data(main_filename=gpc_path, delimiter='\t', keys=['read_2', 'read_3'],
                                             query=query)
                 separate_eids[database][logicKey] = pgc_eids
             elif database == 'main':
                 query = queries['main'][logicKey]
-                print("Querying main dataset with: " + query)
                 main_eids = _query_main_data(main_filename, main_fields, query)
                 separate_eids[database][logicKey] = main_eids
 

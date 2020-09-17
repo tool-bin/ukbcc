@@ -3,6 +3,8 @@ import numpy as np
 from . import utils
 import os
 import plotly.express as px
+import plotly
+import json
 
 
 def compute_stats(main_filename: str, eids: list, showcase_filename: str, coding_filename: str,
@@ -40,9 +42,7 @@ def compute_stats(main_filename: str, eids: list, showcase_filename: str, coding
     else:
         write_out = True
 
-    # get relevant columns
-    translation_df = utils.quick_filter_df(main_filename=main_filename, eids=eids)
-    translation_df = translation_df.filter(items=column_keys)
+    translation_df = utils.filter_df_columns(main_filename=main_filename, column_keys=column_keys, eids=eids)
 
     # create dictionary that contains all codes
     field_dict = dict()
@@ -86,7 +86,7 @@ def compute_stats(main_filename: str, eids: list, showcase_filename: str, coding
         col_type = field_dict[col]['type']
         coding_scheme = field_dict[col]['coding']
 
-        print('{col}, {col_type}, {coding_scheme}')
+        # print(f'{col}, {col_type}, {coding_scheme}')
         if col_type in ['Integer', 'Categorical single']:
             translation_df[col] = translation_df[col].astype(pd.Int32Dtype()).astype(str)
         if not pd.isna(coding_scheme):
@@ -138,7 +138,7 @@ def compute_stats(main_filename: str, eids: list, showcase_filename: str, coding
     return statistics_dict, translation_df
 
 
-def create_report(translation_df: pd.DataFrame, out_path: str):
+def create_report(translation_df: pd.DataFrame, create_html: bool=False, out_path: str="."):
     """Creates html report in out_path.
 
     Keyword arguments:
@@ -146,6 +146,8 @@ def create_report(translation_df: pd.DataFrame, out_path: str):
     translation_df: pd.DataFrame
         dataframe containing only the columns that need should be displayed in the stats report. Likely the output of
         compute_stats.
+    create_html: bool
+        determines whether to convert report to html page
     out_path: str
         path where report.html gets stored.
     """
@@ -153,50 +155,60 @@ def create_report(translation_df: pd.DataFrame, out_path: str):
     if "Unnamed: 0" in translation_df.columns:
         translation_df = translation_df.drop("Unnamed: 0", axis=1)
 
-    divs = translation_df.describe(include='all').to_html(classes='mystyle')
+    divs = translation_df.describe(include='all')
+    tables = []
+    graphs = []
+
+    tables.append(divs)
 
     for col in translation_df.columns:
         div_title = f"""<h2 style="font-family: sans-serif">{col}</h2>"""
         if np.issubdtype(translation_df[col].dtype, np.number):
-            div_table = pd.DataFrame(pd.to_numeric(translation_df[col], errors='coerce').describe()).to_html(
-                classes='mystyle')
+            div_table = pd.DataFrame(pd.to_numeric(translation_df[col], errors='coerce').describe())
         elif np.issubdtype(translation_df[col].dtype, np.datetime64):
-            div_table = pd.DataFrame(pd.to_datetime(translation_df[col], errors='coerce').describe()).to_html(
-                classes='mystyle')
+            div_table = pd.DataFrame(pd.to_datetime(translation_df[col], errors='coerce').describe())
         else:
-            div_table = pd.DataFrame(translation_df[col].describe()).to_html(classes='mystyle')
+            div_table = pd.DataFrame(translation_df[col].describe())
         div_plot = px.bar(translation_df[col].value_counts(normalize=False).reset_index(), x="index", y=col,
-                          title=col).to_html()
+                          title=col)
+        tables.append(div_table)
+        graphs.append(div_plot)
 
-        divs = divs + div_title + div_plot + div_table
+        if create_html:
+            divs_html = divs.to_html(classes='mystyle')
+            div_table_html = div_table.to_html(classes='mystyle')
+            div_plot_html = div_plot.to_html(classes='mystyle')
 
-    html = """\
-    <html>
-        <style>
-            table {{
-                border: 0
-            }}
+            divs_html = divs_html + div_title + div_plot_html + div_table_html
 
-            .mystyle {{
-                font-size: 11pt;
-                font-family: Arial;
-                border-collapse: collapse;
-                border: white;
-            }}
+    if create_html:
+        html = """\
+        <html>
+            <style>
+                table {{
+                    border: 0
+                }}
 
-            .mystyle td, th {{
-                padding: 5px;
-            }}
+                .mystyle {{
+                    font-size: 11pt;
+                    font-family: Arial;
+                    border-collapse: collapse;
+                    border: white;
+                }}
 
-            .mystyle tr:nth-child(even) {{
-                background: #E3E3E3;
-            }}
-            .mystyle tr:hover {{
-                background: silver;
-            }}
-        </style>
-        <head>
-            <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+                .mystyle td, th {{
+                    padding: 5px;
+                }}
+
+                .mystyle tr:nth-child(even) {{
+                    background: #E3E3E3;
+                }}
+                .mystyle tr:hover {{
+                    background: silver;
+                }}
+            </style>
+            <head>
+                <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
         </head>
         <body>
             <h1 style="font-family: sans-serif">Summary Statistics</h1>
@@ -205,7 +217,14 @@ def create_report(translation_df: pd.DataFrame, out_path: str):
             </div>
         </body>
     </html>
-    """.format(divs)
+    """.format(divs_html)
 
-    with open(os.path.join(out_path, 'report.html'), 'w') as f:
-        f.write(html)
+        with open(os.path.join(out_path, 'report.html'), 'w') as f:
+            f.write(html)
+
+    # figures = [divs.to_dict(), div_plot.to_dict(), div_table.to_dict()]
+    figures_dict = {"tables": [table.to_dict() for table in tables],
+                    "graphs": [plotly.io.to_json(fig) for fig in graphs]}
+                    # "graphs": [json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder) for fig in graphs]}
+
+    return figures_dict

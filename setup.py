@@ -29,16 +29,14 @@ setup(
         'Natural Language :: English',
         'Intended Audience :: Science/Research'
     ],
-    scripts=['bin/ukbcc'],
-    entry_points={
-        'console_scripts': [
-            'ukbcc_alt = ukbcc.main:main',
-        ],
-    },
+    scripts=['bin/ukbcc_cli', 'bin/ukbcc'],
+    # entry_points={
+    #     'console_scripts': [
+    #         'ukbcc_alt = ukbcc.main:main',
+    #     ],
+    # },
     keywords='',
     packages=find_packages(),
-    include_package_data=True,
-    package_data = {'': ['data_files/readcodes.csv']},
     zip_safe=False,
     install_requires=[
         'sphinx >= 3.0.3',
@@ -49,10 +47,11 @@ setup(
         'pandas >= 1.0.3',
         'requests >= 2.23.0',
         'numpy >= 1.18',
+        'tableone >= 0.7.8',
         'dash >= 1.13.4',
-        'dash-bootstrap-components >= 0.10.3', 
-        'progressbar2 >= 3.0' 
-        
+        'dash-bootstrap-components >= 0.10.3',
+        'progressbar2 >= 3.0'
+
     ],
     python_requires='>=3.6'
 )

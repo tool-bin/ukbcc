@@ -1,5 +1,5 @@
 import dash
-from app import app
+from ukbcc.webapp.app import app
 
 import dash_html_components as html
 import dash_bootstrap_components as dbc
@@ -7,13 +7,14 @@ from dash.dependencies import Input, Output, State, MATCH, ALL
 import dash_table
 import pandas as pd
 import json
-from apps import kw_search_app
+from . import kw_search_app
 from datetime import datetime
 from dash.exceptions import PreventUpdate
 from collections import OrderedDict
 
 import random
 import string
+import os
 
 
 def get_random_string(length):
@@ -114,7 +115,6 @@ def alter_defined_term(n_clicks: int, modified_timestamp: int, defined_terms: di
 
     """
     ctx = dash.callback_context
-    print('alter_defined_term()- modified_timestamp {}'.format(modified_timestamp))
 
     if (not ctx.triggered):
         raise PreventUpdate
@@ -123,13 +123,10 @@ def alter_defined_term(n_clicks: int, modified_timestamp: int, defined_terms: di
         raise PreventUpdate
 
     defined_terms = defined_terms or OrderedDict()
-    print("alter_defined_term()-defined_terms: {}".format(defined_terms))
 
     if ctx.triggered[0]['prop_id'] == 'selected_terms_data.modified_timestamp':
         if select_row_data[0] is None:
-            print( "alter_defined_term()- nothing to update")
             raise PreventUpdate
-        print('alter_defined_term()- Append terms')
         rows, derived_virtual_selected_rows = select_row_data
 
         if derived_virtual_selected_rows is None:
@@ -143,14 +140,12 @@ def alter_defined_term(n_clicks: int, modified_timestamp: int, defined_terms: di
 
     #If we aren't related to a modal, we're a delete button of a defined term
     if(calling_ctx["modal_ctrl"] == 'none' and calling_ctx['name']!='return_rows'):
-        print('alter_defined_term()- Delete')
         calling_id, calling_action = calling_ctx["name"].rsplit('_', 1)
         del defined_terms[calling_id]
         return defined_terms
 
     # If we are adding a new term
     elif (calling_ctx["modal_ctrl"] == 'new_term' and calling_ctx["name"] == 'submit'):
-        print('alter_defined_term()- Creating term')
         defined_terms[get_random_string(16)]={'name':name, 'any':[]}
     return defined_terms
 
@@ -183,7 +178,6 @@ def populate_defined_terms(defined_terms_timestamp: int, defined_terms: dict):
         n_any_terms = len(defined_terms[id]['any'])
 
         tab_any_terms = pd.concat([pd.read_json(x) for x in defined_terms[id]['any']]+[pd.DataFrame()])
-        print("populate_defined_terms - tab_any_terms: {}".format(tab_any_terms))
         term_count_str = "{} terms".format(len(tab_any_terms.index))  # , n_all_terms)
 
         terms_tab=dbc.Table.from_dataframe(tab_any_terms, striped=True, bordered=True, hover=True)
@@ -231,9 +225,10 @@ def toggle_collapse(value: int, is_open: bool):
     [Input({'type': 'find_terms_modal_btn', 'name': ALL}, "n_clicks"),
      Input({'modal_ctrl':ALL, 'name':'return_rows'}, "n_clicks")],
     [State("find_terms_modal", "is_open"),
-     State("search_logic_state", "children")],
+     State("search_logic_state", "children"),
+     State("config_store", "data")],
 )
-def toggle_new_term_modal(find_terms_click: int, return_terms_click: int, is_open: bool, term_add_state: bool):
+def toggle_new_term_modal(find_terms_click: int, return_terms_click: int, is_open: bool, term_add_state: bool, config: dict):
     """Toggle new terms modal.
 
     Keyword arguments:

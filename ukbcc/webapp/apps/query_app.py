@@ -1,5 +1,5 @@
 import dash
-from app import app
+from ukbcc.webapp.app import app
 
 import dash_html_components as html
 import dash_bootstrap_components as dbc
@@ -162,8 +162,10 @@ def _term_iterator(id: str, defined_terms: dict):
 
 #Submit a query
 @app.callback(
+    # [Output("query_results", "children"),
     [Output("cohort_id_results", "data"),
     Output("cohort_id_results_timestamp", "data")],
+    # Output("cohort_id_report", "data")],
     [Input("cohort_search_submit1", "n_clicks")],
     [State("defined_terms", "data"),
      State({"index":0, "name":"query_term_dropdown"}, 'value'),
@@ -269,6 +271,12 @@ def submit_cohort_query(n: int, defined_terms: dict, all_terms: list,
 
     ids=res['eid'].to_list()
     print('\nfinished query_databases {}'.format(print_time()))
+    print('\n generating report {}'.format(print_time()))
+    # stats_dict, translation_df = stats.compute_stats(main_filename=config['main_path'],
+    #                                            eids=ids,
+    #                                            showcase_filename=config['showcase_path'],
+    #                                            coding_filename=config['codings_path'])
+    # stats_report_dict = stats.create_report(translation_df)
 
     footer = dbc.ModalFooter(dbc.Button("Close", id="close_run_query_btn_new", className="ml-auto", style={"margin": "5px"}))
     output_text = html.P(ret)

@@ -6,7 +6,7 @@ authors: Isabell Kiral, Nathalie Willems, Benjamin Goudey
 Overview
 --------
 
-Tool for curation of UK Biobank data to generate cohorts. The tool can filter the main and associated datasets (e.g GP Clinical data) based on search terms provided by the user. It can be used interactively through a command line interface, or imported as a module and integrated into a broader pipeline. Additional functionality, such as automatically downloading large data files (bulk data) is also supported.
+Tool for curation of UK Biobank data to generate cohorts. The tool can filter the main and associated datasets (e.g general practioner clinical data) based on search terms provided by the user. It can be used interactively through a web-based interface, a command line interface, or imported as a module and integrated into a broader pipeline. Additional functionality, such as automatically downloading large data files (bulk data) is also supported.
 
 
 Known Issues
@@ -46,23 +46,24 @@ Or clone the repo:
     $ git clone https://github.com/tool-bin/ukbcc.git
     $ python3 setup.py install
 
-NB: We strongly recommend using a virtual environment when installing this package and its dependencies. Please see this link for further information: https://docs.python.org/3/tutorial/venv.html
+**NB**: We strongly recommend using a virtual environment when installing this package and its dependencies. Please see this link for further information: https://docs.python.org/3/tutorial/venv.html
 
 Usage
 --------
 
 There are two ways to use with this module:
-1. Running the module from the command line and leveraging the *`interactive mode`* features to dynamically generate cohorts on the fly.
+1. Running the module from the command line and leveraging the *`interactive mode`* features to dynamically generate cohorts.
 2. Importing the module into an existing pipeline, and using the functions developed to interact with the UKBB databases.
 
-There is more detailed information in [our paper](https://www.biorxiv.org/content/10.1101/2020.07.12.199810v1), if you're interested.
+There is more detailed information in [our paper](https://www.biorxiv.org/content/10.1101/2020.07.12.199810v1).
 
 ### Downloads
 In order to make full use of this module, you will need to download the following files:
-* `main_dataset.csv`: The main dataset as downloaded from UK Biobank. Please follow UKBB instructions to obtain this file.
-* `showcase.csv` and `codings.csv`: Files that can be found in the data_files directory within this repo in their current version. A function is provided to download potentially updated files from the UKBB server. These files contain descriptions of columns in the main dataset as well as associated codes.
-* `readcodes.csv`: A file linking readcodes to descriptions for the 'gp_clinical' table in the UKBB data portal. This file can be found in the data_files directory within this repo.
-* `gp_clinical.txt`: The full general practioner (GP) clinical data that forms part of the primary care dataset. The full table (gp_clinical) can be downloaded from the UKBB data portal website. Downloading this file is optional, but will provide the most comprehensive search for participants to generate cohorts. Instructions are provided below.
+* `main_dataset.csv`: The main dataset as downloaded from UK Biobank. Please follow UKBB instructions to obtain this file. Utilities to download this file can be found here: http://biobank.ctsu.ox.ac.uk/crystal/download.cgi. **Please note that the module assumes that the main dataset is generated as a CSV file!**
+* `Showcase_Data_Dictionary.csv`: This file encodes all the different datafields and their values within the UK Biobank Showcase. The file can be downloaded here:  https://biobank.ctsu.ox.ac.uk/~bbdatan/Data_Dictionary_Showcase.csv.
+* `Showcase_Codings.csv`: This file contains all the coding schemes used in the UK Biobank Showcase. This file can be downloaded here: https://biobank.ctsu.ox.ac.uk/~bbdatan/Codings_Showcase.csv.
+* `readcodes.csv`: A file linking readcodes to descriptions for the GP Clinical data, available from the UKBB data portal. This file can be found in the data_files directory within this repo. A link to download this file is given here: https://raw.githubusercontent.com/tool-bin/ukbcc/master/data_files/readcodes.csv.
+* `gp_clinical.txt`: The full general practioner (GP) clinical data that forms part of the primary care dataset. The full table (gp_clinical) can be downloaded from the UKBB data portal website. Instructions to download this table are provided below.
 <!-- * [`lookupCodeDescriptions.csv`](https://github.ibm.com/aur-genomics/modellingScripts/blob/master/isabell/cohortPipeline/lookupCodeDescriptions.csv): A file that maps descriptions to codes for the following formats: ICD9, ICD10, read_2, read_3.
 * [`coding19.tsv`](https://github.ibm.com/aur-genomics/modellingScripts/blob/master/isabell/cohortPipeline/coding19.tsv): A file that maps the `node_id`s from the main dataset to ICD10 codes.    -->
 
@@ -86,20 +87,22 @@ There are two ways to run *`interactive mode`*:
 
 ### Web-based interface
 
-Currently, to use the web-based interface, you will need to clone this repository (ui branch) and build the package locally.
+In order to use the web-based interface, please run the following command from the command line:
 
-In order to run the web-based interface, please run the following commands:
-1. Navigate to the **"webapp"** folder
-2. Execute:
+    $ ukbcc
 
-    $ python index.py
+The above command will setup the web-based interface and generates a web address where this can be accessed.
 
-3. The above command will setup the web-based interface and generates a web address where this can be accessed:
+Follow the instructions on the website to proceed with cohort generation.
 
-![Alt text](images/web_setup.png?raw=true "Start web-interface")
+**NB**: The web-based interface is built using Plotly Dash, which uses Flask in order to serve the web application. The Flask library uses the default werkzeug development server, which has not been tested for security or performance. Consequently, you will see the following warning when running this command in the command line:
 
-4. Paste the generated web address into a web browser.
-5. Follow the web page instructions to use the tool.
+  "Warning: This is a development server. Do not use app.run_server
+   in production, use a production WSGI server like gunicorn instead."
+
+We recommend using a web-server if you would like to run the UKBCC tool in a production environment. Popular choices include:
+- gunicorn: https://gunicorn.org/
+- uWSIG: https://uwsgi-docs.readthedocs.io/en/latest/
 
 
 ### Command-line interface
@@ -108,7 +111,7 @@ In order to use the command-line interface functionality, the module can simple 
 
 1. To start the configuration process, type:
 ```shell
-$ ukbcc
+$ ukbcc_cli
 ```
 <!-- If interaction with the portal is not necessary because all files are local, no configuration file is necessary.
 Use the `portal_access` flag and provide the location and filename of the gp_clinical dataset:

@@ -1,5 +1,5 @@
 import dash
-from app import app
+from ukbcc.webapp.app import app
 
 import dash_html_components as html
 from dash.dependencies import Input, Output, State, MATCH, ALL
@@ -9,6 +9,7 @@ import pandas as pd
 import dash_table
 from ukbcc import filter as ukbcc_filter
 import json
+import configparser
 from dash.exceptions import PreventUpdate
 
 #Define form inputs
@@ -138,11 +139,11 @@ def search_kw_button(_: int, config: dict, search_terms: list, kw_search: dict):
 
     #If we haven't clicked submit and we have a previous value, return the previous value
     if len(ctx.triggered) and ctx.triggered[0]['value'] is None and kw_search is not None:
-        return kw_search
+        return (kw_search), ()
 
     #Show error if we haven't set any config
     if not config:
-        return "Config has not been set. Missing all fields"
+        return ("Config has not been set. Missing all fields"), ()
 
     #Show error if we are missing fields
     required_config = set(['db_path', 'gp_path', 'readcodes_path', 'codings_path', 'showcase_path'])
@@ -155,43 +156,31 @@ def search_kw_button(_: int, config: dict, search_terms: list, kw_search: dict):
     # Run the search
     # Show error if we haven't set any search terms
     if not search_terms or len(search_terms)==0:
-        print("No search terms")
         raise PreventUpdate
-    # if search_terms is None:
-    #     print('No search terms')
-    #     raise PreventUpdate
-    #
-    # if len(search_terms)==0:
-    #     print('No search terms')
-    #     raise PreventUpdate
 
     #TODO: Why is delimiter semicolon, we use comma in command-line version
     search_terms = search_terms.split(';')
-    print(f'Search terms: {search_terms}')
 
     coding_filename = config['codings_path']
     showcase_filename = config['showcase_path']
     readcode_filename = config['readcodes_path']
 
-    print('Constructing search')
     search_df = ukbcc_filter.construct_search_df(showcase_filename=showcase_filename,
                                            coding_filename=coding_filename,
                                            readcode_filename=readcode_filename)
-    print('Searching keyword')
     candidate_df = ukbcc_filter.construct_candidate_df(searchable_df=search_df, search_terms=search_terms)
-    print('Done searching keyword')
     if not search_terms:
         search_terms = []
     return (candidate_df.to_json()), (search_terms)
 
 # Show candidate search terms
-@app.callback([Output('kw_search_output_select', 'children'),
-               Output('kw_search_output', 'children'),
-               Output('find_terms_modalfooter', 'children')],
-               # Output("kw_fields_output", "children")],
-             [Input('kw_search', 'modified_timestamp')],
-              [State('kw_search', 'data')]
-            )
+@app.callback(
+    [Output('kw_search_output_select', 'children'),
+    Output('kw_search_output', 'children'),
+    Output('find_terms_modalfooter', 'children')],
+   [Input('kw_search', 'modified_timestamp')],
+   [State('kw_search', 'data')]
+)
 def show_candidates(ts, candidate_df_json):
     if not ts:
         raise PreventUpdate
@@ -220,7 +209,7 @@ def show_candidates(ts, candidate_df_json):
                         style_cell_conditional = [
                                 {'if': {'column_id':'Value'}, 'width': '50px'}
                         ],
-                        columns=[{"name": i, "id": i} for i in candidate_df.columns],
+                            columns=[{"name": i, "id": i} for i in candidate_df.columns],
                         data=candidate_df.to_dict('records'),
                         row_selectable='multi',
                         filter_action='native',
