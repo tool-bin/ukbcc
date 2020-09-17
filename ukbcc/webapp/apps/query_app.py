@@ -1,5 +1,6 @@
 import dash
-from ukbcc.webapp.app import app
+# from ukbcc.webapp.app import app
+from app import app
 
 import dash_html_components as html
 import dash_bootstrap_components as dbc
@@ -123,7 +124,6 @@ def set_querable_terms(active_tab: str, defined_terms: dict):
     """
     # If we have no defined terms, sop this callback
     if (defined_terms is None):
-        print(defined_terms)
         raise PreventUpdate
 
     opts=[{'label': val['name'][0], 'value': key} for key,val in defined_terms.items()]
@@ -204,7 +204,6 @@ def submit_cohort_query(n: int, defined_terms: dict, all_terms: list,
         contains IDs returned from search
 
     """
-    print('\nsubmit_cohort_query()')
     pp = pprint.PrettyPrinter(indent=4)
 
     ctx = dash.callback_context
