@@ -108,6 +108,7 @@ def query_databases(cohort_criteria: dict, queries: dict, main_filename: str, wr
             if entry[0] not in ['read_2', 'read_3']:
                 main_fields.append(entry[0])
 
+
     for database in queries.keys():
         if len(queries[database]) == 0:
             print("No queries found for database: {}".format(database))
@@ -203,6 +204,9 @@ def _query_main_data(main_filename: str, keys: list, query: str, delimiter: str=
     main_df = utils.get_columns(main_filename, keys, delimiter=delimiter).set_index('eid')
     main_df.columns = "t" + main_df.columns.str.replace('-', '_')
     main_df.columns = main_df.columns.str.replace('.', '_')
+    print("dat: {}".format(main_df))
+    print("cols: {}".format(main_df.columns))
+    print("query: {}".format(query))
     filtered_eids = main_df.query(query)#.reset_index()['eid'].tolist()
     if return_df:
         return filtered_eids.reset_index()
