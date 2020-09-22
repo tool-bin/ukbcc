@@ -130,16 +130,15 @@ def set_querable_terms(active_tab: str, defined_terms: dict):
 
 # def _term_iterator(id: str, defined_terms: dict):
 def _term_iterator(selterms: dict):
-    """Creates list of tuples from defined_terms dictionary.
+    """Creates list of tuples from selterms dictionary.
 
-    Iterates through field, value combinations within defined_terms[id]['any']
+    Iterates through field, value combinations within selterms dictionary
+    (created from the definted_terms[id]['any_of'] key)
     and appends them to a list as tuples of (key, value)
 
     Keyword arguments:
     ------------------
-    id: str
-        id to use as key for defined_terms dict
-    defined_terms: dict
+    selterms: dict
         dictionary returned by alter_defined_term function in "definitions_app.py"
 
     Returns:
@@ -160,6 +159,27 @@ def _term_iterator(selterms: dict):
     return rand_terms, rand_terms_decoded
 
 def _create_conditional_logic_list(logic_terms: list, defined_terms: dict):
+    """Combines list of tuples created from defined_terms dictionary.
+
+    Iterates through the phenotypes selected from the "all of", "any of", and/or
+    "none of" dropdowns and merges the list of field, value tuples to a single list
+
+    Keyword arguments:
+    ------------------
+    logic_terms: list
+        list of ids referencing the phenotypes created in the "definition_app.py"
+        ids are keys in a dictionary containing all the definted terms
+    defined_terms: dict
+        dictionary returned by alter_defined_term function in "definitions_app.py"
+
+    Returns:
+    --------
+    term_final: list
+        list of tuples of encoded field, value combinations
+    term_decoded_final: list
+        list of tuples of decoded field, value combinations
+
+    """
     temp = []
     decoded_temp = []
     for id in logic_terms:
