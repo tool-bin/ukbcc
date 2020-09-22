@@ -235,7 +235,6 @@ def submit_cohort_query(n: int, defined_terms: dict, all_terms: list,
             terms_encoded, terms_decoded = _create_conditional_logic_list(selected_terms, defined_terms)
             cohort_dictionaries["encoded"][logic] = terms_encoded
             cohort_dictionaries["decoded"][logic] = terms_decoded
-    print(f"cohort dictionary {cohort_dictionaries}")
 
     outpath = config['cohort_path']
     if kw_search_terms:
