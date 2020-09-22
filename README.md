@@ -60,9 +60,12 @@ There is more detailed information in [our paper](https://www.biorxiv.org/conten
 ### Downloads
 In order to make full use of this module, you will need to download the following files:
 * `main_dataset.csv`: The main dataset as downloaded from UK Biobank. Please follow UKBB instructions to obtain this file. Utilities to download this file can be found here: http://biobank.ctsu.ox.ac.uk/crystal/download.cgi. **Please note that the module assumes that the main dataset is generated as a CSV file!**
-* `Showcase_Data_Dictionary.csv`: This file encodes all the different datafields and their values within the UK Biobank Showcase. The file can be downloaded here:  https://biobank.ctsu.ox.ac.uk/~bbdatan/Data_Dictionary_Showcase.csv.
-* `Showcase_Codings.csv`: This file contains all the coding schemes used in the UK Biobank Showcase. This file can be downloaded here: https://biobank.ctsu.ox.ac.uk/~bbdatan/Codings_Showcase.csv.
-* `readcodes.csv`: A file linking readcodes to descriptions for the GP Clinical data, available from the UKBB data portal. This file can be found in the data_files directory within this repo. A link to download this file is given here: https://raw.githubusercontent.com/tool-bin/ukbcc/master/data_files/readcodes.csv.
+* `Showcase_Data_Dictionary.csv`: This file encodes all the different datafields and their values within the UK Biobank Showcase. The file can be downloaded here:  https://raw.githubusercontent.com/tool-bin/ukbcc/master/data_files/showcase.csv
+<!-- https://biobank.ctsu.ox.ac.uk/~bbdatan/Data_Dictionary_Showcase.csv. -->
+* `Showcase_Codings.csv`: This file contains all the coding schemes used in the UK Biobank Showcase. This file can be downloaded here: https://raw.githubusercontent.com/tool-bin/ukbcc/master/data_files/codings.csv
+<!--https://biobank.ctsu.ox.ac.uk/~bbdatan/Codings_Showcase.csv.-->
+* `readcodes.csv`: A file linking readcodes to descriptions for the GP Clinical data, available from the UKBB data portal. This file can be found in the data_files directory within this repo. A link to download this file is given here: https://raw.githubusercontent.com/tool-bin/ukbcc/master/data_files/readcodes.csv
+<!--https://raw.githubusercontent.com/tool-bin/ukbcc/master/data_files/readcodes.csv.-->
 * `gp_clinical.txt`: The full general practioner (GP) clinical data that forms part of the primary care dataset. The full table (gp_clinical) can be downloaded from the UKBB data portal website. Instructions to download this table are provided below.
 <!-- * [`lookupCodeDescriptions.csv`](https://github.ibm.com/aur-genomics/modellingScripts/blob/master/isabell/cohortPipeline/lookupCodeDescriptions.csv): A file that maps descriptions to codes for the following formats: ICD9, ICD10, read_2, read_3.
 * [`coding19.tsv`](https://github.ibm.com/aur-genomics/modellingScripts/blob/master/isabell/cohortPipeline/coding19.tsv): A file that maps the `node_id`s from the main dataset to ICD10 codes.    -->
