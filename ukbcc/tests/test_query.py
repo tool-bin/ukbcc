@@ -179,6 +179,22 @@ def test_missing_fields(main_csv, gp_csv):
     exp_ids = set([])
     assert exp_ids == set(ids)
 
+#What do we do when we query nan?
+def test_missing_fields(main_csv, gp_csv):
+    cohort_criteria = {'all_of': [('6070', "nan")], 'any_of': [], 'none_of': []}
+    gen_query = query.create_queries(cohort_criteria,
+                                   main_filename=main_csv,
+                                   gpc_path=gp_csv)
+    ids = query.query_databases(cohort_criteria=cohort_criteria,
+                                queries=gen_query, main_filename=main_csv,
+                                write_dir=None, gpc_path=gp_csv,
+                                out_filename=None, write=False)
+    
+    exp_ids = set([])
+    assert exp_ids == set(ids)
+
+
+#Can we do a query on read2 at all?
 def test_all_gp_clinical_read2(main_csv, gp_csv): 
     cohort_criteria = {'all_of': [('read_2', "229..")], 'any_of': [], 'none_of': []}
     gen_query = query.create_queries(cohort_criteria,
@@ -191,6 +207,7 @@ def test_all_gp_clinical_read2(main_csv, gp_csv):
     
     exp_ids = set(["1037918"])
     assert exp_ids == set(ids)
+
 
 #Can we read read2 when multiple entries per person
 def test_all_gp_clinical_read_2_multiple(main_csv, gp_csv): 
