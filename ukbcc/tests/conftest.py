@@ -7,21 +7,22 @@ import re
 
 @pytest.fixture(scope='module')
 def main_csv(tmpdir_factory):
-    test_main_dat = ('"21017-0.0"	"41270-0.1"	"6070-0.0"	"6119-0.0"	"6148-0.1"	"6148-0.2"	"eid"\n'
-'"21017_0_0"	"E119"	"2"	""	"4"	"5"	"1037918"\n'
-'"21017_0_0"	"Block H40-H42"	"1"	""	""	""	"1041796"\n'
-'"21017_0_0"	"Block H40-H42"	""	"3"	"2"	"4"	"1033149"\n'
-'"21017_0_0"	"Z138"	"1"	"3"	"5"	"6"	"1037058"\n'
-'""	"H048"	"1"	"1"	""	""	"1024938"\n'
-'""	"E148"	"1"	""	"4"	"6"	"1016017"\n'
-'"21017_0_0"	"D226"	""	"3"	"4"	"6"	"1033388"\n'
-'""	"H269"	""	"3"	"6"	""	"1031625"\n'
-'"21017_0_0"	"D414"	"1"	"1"	"2"	""	"1038882"\n'
-'""	"H402"	"1"	""	"4"	""	"1030520"\n'
-'""	"H264"	"1"	"3"	"4"	""	"1003670"\n'
-'"21017_0_0"	"R103"	"1"	""	"5"	""	"1027017"\n'
-'""	"A498"	""	""	""	"6"	"1031595"\n'
-'"21017_0_0"	"H400"	""	""	""	""	"1008947"\n')
+    test_main_dat = (
+'"eid"	"21017-0.0"	"41270-0.1"	"6070-0.0"	"6119-0.0"	"6148-0.1"	"6148-0.2"\n'
+'"1037918"	"21017_0_0"	"E119"	"2"	""	"4"	"5"\n'
+'"1041796"	"21017_0_0"	"Block H40-H42"	"1"	""	""	""\n'
+'"1033149"	"21017_0_0"	"Block H40-H42"	""	"3"	"2"	"4"\n'
+'"1037058"	"21017_0_0"	"Z138"	"1"	"3"	"5"	"6"\n'
+'"1024938"	""	"H048"	"1"	"1"	""	""\n'
+'"1016017"	""	"E148"	"1"	""	"4"	"6"\n'
+'"1033388"	"21017_0_0"	"D226"	""	"3"	"4"	"6"\n'
+'"1031625"	""	"H269"	""	"3"	"6"	""\n'
+'"1038882"	"21017_0_0"	"D414"	"1"	"1"	"2"	""\n'
+'"1030520"	""	"H402"	"1"	""	"4"	""\n'
+'"1003670"	""	"H264"	"1"	"3"	"4"	""\n'
+'"1027017"	"21017_0_0"	"R103"	"1"	""	"5"	""\n'
+'"1031595"	""	"A498"	""	""	""	"6"\n'
+'"1008947"	"21017_0_0"	"H400"	""	""	""	""\n')
     test_main_dat = re.sub("\t+", ",", test_main_dat)
     #test_main_df = pd.read_csv(StringIO(test_main_dat), delimiter="[ ]+", quotechar="'")
     fn = tmpdir_factory.mktemp("data").join("ukb.csv")
@@ -44,6 +45,28 @@ def gp_csv(tmpdir_factory):
     fn = tmpdir_factory.mktemp("data").join("gp.csv")
     #Tabs write out strangely so we swap tabs for commas when outputting
     fn.write(re.sub(',','\t', re.sub("\t+", "",test_gp_dat)))
+    print(fn)
+    return str(fn)
+
+
+
+@pytest.fixture(scope='module')
+def showcase_csv(tmpdir_factory):
+    test_showcase_dat = (   
+"Path,Category,FieldID,Field,Participants,Items,Stability,ValueType,Units,ItemType,Strata,Sexed,Instances,Array,Coding,Notes,Link\n"
+"OCT,100016,6070,OCT measured (right),,98849,Complete,Categorical single,,Data,Primary,Unisex,2,1,100274,n1,http://biobank.ctsu.ox.ac.uk/showcase/field.cgi?id=6070\n"
+"EYE,100041,6119,Which eye(s) affected by glaucoma,,3970,Complete,Categorical single,,Data,Primary,Unisex,4,1,100515,n2,http://biobank.ctsu.ox.ac.uk/showcase/field.cgi?id=6119\n"
+"EYE,100041,6148,Eye problems/disorders,,252799,Complete,Categorical multiple,,Data,Primary,Unisex,4,5,100523,n3,http://biobank.ctsu.ox.ac.uk/showcase/field.cgi?id=6148\n"
+"OCT,100016,21017,OCT image slices (left),,87595,Complete,Text,,Bulk,Primary,Unisex,2,2,,n4,http://biobank.ctsu.ox.ac.uk/showcase/field.cgi?id=21017\n"
+"SummaryDx,2002,41270,Diagnoses - ICD10,,4131361,Ongoing,Categorical multiple,,Data,Primary,Unisex,1,213,19,n5,http://biobank.ctsu.ox.ac.uk/showcase/field.cgi?id=41270\n"
+"Genomics > HLA,100035,22182,HLA imputation values,488265,488265,Accruing,Compound,,Data,Derived,Unisex,1,1,5,n6,http://biobank.ctsu.ox.ac.uk/showcase/field.cgi?id=22182\n"
+"R > R,100024,21003,Age when attended assessment centre,502506,573525,Complete,Integer,years,Data,Derived,Unisex,4,1,,Derived,http://biobank.ctsu.ox.ac.uk/showcase/field.cgi?id=21003\n"
+"Prospective memory,100031,4286,Time when initial screen shown,211307,239452,Complete,Time,,Data,Primary,Unisex,4,1,,,http://biobank.ctsu.ox.ac.uk/showcase/field.cgi?id=4286\n"
+"Symbol digit substitution,122,20137,When symbol digit substitution test completed,120183,120183,Complete,Time,,Data,Primary,Unisex,1,1,,Time sybol complete,http://biobank.ctsu.ox.ac.uk/showcase/field.cgi?id=20137\n"
+"Reception,100024,53,Date of attending assessment centre,502506,573525,Complete,Date,,Data,Primary,Unisex,4,1,,Date attend assessment,http://biobank.ctsu.ox.ac.uk/showcase/field.cgi?id=53\n"
+        )
+    fn = tmpdir_factory.mktemp("data").join("showcase.csv")
+    fn.write(test_showcase_dat)
     print(fn)
     return str(fn)
 

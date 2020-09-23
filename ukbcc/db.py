@@ -6,15 +6,12 @@ import re
 import numpy as np
 
 # Create a table for a given category ('cat')
-def create_long_value_table(con, tab_name, tab_type):
+def create_long_value_table_query(tab_name, tab_type):
 	field_cols = ["eid", "field", "time", "value"]
 	field_col_types = ["INTEGER",  "VARCHAR", "INTEGER", tab_type]
 	cols = ','.join(map(' '.join, zip(field_cols, field_col_types)))
-	x = con.execute(f"DROP TABLE IF EXISTS {tab_name};")
 	cmd = f"CREATE TABLE {tab_name} ({cols}) ;"
-	print(cmd)
-	x = con.execute(cmd)
-	con.commit()
+	return(cmd)
 
 
 def create_type_maps():
@@ -72,7 +69,12 @@ def create_tab_fields_map(tabs,field_df):
 
 	return (tab_fields)
 
-def create_field_df(main_df, data_dict, ukbtype_sqltype_map, ukbtype_pandastypes_map):
+
+def create_field_df(main_df, showcase_file):
+
+	data_dict = pd.read_csv(showcase_file)
+	data_dict['FieldID'] = list(map(str, data_dict['FieldID']))
+	ukbtype_sqltype_map, ukbtype_pandastypes_map = create_type_maps()
 
 	field_df = pd.DataFrame({'field_col': main_df.columns,
 							 'field': ['eid'] + [str(x.split('-')[0]) for x in main_df.columns[1:]]})
@@ -106,17 +108,9 @@ def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str
 		Connection to the written database
 
 	"""
-	data_dict = pd.read_csv(showcase_file)
-	data_dict['FieldID'] = list(map(str, data_dict['FieldID']))
 	main_df = pd.read_csv(main_filename, nrows=1)
-	#
-	#Map types that come with UKB to other forms
-	ukbtype_sqltype_map, ukbtype_pandastypes_map = create_type_maps()
+	field_df = create_field_df(main_df, showcase_file)
 
-	field_df = create_field_df(main_df, data_dict, ukbtype_sqltype_map, ukbtype_pandastypes_map)
-
-	#
-	#
 	# Connect to db
 	con = sqlite3.connect(database=db_filename)
 	#
@@ -126,7 +120,10 @@ def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str
 	tab_fields=create_tab_fields_map(tabs,field_df)
 
 	for tab_name,field_type in tabs.items():
-		create_long_value_table(con,tab_name=tab_name, tab_type=field_type)
+		x=con.execute(f"DROP TABLE IF EXISTS {tab_name};")
+		x=con.execute(create_long_value_table_query(tab_name=tab_name, tab_type=field_type))
+
+	con.commit()
 
 	#Write fields to a table in the database
 	field_tab_map = {item: k for k, v in tab_fields.items() for item in v.to_list()}
@@ -234,7 +231,7 @@ def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str
 def query_sqlite_db(db_filename: str, cohort_criteria: dict):
 	#TODO: Fix cohort criteria generation so that its more inline with the db we create.
 	print("orig cohort_criteria: {}".format(cohort_criteria))
-	cohort_criteria = {k:[(re.sub('\.[0-9]+$', '', v0),v1) for (v0,v1) in vs] for k,vs in cohort_criteria.items()}
+	cohort_criteria = {k:[(re.sub(r'\.[0-9]+$', '', v0),v1) for (v0,v1) in vs] for k,vs in cohort_criteria.items()}
 	print("new cohort_criteria: {}".format(cohort_criteria))
 
 	print(f'Open database {datetime.now()}')
