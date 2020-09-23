@@ -130,17 +130,17 @@ def set_querable_terms(active_tab: str, defined_terms: dict):
     return(opts)
 
 
-def _term_iterator(id: str, defined_terms: dict):
-    """Creates list of tuples from defined_terms dictionary.
+# def _term_iterator(id: str, defined_terms: dict):
+def _term_iterator(selterms: dict):
+    """Creates list of tuples from selterms dictionary.
 
-    Iterates through field, value combinations within defined_terms[id]['any']
+    Iterates through field, value combinations within selterms dictionary
+    (created from the definted_terms[id]['any_of'] key)
     and appends them to a list as tuples of (key, value)
 
     Keyword arguments:
     ------------------
-    id: str
-        id to use as key for defined_terms dict
-    defined_terms: dict
+    selterms: dict
         dictionary returned by alter_defined_term function in "definitions_app.py"
 
     Returns:
@@ -153,12 +153,45 @@ def _term_iterator(id: str, defined_terms: dict):
     """
     rand_terms = []
     rand_terms_decoded = []
-    terms = pd.concat([pd.read_json(x) for x in defined_terms[id]['any']] + [pd.DataFrame()])
+    terms = pd.concat([pd.read_json(x) for x in selterms['any']] + [pd.DataFrame()])
     terms['FieldID'] = terms['FieldID'].astype(str)
     terms['Value'] = terms['Value'].astype(str)
     rand_terms = rand_terms + [tuple(x) for x in terms[['FieldID', 'Value']].values]
     rand_terms_decoded = rand_terms_decoded + [tuple(x) for x in terms[['Field', 'Meaning']].values]
     return rand_terms, rand_terms_decoded
+
+def _create_conditional_logic_list(logic_terms: list, defined_terms: dict):
+    """Combines list of tuples created from defined_terms dictionary.
+
+    Iterates through the phenotypes selected from the "all of", "any of", and/or
+    "none of" dropdowns and merges the list of field, value tuples to a single list
+
+    Keyword arguments:
+    ------------------
+    logic_terms: list
+        list of ids referencing the phenotypes created in the "definition_app.py"
+        ids are keys in a dictionary containing all the definted terms
+    defined_terms: dict
+        dictionary returned by alter_defined_term function in "definitions_app.py"
+
+    Returns:
+    --------
+    term_final: list
+        list of tuples of encoded field, value combinations
+    term_decoded_final: list
+        list of tuples of decoded field, value combinations
+
+    """
+    temp = []
+    decoded_temp = []
+    for id in logic_terms:
+        term_tuples, term_decoded_tuples = _term_iterator(defined_terms[id])
+        temp.append(term_tuples)
+        decoded_temp.append(term_decoded_tuples)
+    term_final = [y for x in temp for y in x]
+    term_decoded_final = [y for x in decoded_temp for y in x]
+    return term_final, term_decoded_final
+
 
 #Submit a query
 @app.callback(
@@ -214,30 +247,15 @@ def submit_cohort_query(n: int, defined_terms: dict, all_terms: list,
 
     timestamp = datetime.now().timestamp()
 
-    #Put data in the right for for the ukbcc backend
-    anys = []
-    nones = []
-    alls = []
-    anys_decoded = []
-    nones_decoded = []
-    alls_decoded = []
+    logic_dictionary = {'all_of': all_terms, 'any_of': any_terms, 'none_of': none_terms}
+    cohort_dictionaries = {"encoded": {"all_of": [], "any_of": [], "none_of": []},
+                           "decoded": {"all_of": [], "any_of": [], "none_of": []}}
 
-    # print("defined terms {}".format(defined_terms))
-
-    if all_terms:
-        for id in all_terms:
-            alls, alls_decoded = _term_iterator(id, defined_terms)
-
-    if any_terms:
-        for id in any_terms:
-            anys, anys_decoded = _term_iterator(id, defined_terms)
-
-    if none_terms:
-        for id in none_terms:
-            nones, nones_decoded = _term_iterator(id, defined_terms)
-
-    cohort_dictionaries = {"encoded": {"all_of": alls, "any_of": anys, "none_of": nones},
-                           "decoded": {"all_of": alls_decoded, "any_of": anys_decoded, "none_of": nones_decoded}}
+    for logic, selected_terms in logic_dictionary.items():
+        if selected_terms:
+            terms_encoded, terms_decoded = _create_conditional_logic_list(selected_terms, defined_terms)
+            cohort_dictionaries["encoded"][logic] = terms_encoded
+            cohort_dictionaries["decoded"][logic] = terms_decoded
 
     outpath = config['cohort_path']
     if kw_search_terms:

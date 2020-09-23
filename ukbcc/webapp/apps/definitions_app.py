@@ -33,7 +33,7 @@ add_new_phenotype_modal = dbc.Modal(
                     dbc.ModalBody(
                         dbc.Form([dbc.FormGroup([
                                 dbc.Label("New phenotype name", html_for='new_phenotype_input'),
-                                dbc.Input(placeholder="Enter name", type="text", id={"name":"name_input",'type':'new_term'}),
+                                dbc.Input(placeholder="Enter name", type="text", id={"name":"name_input",'type':'new_term'}, persistence=False),
                                 dbc.FormText("Specify the name of the phenotype you wish to create", color="secondary"),
                         ])]),
                         id="find_terms_modalbody"),

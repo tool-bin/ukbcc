@@ -51,7 +51,7 @@ setup(
         'dash >= 1.13.4',
         'dash-bootstrap-components >= 0.10.3',
         'progressbar2 >= 3.0'
-
+        'pytest >= 6.0.0'
     ],
     python_requires='>=3.6'
 )
