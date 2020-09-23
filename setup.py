@@ -48,7 +48,8 @@ setup(
         'requests >= 2.23.0',
         'numpy >= 1.18',
         'dash >= 1.13.4',
-        'dash-bootstrap-components >= 0.10.3'
+        'dash-bootstrap-components >= 0.10.3',
+        'pytest >= 6.0.0'
     ],
     python_requires='>=3.6'
 )

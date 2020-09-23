@@ -130,14 +130,14 @@ def query_databases(cohort_criteria: dict, queries: dict, main_filename: str, wr
         ands = set.intersection(*(set(x) for x in [separate_eids['gp_clinical']['all_of'],
                                                    separate_eids['main']['all_of']] if x))
     except Exception as error:
-        print("No results from mandatory conditions, resulting in exception {}. Creating empty ands set".format(error))
+        #print("No results from mandatory conditions, resulting in exception {}. Creating empty ands set".format(error))
         ands = set()
     ors = set(set(separate_eids['gp_clinical']['any_of']) | set(separate_eids['main']['any_of']))
     nots = set(set(separate_eids['gp_clinical']['none_of']) | set(separate_eids['main']['none_of']))
     try:
         ands_ors = set.intersection(*(set(x) for x in [ands, ors] if x))
     except Exception as error:
-        print("No results from intersection between ands and ors, resulting in exception: {}. Creating empty ands_ors set".format(error))
+        #print("No results from intersection between ands and ors, resulting in exception: {}. Creating empty ands_ors set".format(error))
         ands_ors = set()
     eids = list(ands_ors - nots)
 
@@ -204,9 +204,9 @@ def _query_main_data(main_filename: str, keys: list, query: str, delimiter: str=
     main_df = utils.get_columns(main_filename, keys, delimiter=delimiter).set_index('eid')
     main_df.columns = "t" + main_df.columns.str.replace('-', '_')
     main_df.columns = main_df.columns.str.replace('.', '_')
-    print("dat: {}".format(main_df))
-    print("cols: {}".format(main_df.columns))
-    print("query: {}".format(query))
+    #print("dat: {}".format(main_df))
+    #print("cols: {}".format(main_df.columns))
+    # print("query: {}".format(query))
     filtered_eids = main_df.query(query)#.reset_index()['eid'].tolist()
     if return_df:
         return filtered_eids.reset_index()

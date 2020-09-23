@@ -1,60 +1,49 @@
 import pytest
 import pandas as pd
 from io import StringIO
+import re
 #import sqlite
 #import textwrap
 
 @pytest.fixture(scope='module')
 def main_csv(tmpdir_factory):
-    test_main_dat =  {
-     '21017-0.0': {   366: '21017_0_0', 893: '21017_0_0', 1600: '21017_0_0',
-        2492: '21017_0_0', 2700: float("NaN"), 2737: float("NaN"), 3051: 
-     '21017_0_0', 3158: float("NaN"), 3161: '21017_0_0', 3313: '21017_0_0', 3337: float("NaN"),
-        3704: float("NaN"), 3790: '21017_0_0', 3887: float("NaN"), 4178: '21017_0_0'},
-     '41270-0.1': {   366: 'E119', 893: 'H278', 1600: 'H539', 2492: 'Z138',
-            2700: 'H048', 2737: 'E148', 3051: 'D226', 3158: 'H269', 3161: 'B964', 3313:
-            'D414', 3337: 'H402', 3704: 'H264', 3790: 'R103', 3887: 'A498', 4178: 'H400'},
-     '6070-0.0': {   366: 1.0, 893: 1.0, 1600: float("NaN"), 2492: 1.0, 2700: 1.0,
-            2737: 1.0, 3051: float("NaN"), 3158: float("NaN"), 3161: float("NaN"), 3313:
-            1.0, 3337: 1.0, 3704: 1.0, 3790: 1.0, 3887: float("NaN"), 4178: float("NaN")},
-     '6119-0.0': {   366: float("NaN"), 893: float("NaN"), 1600: 3.0, 2492:
-            3.0, 2700: 1.0, 2737: float("NaN"), 3051: 3.0, 3158: 3.0, 3161: float("NaN"),
-            3313: 1.0, 3337: float("NaN"), 3704: 3.0, 3790: float("NaN"), 3887:
-            float("NaN"), 4178: float("NaN")}, 
-     '6148-0.1': {   366: 4.0, 893: float("NaN"), 1600: 2.0, 2492: 5.0, 2700:
-            float("NaN"), 2737: 4.0, 3051: 4.0, 3158: 6.0, 3161: 4.0, 3313: 2.0, 3337: 4.0,
-            3704: 4.0, 3790: 5.0, 3887: float("NaN"), 4178: float("NaN")},
-    '6148-0.2': {   366: 5.0, 893: float("NaN"), 1600: 4.0, 2492: 6.0, 2700:
-            float("NaN"), 2737: 6.0, 3051: 6.0, 3158: float("NaN"), 3161: float("NaN"),
-            3313: float("NaN"), 3337: float("NaN"), 3704: float("NaN"), 3790: float("NaN"),
-            3887: 6.0, 4178: float("NaN")}, 
-    'eid': {366: 1037918, 893: 1041796, 1600: 1033149, 2492: 1037058, 2700:
-            1024938, 2737: 1016017, 3051: 1033388, 3158: 1031625, 3161: 1027382, 3313:
-            1038882, 3337: 1030520, 3704: 1003670, 3790: 1027017, 3887: 1031595, 4178:
-            1008947} 
-    }
-    test_main_df = pd.DataFrame.from_dict(test_main_dat)
+    test_main_dat = ('"21017-0.0"	"41270-0.1"	"6070-0.0"	"6119-0.0"	"6148-0.1"	"6148-0.2"	"eid"\n'
+'"21017_0_0"	"E119"	"2"	""	"4"	"5"	"1037918"\n'
+'"21017_0_0"	"Block H40-H42"	"1"	""	""	""	"1041796"\n'
+'"21017_0_0"	"Block H40-H42"	""	"3"	"2"	"4"	"1033149"\n'
+'"21017_0_0"	"Z138"	"1"	"3"	"5"	"6"	"1037058"\n'
+'""	"H048"	"1"	"1"	""	""	"1024938"\n'
+'""	"E148"	"1"	""	"4"	"6"	"1016017"\n'
+'"21017_0_0"	"D226"	""	"3"	"4"	"6"	"1033388"\n'
+'""	"H269"	""	"3"	"6"	""	"1031625"\n'
+'"21017_0_0"	"D414"	"1"	"1"	"2"	""	"1038882"\n'
+'""	"H402"	"1"	""	"4"	""	"1030520"\n'
+'""	"H264"	"1"	"3"	"4"	""	"1003670"\n'
+'"21017_0_0"	"R103"	"1"	""	"5"	""	"1027017"\n'
+'""	"A498"	""	""	""	"6"	"1031595"\n'
+'"21017_0_0"	"H400"	""	""	""	""	"1008947"\n')
+    test_main_dat = re.sub("\t+", ",", test_main_dat)
+    #test_main_df = pd.read_csv(StringIO(test_main_dat), delimiter="[ ]+", quotechar="'")
     fn = tmpdir_factory.mktemp("data").join("ukb.csv")
-    test_main_df.to_csv(str(fn))
+    fn.write(test_main_dat)#test_main_df.to_csv(str(fn), sep=",", quotechar='"', index=False)
     print(fn)
     return str(fn)
 
 
 @pytest.fixture(scope='module')
 def gp_csv(tmpdir_factory):
-    test_gp_dat = {   
-        'data_provider': {   85711: 3, 85712: 3, 85713: 3, 206676: 3, 206677: 3, 206678: 3}, 
-        'eid': {   85711: 1037918, 85712: 1037918, 85713: 1037918, 206676: 1016017, 206677: 1016017, 206678: 1016017}, 
-        'event_dt': {   85711: '01/01/1980', 85712: '08/05/1984', 85713: '08/12/1986', 206676: '24/12/1964', 206677: '21/09/1966', 206678: '31/10/1967'}, 
-        'read_2': {   85711: float("NaN"), 85712: float("NaN"), 85713: float("NaN"), 206676: float("NaN"), 206677: float("NaN"), 206678: float("NaN")}, 
-        'read_3': {   85711: 'XE0Gu', 85712: 'F45..', 85713: '229..', 206676: 'Xa8Pq', 206677: 'L04..', 206678: '7F19.'}, 
-        'value1': {   85711: float("NaN"), 85712: float("NaN"), 85713: '0.000', 206676: float("NaN"), 206677: '0.000', 206678: float("NaN")}, 
-        'value2': {   85711: float("NaN"), 85712: float("NaN"), 85713: float("NaN"), 206676: float("NaN"), 206677: float("NaN"), 206678: float("NaN")}, 
-        'value3': {   85711: float("NaN"), 85712: float("NaN"), 85713: float("NaN"), 206676: float("NaN"), 206677: float("NaN"), 206678: float("NaN")}
-        }
-    test_gp_df = pd.DataFrame.from_dict(test_gp_dat)
+    test_gp_dat = (   
+"eid,	data_provider,	event_dt,	read_2,	read_3,	value1,	value2,	value3\n"
+"1037918,	3,	01/01/1980,	,XE0Gu,	\n"
+"1037918,	3,	08/05/1984,	,F45..,	\n"
+"1037918,	3,	08/12/1986,	229..,	0.0,	\n"
+"1016017,	3,	24/12/1964,	XE0of,	\n"
+"1041796,	3,	21/09/1966,	4662.,	0.0,	\n"
+"1016017,	3,	31/10/1967,	XE0of,	1.0,	2.0,	3.0\n"
+        )
     fn = tmpdir_factory.mktemp("data").join("gp.csv")
-    test_gp_df.to_csv(str(fn))
+    #Tabs write out strangely so we swap tabs for commas when outputting
+    fn.write(re.sub(',','\t', re.sub("\t+", "",test_gp_dat)))
     print(fn)
     return str(fn)
 
