@@ -49,10 +49,10 @@ def create_queries(cohort_criteria: dict, main_filename: str, gpc_path: str) -> 
                 main_fields.append(entry[0])
 
     for database in data.keys():
-        if len(data[database]) == 0:
+        if not data[database]:
             continue
         for logicKey in data[database]:
-            if len(data[database][logicKey]) == 0:
+            if not data[database][logicKey]:
                 continue
             if gpc_path and database == 'gp_clinical':
                 queries['gp_clinical'][logicKey] = _create_mds_query(gpc_path, entries=data[database][logicKey], delimiter='\t', logic=logicKey)
@@ -113,7 +113,6 @@ def query_databases(cohort_criteria: dict, queries: dict, main_filename: str, wr
             print("No queries found for database: {}".format(database))
             break
         for logicKey in queries[database]:
-            # if len(queries[database][logicKey]) == 0:
             if not queries[database][logicKey]:
                 continue
             if database == 'gp_clinical' and gpc_path:
@@ -130,15 +129,16 @@ def query_databases(cohort_criteria: dict, queries: dict, main_filename: str, wr
         ands = set.intersection(*(set(x) for x in [separate_eids['gp_clinical']['all_of'],
                                                    separate_eids['main']['all_of']] if x))
     except Exception as error:
-        #print("No results from mandatory conditions, resulting in exception {}. Creating empty ands set".format(error))
+        print("No results from mandatory conditions, resulting in exception {}. Creating empty ands set".format(error))
         ands = set()
     ors = set(set(separate_eids['gp_clinical']['any_of']) | set(separate_eids['main']['any_of']))
     nots = set(set(separate_eids['gp_clinical']['none_of']) | set(separate_eids['main']['none_of']))
     try:
         ands_ors = set.intersection(*(set(x) for x in [ands, ors] if x))
     except Exception as error:
-        #print("No results from intersection between ands and ors, resulting in exception: {}. Creating empty ands_ors set".format(error))
+        print("No results from intersection between ands and ors, resulting in exception: {}. Creating empty ands_ors set".format(error))
         ands_ors = set()
+
     # if any_of and all_of are empty, return all eids in the dataset
     if 'any_of' in empty and 'all_of' in empty:
         ands_ors = set(pd.read_csv(main_filename, usecols=['eid'], dtype=str)['eid'].to_list())
