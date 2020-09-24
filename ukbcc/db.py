@@ -62,7 +62,7 @@ def create_tab_fields_map(tabs, field_desc):
 	for tab_name, field_type in tabs.items():
 		tab_fields[tab_name] = \
 			field_desc[(field_desc['ukb_type'].isin(type_lookups[tab_name])) & (field_desc['field_col'] != 'eid')][
-				'field_col']
+				'field_col'].tolist()
 
 	return (tab_fields)
 
@@ -107,22 +107,23 @@ def create_table_queries(tabs):
 	return queries
 
 
-def insert_main_chunk(chunk, tabs, tf_eid, tab_fields):
-	for tab_name, field_type in tabs.items():
-		# Convert to triples, remove nulls and then explode field
-		#TODO: Why is this crazy tab_fields thing here, why not jsut make this a list?
-		trips = chunk[tab_fields[tab_name].append(tf_eid)].melt(id_vars='eid', value_vars=tab_fields[tab_name])
-		trips = trips[trips['value'].notnull()]
+def insert_main_chunk(chunk, tab_name, tab_fields):
+	# Convert to triples, remove nulls and then explode field
+	#TODO: Why is this crazy tab_fields thing here, why not jsut make this a list?
+	#trips = chunk[tab_fields[tab_name].append(tf_eid)].melt(id_vars='eid', value_vars=tab_fields[tab_name])
+	curr_tab_fields = set(chunk.columns.to_list())&set(tab_fields)
+	trips = chunk[['eid'] + list(curr_tab_fields)].melt(id_vars='eid', value_vars=curr_tab_fields)
+	trips = trips[trips['value'].notnull()]
 
-		# This is constant if we have it in the row before?
-		trips['field'], trips['time'], trips['array'] = trips['variable'].str.split("[-.]", 2).str
-		trips = trips[['eid', 'field', 'time', 'value']]
-		if (tab_name == 'datetime'):
-			trips['value'] = pd.to_numeric(trips['value'])
-		#
-		# if not trips.shape[0]:
-		#    continue
-		return (f'INSERT INTO {tab_name} values({",".join("?" * len(trips.columns))})',
+	# This is constant if we have it in the row before?
+	trips['field'], trips['time'], trips['array'] = trips['variable'].str.split("[-.]", 2).str
+	trips = trips[['eid', 'field', 'time', 'value']]
+	if (tab_name == 'datetime'):
+		trips['value'] = pd.to_numeric(trips['value'])
+	#
+	# if not trips.shape[0]:
+	#    continue
+	return (f'INSERT INTO {tab_name} values({",".join("?" * len(trips.columns))})',
 							trips.values.tolist())
 
 
@@ -199,7 +200,7 @@ def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str
 	tabs = dict(zip(['str', 'int', 'real', 'datetime'], ["VARCHAR", "INTEGER", "REAL", "REAL"]))
 	tab_fields = create_tab_fields_map(tabs, field_desc)
 	#Create queries to drop and create tables.
-	x=map(con.execute, create_table_queries(tabs))
+	x=con.executescript("".join(create_table_queries(tabs)))
 
 	# Add columns to field_desc indicate which table each field goes into
 	# Then write fields to a table in the database
@@ -210,16 +211,15 @@ def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str
 	date_cols = field_desc['field_col'][
 		(field_desc['ukb_type'] == 'Date') | (field_desc['ukb_type'] == 'Time')].to_list()
 	dtypes_dict = dict(zip(field_desc['field_col'].to_list(), field_desc['pd_type'].to_list()))
-	tf_eid = field_desc[field_desc['field_col'] == 'eid']['field_col']
+	#tf_eid = field_desc[field_desc['field_col'] == 'eid']['field_col']
 
 	# GP clinical data
 	max_pb = int(estimate_line_count(gp_clin_filename) / step) + 1
 	pb_widgets = [progressbar.Percentage(), progressbar.Bar(), progressbar.ETA(), ]
-	reader = pd.read_csv(gp_clin_filename, chunksize=step, low_memory=False, encoding="ISO-8859-1", delimiter='\t',
-						 dtype=dtypes_dict, parse_dates=date_cols)
-	with progressbar.ProgressBar(widgets=pb_widgets, max_value=max_pb)		 as bar:
+	reader = pd.read_csv(gp_clin_filename, chunksize=step, low_memory=False, encoding="ISO-8859-1", delimiter='\t')
+	with progressbar.ProgressBar(widgets=pb_widgets, max_value=max_pb)	as bar:
 		for i, chunk in enumerate(reader):
-			x = con.executemany(insert_gp_clin_chunk(chunk))
+			x = con.executemany(*insert_gp_clin_chunk(chunk))
 			bar.update(i)
 
 	# TODO: This is slow. We can parallelise this using Queue
@@ -229,7 +229,8 @@ def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str
 						 dtype=dtypes_dict, parse_dates=date_cols)
 	with progressbar.ProgressBar(widgets=pb_widgets, max_value=max_pb) as bar:
 		for i, chunk in enumerate(reader):
-			x = con.executemany(insert_main_chunk(chunk, tabs, tf_eid, tab_fields))
+			for tab_name, field_type in tabs.items():
+				x = con.executemany(*insert_main_chunk(chunk, tab_name, tab_fields[tab_name]))
 			bar.update(i)
 	#
 	con.commit()
