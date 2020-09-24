@@ -110,6 +110,7 @@ def create_table_queries(tabs):
 def insert_main_chunk(chunk, tabs, tf_eid, tab_fields):
 	for tab_name, field_type in tabs.items():
 		# Convert to triples, remove nulls and then explode field
+		#TODO: Why is this crazy tab_fields thing here, why not jsut make this a list?
 		trips = chunk[tab_fields[tab_name].append(tf_eid)].melt(id_vars='eid', value_vars=tab_fields[tab_name])
 		trips = trips[trips['value'].notnull()]
 
@@ -150,7 +151,7 @@ def create_index(con):
 
 # Get estimate of number of lines in a file. If file is <10MB, get exact, otherwise estimate based
 # on the number of lines in the first 10MB and add 10%
-def estimate_lines(filename):
+def estimate_line_count(filename):
 	filesize = os.path.getsize(filename)
 	if filesize < 10*1024**2:
 		nlines = sum(1 for line in open(filename))
@@ -163,10 +164,10 @@ def estimate_lines(filename):
 
 # Add columns to field_desc indicate which table each field goes into
 def add_tabs_to_field_desc(field_desc, tab_fields):
-	field_tab_map = {item: k for k, v in tab_fields.items() for item in v.to_list()}
+	field_tab_map = {item: k for k, v in tab_fields.items() for item in v}#.to_list()}
 	field_tab_map['eid'] = None
 	field_desc['tab'] = list(map(field_tab_map.get, field_desc['field_col']))
-
+	return field_desc
 
 # TODO: do more checks on whether the files exist
 def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str,
@@ -212,7 +213,7 @@ def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str
 	tf_eid = field_desc[field_desc['field_col'] == 'eid']['field_col']
 
 	# GP clinical data
-	max_pb = int(estimate_lines(gp_clin_filename) / step) + 1
+	max_pb = int(estimate_line_count(gp_clin_filename) / step) + 1
 	pb_widgets = [progressbar.Percentage(), progressbar.Bar(), progressbar.ETA(), ]
 	reader = pd.read_csv(gp_clin_filename, chunksize=step, low_memory=False, encoding="ISO-8859-1", delimiter='\t',
 						 dtype=dtypes_dict, parse_dates=date_cols)
@@ -223,7 +224,7 @@ def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str
 
 	# TODO: This is slow. We can parallelise this using Queue
 	# TODO: Repeats the specific code above, except insert call and delimiter
-	max_pb = int(estimate_lines(main_filename)/ step)+ 1
+	max_pb = int(estimate_line_count(main_filename)/ step)+ 1
 	reader = pd.read_csv(main_filename, chunksize=step, low_memory=False, encoding="ISO-8859-1",
 						 dtype=dtypes_dict, parse_dates=date_cols)
 	with progressbar.ProgressBar(widgets=pb_widgets, max_value=max_pb) as bar:
