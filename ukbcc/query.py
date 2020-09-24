@@ -1,7 +1,5 @@
 import pandas as pd
 import os
-#from selenium import webdriver
-#import requests
 from . import utils
 import io
 import time
@@ -102,19 +100,19 @@ def query_databases(cohort_criteria: dict, queries: dict, main_filename: str, wr
 
     main_fields = []
     for logicKey in cohort_criteria.keys():
-        if len(cohort_criteria[logicKey]) == 0:
+        if not cohort_criteria[logicKey]:
             continue
         for entry in cohort_criteria[logicKey]:
             if entry[0] not in ['read_2', 'read_3']:
                 main_fields.append(entry[0])
 
-
     for database in queries.keys():
-        if len(queries[database]) == 0:
+        if not queries[database]:
             print("No queries found for database: {}".format(database))
             break
         for logicKey in queries[database]:
-            if len(queries[database][logicKey]) == 0:
+            # if len(queries[database][logicKey]) == 0:
+            if not queries[database][logicKey]:
                 continue
             if database == 'gp_clinical' and gpc_path:
                 query = queries['gp_clinical'][logicKey]

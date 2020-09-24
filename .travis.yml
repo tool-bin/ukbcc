@@ -1,3 +1,6 @@
 language: python
+jobs:
+    include:
+        - name "3.6 unit test"
 script:
     - pytest
