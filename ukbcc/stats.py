@@ -155,7 +155,7 @@ def create_report(translation_df: pd.DataFrame, create_html: bool=False, out_pat
     if "Unnamed: 0" in translation_df.columns:
         translation_df = translation_df.drop("Unnamed: 0", axis=1)
 
-    divs = translation_df.describe(include='all')
+    divs = translation_df.describe(include='all').reset_index().rename(columns={"index":"Statistic"}).fillna(value="0")
     tables = []
     graphs = []
 
@@ -164,11 +164,11 @@ def create_report(translation_df: pd.DataFrame, create_html: bool=False, out_pat
     for col in translation_df.columns:
         div_title = f"""<h2 style="font-family: sans-serif">{col}</h2>"""
         if np.issubdtype(translation_df[col].dtype, np.number):
-            div_table = pd.DataFrame(pd.to_numeric(translation_df[col], errors='coerce').describe())
+            div_table = pd.DataFrame(pd.to_numeric(translation_df[col], errors='coerce').describe()).reset_index().rename(columns={"index":"Statistic"}).fillna(value="0")
         elif np.issubdtype(translation_df[col].dtype, np.datetime64):
-            div_table = pd.DataFrame(pd.to_datetime(translation_df[col], errors='coerce').describe())
+            div_table = pd.DataFrame(pd.to_datetime(translation_df[col], errors='coerce').describe()).reset_index().rename(columns={"index":"Statistic"}).fillna(value="0")
         else:
-            div_table = pd.DataFrame(translation_df[col].describe())
+            div_table = pd.DataFrame(translation_df[col].describe()).reset_index().rename(columns={"index":"Statistic"}).fillna(value="0")
         div_plot = px.bar(translation_df[col].value_counts(normalize=False).reset_index(), x="index", y=col,
                           title=col)
         tables.append(div_table)
