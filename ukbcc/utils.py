@@ -6,6 +6,21 @@ import os
 from configparser import ConfigParser
 
 
+def write_txt_file(output_file: str, eids: list):
+    with open(output_file, "w") as f:
+        for id in eids:
+            f.write(str(id) + ",")
+
+
+def read_txt_file(file: str):
+    lines = []
+    with open(file, "r") as f:
+        for line in f.read().split(','):
+            if line != "":
+                lines.append(line)
+    return lines
+
+
 def read_dictionary(file: str):
     """Loads contents of a file into a dictionary
 
@@ -201,21 +216,6 @@ def filter_df_columns(main_filename: str, column_keys: list, eids: list):
     main_df = pd.read_csv(main_filename, usecols=column_keys)
     main_df_filtered = main_df.set_index('eid').iloc[main_df.set_index('eid').index.isin(eids)]
     return main_df_filtered
-
-def write_txt_file(output_file: str, eids: list):
-    with open(output_file, "w") as f:
-        for id in eids:
-            f.write(str(id) + ",")
-
-
-def read_txt_file(file: str):
-    lines = []
-    with open(file, "r") as f:
-        for line in f.read().split(','):
-            if line != "":
-                lines.append(line)
-    return lines
-
 
 def filter_main_df(main_filename: str, column_keys: list, values: list, eids: list=[], write: bool=True, filename: str="filtered_main_df_eids.txt") \
         -> pd.DataFrame:
