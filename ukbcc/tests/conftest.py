@@ -2,6 +2,7 @@ import pytest
 import pandas as pd
 from io import StringIO
 import re
+from ukbcc import db
 #import sqlite
 #import textwrap
 
@@ -26,7 +27,7 @@ def main_csv(tmpdir_factory):
 )
     test_main_dat = re.sub("\t+", ",", test_main_dat)
     #test_main_df = pd.read_csv(StringIO(test_main_dat), delimiter="[ ]+", quotechar="'")
-    fn = tmpdir_factory.mktemp("data").join("ukb.csv")
+    fn = tmpdir_factory.mktemp("main").join("ukb.csv")
     fn.write(test_main_dat)#test_main_df.to_csv(str(fn), sep=",", quotechar='"', index=False)
     print(fn)
     return str(fn)
@@ -38,12 +39,12 @@ def gp_csv(tmpdir_factory):
 "eid,	data_provider,	event_dt,	read_2,	read_3,	value1,	value2,	value3\n"
 "1037918,	3,	01/01/1980,	,XE0Gu,	\n"
 "1037918,	3,	08/05/1984,	,F45..,	\n"
-"1037918,	3,	08/12/1986,	229..,	0.0,	\n"
+"1037918,	3,	08/12/1986,	,229..,	0.0,	\n"
 "1016017,	3,	24/12/1964,	XE0of,	\n"
 "1041796,	3,	21/09/1966,	4662.,	0.0,	\n"
 "1016017,	3,	31/10/1967,	XE0of,	1.0,	2.0,	3.0\n"
         )
-    fn = tmpdir_factory.mktemp("data").join("gp.csv")
+    fn = tmpdir_factory.mktemp("gp").join("gp.csv")
     #Tabs write out strangely so we swap tabs for commas when outputting
     fn.write(re.sub(',','\t', re.sub("\t+", "",test_gp_dat)))
     print(fn)
@@ -66,13 +67,21 @@ def showcase_csv(tmpdir_factory):
 "Body size measures,100010,50,Standing height,500043,569401,Complete,Continuous,cm,Data,Primary,Unisex,4,1,,Standing,http://biobank.ctsu.ox.ac.uk/showcase/field.cgi?id=50\n"
 "Reception,100024,53,Date of attending assessment centre,502506,573525,Complete,Date,,Data,Primary,Unisex,4,1,,Date attend assessment,http://biobank.ctsu.ox.ac.uk/showcase/field.cgi?id=53\n"
         )
-    fn = tmpdir_factory.mktemp("data").join("showcase.csv")
+    fn = tmpdir_factory.mktemp("showcase").join("showcase.csv")
     fn.write(test_showcase_dat)
     print(fn)
     return str(fn)
 
 
-
+@pytest.fixture(scope='module')
+def sqlite_db(main_csv, showcase_csv, gp_csv, tmpdir_factory):
+    db_file = str(tmpdir_factory.mktemp("sqlite").join("db.sqlite"))
+    con = db.create_sqlite_db(db_filename=db_file, 
+                     main_filename=main_csv, 
+                     gp_clin_filename = gp_csv,
+                     showcase_file = showcase_csv,
+                     step=2)
+    return(con)
 
 
 

@@ -7,8 +7,8 @@ import os
 
 # Create a table for a given category ('cat')
 def create_long_value_table_query(tab_name, tab_type):
-	field_cols = ["eid", "field", "time", "value"]
-	field_col_types = ["INTEGER", "VARCHAR", "INTEGER", tab_type]
+	field_cols = ["eid", "field", "time","array", "value"]
+	field_col_types = ["INTEGER", "VARCHAR", "INTEGER", "INTEGER", tab_type]
 	cols = ','.join(map(' '.join, zip(field_cols, field_col_types)))
 	cmd = f"CREATE TABLE {tab_name} ({cols}) ;"
 	return (cmd)
@@ -117,7 +117,7 @@ def insert_main_chunk(chunk, tab_name, tab_fields):
 
 	# This is constant if we have it in the row before?
 	trips['field'], trips['time'], trips['array'] = trips['variable'].str.split("[-.]", 2).str
-	trips = trips[['eid', 'field', 'time', 'value']]
+	trips = trips[['eid', 'field', 'time', 'array', 'value']]
 	if (tab_name == 'datetime'):
 		trips['value'] = pd.to_numeric(trips['value'])
 	#
@@ -127,9 +127,10 @@ def insert_main_chunk(chunk, tab_name, tab_fields):
 							trips.values.tolist())
 
 
+#TODO: Give gp_clinical data its own table. I think the event dates cannot be fit into the form we currently have
 def insert_gp_clin_chunk(chunk):
 	chunk['read_2'] = chunk.read_2.combine_first(chunk.read_3)
-
+	chunk["array"]=0
 	# To have field as data_provider and value as read2/3
 	trips = chunk.rename(columns={'data_provider': 'field', 'event_dt': 'time', 'read_2': 'value'})[
 		['eid', 'field', 'time', 'value']]
@@ -170,10 +171,11 @@ def add_tabs_to_field_desc(field_desc, tab_fields):
 	field_desc['tab'] = list(map(field_tab_map.get, field_desc['field_col']))
 	return field_desc
 
+
 # TODO: do more checks on whether the files exist
 def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str,
-					 showcase_file: str, step=5000) -> sqlite3.Connection:
-	"""Returns basic statistics for given columns and a translated dataframe.
+					 showcase_file: str, step: int = 5000) -> sqlite3.Connection:
+	"""Creates an sql database
 
 	Keyword arguments:
 	------------------
@@ -185,6 +187,8 @@ def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str
 		path and filename of gp_clinical table dataset
 	showcase_file: str
 		path and filename of showcase file
+	step: int
+		number of lines to read in at a time from main file.
 
 	Returns:
 	--------
@@ -211,7 +215,6 @@ def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str
 	date_cols = field_desc['field_col'][
 		(field_desc['ukb_type'] == 'Date') | (field_desc['ukb_type'] == 'Time')].to_list()
 	dtypes_dict = dict(zip(field_desc['field_col'].to_list(), field_desc['pd_type'].to_list()))
-	#tf_eid = field_desc[field_desc['field_col'] == 'eid']['field_col']
 
 	# GP clinical data
 	max_pb = int(estimate_line_count(gp_clin_filename) / step) + 1
@@ -242,53 +245,25 @@ def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str
 	return (con)
 
 
-#
-#
-# query_tuples: list of tuples, each with 3 entries: field, condition, value
-# a = con.execute('''
-#            select eid,
-#                   max(distinct case when field=6072 then value end) as f6072,
-#          from (select * from str where
-#                field = 6072 and value = 1 or
-#                field = 21000
-#          union
-#                select * from real where
-#                field = 5262 or
-#                field = 5263 or
-#                field = 5254 or
-#                field = 5255)
-#         GROUP BY eid LIMIT 10''').fetchall()
-###
-def query_sqlite_db(db_filename: str, cohort_criteria: dict):
-	# TODO: Fix cohort criteria generation so that its more inline with the db we create.
-	print("orig cohort_criteria: {}".format(cohort_criteria))
-	cohort_criteria = {k: [(re.sub(r'\.[0-9]+$', '', v0), v1) for (v0, v1) in vs] for k, vs in cohort_criteria.items()}
-	print("new cohort_criteria: {}".format(cohort_criteria))
 
-	print(f'Open database {datetime.now()}')
-	con = sqlite3.connect(database=db_filename)
 
-	print(f'Read field info {datetime.now()}')
-	field_desc = pd.read_sql('SELECT * from field_desc', con)
-	print(f'Done {datetime.now()}')
 
-	print("generate main criteria: {}".format(cohort_criteria))
-	# main_criteria = {k: [('f'+str(int(float(vi[0]))),vi[1]) for vi in v if str(int(float(vi[0]))) in field_desc['field'].values]
-	# 				 for k, v in cohort_criteria.items()}
-	main_criteria = {k: [('f' + vi[0], vi[1]) for vi in v if vi[0] in field_desc['field'].values]
-					 for k, v in cohort_criteria.items()}
 
-	# Fit each condition to a template and derive a final filter
-	# Fit each condition to a template and derive a final filter
-	def join_field_vals(fs):
-		if (not fs):
-			return []
-		quote = lambda x: '"' if field_desc[field_desc['field'] == re.sub('^f', '', x)]['sql_type'].iloc[
-									 0] == 'VARCHAR' else ""
-		return ['"{}" {}'.format(f'{f}_{v}', 'is not NULL' if v == 'nan' else '={}{}{}'.format(quote(f), v, quote(f)))
-				for f, v in fs]
 
-	print(f'generate selection criteria')
+
+
+# Fit each condition to a template and derive a final filter
+def join_field_vals(fs, field_desc):
+	if (not fs):
+		return []
+	quote = lambda x: '"' if field_desc[field_desc['field'] == re.sub('^f', '', x)]['sql_type'].iloc[
+								 0] == 'VARCHAR' else ""
+	return ['"{}" {}'.format(f'{f}_{v}', 'is not NULL' if v == 'nan' else '={}{}{}'.format(quote(f), v, quote(f)))
+			for f, v in fs]
+
+
+def filter_pivoted_results(main_criteria, field_desc):
+	#NB: which fields do we one-hot-encode? Those with array values. Need to do some checks to see if this all types of fields.
 	q = {}
 
 	# q['all_of'] =  " AND ".join(join_field_vals(main_criteria['all_of']))#field_desc[field_desc['field']=='read_2']['ukb_type'].iloc[0]=='Categorical multiple'
@@ -305,9 +280,23 @@ def query_sqlite_db(db_filename: str, cohort_criteria: dict):
 	print('3')
 	selection_query = " AND ".join([qv for qk, qv in q.items() if main_criteria[qk]])
 
-	print('generate query_tuples {}'.format(cohort_criteria.values()))
-	# Add the table for the field inop each query and turn in them into dictionaries to help readability
-	# query_tuples = [(int(float(vi[0])), vi[1]) for v in cohort_criteria.values() for vi in v]
+
+# Make query: select * from tab where field=f1 and value=v1 or field=f2 and value=v2 ...
+# Make query: select * from tab where field=f1 and value=v1 or field=f2 and value=v2 ...
+def tab_select(tab, qts, field_desc):
+	if not qts:
+		return ""
+	quote = lambda x: '"' if field_desc[field_desc['field'] == re.sub('^f', '', x)]['sql_type'].iloc[
+								 0] == 'VARCHAR' else ""
+	return 'select * from {} where {}'.format(tab,
+											  " or ".join(['field="{}" and value {}'.format(
+												  q['field'],
+												  'is not NULL' if q['val'] == 'nan' else '={}{}{}'.format(
+													  quote(q['field']), q['val'], quote(q['field']))
+											  ) for q in qts]))  # TODO: duplicates join_field_vals
+
+
+def create_query_tuples(cohort_criteria, field_desc):
 	print(1)
 	query_tuples = [(vi[0], vi[1]) for v in cohort_criteria.values() for vi in v]
 	# query_tuples = [list(qt) + [field_desc[field_desc['field'] == str(int(float(qt[0])))]['tab'].iloc[0]] for qt in query_tuples]
@@ -315,39 +304,68 @@ def query_sqlite_db(db_filename: str, cohort_criteria: dict):
 	query_tuples = [list(qt) + [field_desc[field_desc['field'] == qt[0]]['tab'].iloc[0]] for qt in query_tuples]
 	print(3)
 	query_tuples = [dict(zip(('field', 'val', 'tab'), q)) for q in query_tuples]
+	return(query_tuples)
 
-	print('generate column naming query')
-	# column naming query
-	field_sql_map = {f: field_desc[field_desc['field'] == f]['sql_type'].iloc[0] for f in
-					 set([q['field'] for q in query_tuples])}
-	# col_names_q = ",".join([f"cast(max(distinct case when field='{f}' then value end) as {field_sql_map[f]}) as 'f{f}'" for f in set([q['field'] for q in query_tuples])])
-	col_names_q = ",".join([
-		f"max(distinct case when field='{q['field']}' and value ='{q['val']}' then value end) as 'f{q['field']}_{q['val']}'"
-		for q in query_tuples])
 
-	# Make query: select * from tab where field=f1 and value=v1 or field=f2 and value=v2 ...
-	# Make query: select * from tab where field=f1 and value=v1 or field=f2 and value=v2 ...
-	def tab_select(tab, qts):
-		if not qts:
-			return ""
-		quote = lambda x: '"' if field_desc[field_desc['field'] == re.sub('^f', '', x)]['sql_type'].iloc[
-									 0] == 'VARCHAR' else ""
-		return 'select * from {} where {}'.format(tab,
-												  " or ".join(['field="{}" and value {}'.format(
-													  q['field'],
-													  'is not NULL' if q['val'] == 'nan' else '={}{}{}'.format(
-														  quote(q['field']), q['val'], quote(q['field']))
-												  ) for q in qts]))  # TODO: duplicates join_field_vals
-
+def unify_query_tuples(query_tuples, field_desc):
 	# print('derive unique tabs')
 	tabs = [t for t in field_desc['tab'].iloc[1:].unique()]
 	# Look at the fields in each table, form into query, take union
 	union_q = "(" + " union ".join(
-		filter(len, [tab_select(tab, [qt for qt in query_tuples if qt['tab'] == tab]) for tab in tabs])) + ")"
+		filter(len, [tab_select(tab, [qt for qt in query_tuples if qt['tab'] == tab], field_desc) for tab in tabs])) + ")"
+
+	return(union_q)
+
+
+def pivot_results(field_desc, query_tuples):
+	field_sql_map = {f: field_desc[field_desc['field'] == f]['sql_type'].iloc[0] for f in
+					 set([q['field'] for q in query_tuples])}
+	# col_names_q = ",".join(
+	# 	[f"cast(max(distinct case when field='{f}' then value end) as {field_sql_map[f]}) as 'f{f}'" for f in set([q['field'] for q in query_tuples])])
+	pivot_query = ",".join([
+		f"max(distinct case when field='{q['field']}' and value ='{q['val']}' then value end) as 'f{q['field']}_{q['val']}'"
+		for q in query_tuples])
+	return(pivot_query)
+
+
+def query_sqlite_db(db_filename: str, cohort_criteria: dict):
+	"""Query the triple store
+
+		Keyword arguments:
+		------------------
+		db_filename: str
+			path and filename of db to query
+		cohort_criteria: dict
+			cohort_criteria defining query
+
+
+		Returns:
+		--------
+		res: pd.DataFrame
+			DataFrame of query results
+
+		"""
+
+	# TODO: Fix cohort criteria generation so that its more inline with the db we create.
+	con = sqlite3.connect(database=db_filename)
+	field_desc = pd.read_sql('SELECT * from field_desc', con)
+
+	print("generate main criteria: {}".format(cohort_criteria))
+	cohort_criteria = {k: [(re.sub(r'\.[0-9]+$', '', v0), v1) for (v0, v1) in vs] for k, vs in cohort_criteria.items()}
+	main_criteria = {k: [('f' + vi[0], vi[1]) for vi in v if vi[0] in field_desc['field'].values]
+					 for k, v in cohort_criteria.items()}
+
+
+	selection_query = filter_pivoted_results(main_criteria, field_desc)
+	query_tuples = create_query_tuples(cohort_criteria, field_desc)
+	long_tables_query = unify_query_tuples(query_tuples, field_desc)
+	pivot_query = pivot_results(field_desc, query_tuples)
+	# Add the table for the field inop each query and turn in them into dictionaries to help readability
+	# query_tuples = [(int(float(vi[0])), vi[1]) for v in cohort_criteria.values() for vi in v]
 
 	q = f'''select * from (
-            select eid, {col_names_q}
-          from {union_q}
+            select eid, {pivot_query}
+          from {long_tables_query}
          GROUP BY eid) where {selection_query}'''.strip('\n')
 
 	print(f'Run query {datetime.now()}\n {q}')

@@ -131,14 +131,14 @@ def test_line_estimate(main_csv):
 
 
 
-def test_db_create(main_csv, showcase_csv, gp_csv, tmpdir):
-    db_file = str(tmpdir.mkdir("sqlite").join("db.sqlite"))
-    con = db.create_sqlite_db(db_filename=db_file, 
-                     main_filename=main_csv, 
-                     gp_clin_filename = gp_csv,
-                     showcase_file = showcase_csv,
-                     step=2)
-
+def test_db_create(sqlite_db):#main_csv, showcase_csv, gp_csv, tmpdir):
+    #db_file = str(tmpdir.mkdir("sqlite").join("db.sqlite"))
+    #con = db.create_sqlite_db(db_filename=db_file, 
+    #                 main_filename=main_csv, 
+    #                 gp_clin_filename = gp_csv,
+    #                 showcase_file = showcase_csv,
+    #                 step=2)
+    con = sqlite_db
     #Check we've created the right tables
     tabs=con.execute("select name from sqlite_master where type = 'table';").fetchall()
     exp_tabs=set(["int", "str", "real", "datetime", "field_desc"])
