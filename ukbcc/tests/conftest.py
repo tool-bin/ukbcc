@@ -83,6 +83,24 @@ def sqlite_db(main_csv, showcase_csv, gp_csv, tmpdir_factory):
                      step=2)
     return(con)
 
+@pytest.fixture(scope='module')
+def field_desc():
+    field_desc = pd.read_csv(StringIO(re.sub('[ \t][ \t]+', ',', (
+    "field_col   field  category             ukb_type  sql_type  pd_type    tab\n"
+          "eid     eid       -1               Integer  INTEGER   Int64      None\n"
+    "21017-0.0   21017   100016                  Text  VARCHAR  object       str\n"
+    "41270-0.1   41270     2002  Categorical multiple  VARCHAR  object       str\n"
+     "6070-0.0    6070   100016    Categorical single  VARCHAR  object       str\n"
+       "53-0.0      53   100024                  Date  NUMERIC  object  datetime\n"
+     "4286-0.0    4286   100031                  Time  NUMERIC  object  datetime\n"
+    "21003-0.0   21003   100024               Integer  INTEGER   Int64       int\n"
+    "22182-0.0   22182   100035              Compound  VARCHAR  object       str\n"
+       "50-0.0      50   100010            Continuous     REAL   float      real\n"
+       "read_3  read_3   read_3  Categorical multiple  VARCHAR  object       str\n"
+    ))))
+    return(field_desc)
+    
+    
 
 
 #@pytest.fixture

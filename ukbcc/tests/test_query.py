@@ -1,7 +1,6 @@
 import pytest
 from ukbcc import query 
 
-
 def test_basic_query_creation(main_csv, gp_csv):
     cohort_criteria = {'all_of': [('6070', '1')], 'any_of': [], 'none_of': []}
     obs_query = query.create_queries(cohort_criteria,

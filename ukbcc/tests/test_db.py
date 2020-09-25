@@ -40,13 +40,13 @@ def test_tab_creation_queries(main_csv, showcase_csv):
 
     exp_output = [
      'DROP TABLE IF EXISTS str;', 
-     'CREATE TABLE str (eid INTEGER,field VARCHAR,time INTEGER,value VARCHAR) ;', 
+     'CREATE TABLE str (eid INTEGER,field VARCHAR,time INTEGER,array INTEGER,value VARCHAR) ;', 
      'DROP TABLE IF EXISTS int;',
-     'CREATE TABLE int (eid INTEGER,field VARCHAR,time INTEGER,value INTEGER) ;', 
+     'CREATE TABLE int (eid INTEGER,field VARCHAR,time INTEGER,array INTEGER,value INTEGER) ;', 
      'DROP TABLE IF EXISTS real;', 
-     'CREATE TABLE real (eid INTEGER,field VARCHAR,time INTEGER,value REAL) ;', 
+     'CREATE TABLE real (eid INTEGER,field VARCHAR,time INTEGER,array INTEGER,value REAL) ;', 
      'DROP TABLE IF EXISTS datetime;', 
-     'CREATE TABLE datetime (eid INTEGER,field VARCHAR,time INTEGER,value REAL) ;'
+     'CREATE TABLE datetime (eid INTEGER,field VARCHAR,time INTEGER,array INTEGER,value REAL) ;'
     ]
     assert tab_create_queries  == exp_output
 
@@ -56,9 +56,9 @@ def test_tab_creation(tmpdir):
     con = sqlite3.connect(database=db_filename)
     queries = [
      'DROP TABLE IF EXISTS str;',
-     'CREATE TABLE str (eid INTEGER,field VARCHAR,time INTEGER,value VARCHAR) ;',
+     'CREATE TABLE str (eid INTEGER,field VARCHAR,time INTEGER, array INTEGER,value VARCHAR) ;',
      'DROP TABLE IF EXISTS int;',
-     'CREATE TABLE int (eid INTEGER,field VARCHAR,time INTEGER,value INTEGER) ;']
+     'CREATE TABLE int (eid INTEGER,field VARCHAR,time INTEGER, array INTEGER,value INTEGER) ;']
     con.executescript("".join(queries))
     con.commit()
     tabs=con.execute("select name from sqlite_master where type = 'table';").fetchall()
@@ -155,6 +155,7 @@ def test_db_create(sqlite_db):#main_csv, showcase_csv, gp_csv, tmpdir):
     vals_read_3 = con.execute("select * from str where field='read_3'").fetchall()
     assert len(vals_read_3)==6
     
+
 
 def test_db_main_insert(main_csv):
     dtypes_dict = {

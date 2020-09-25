@@ -32,26 +32,6 @@ def create_type_maps():
 	return ukbtype_sqltype_map, ukbtype_pandastypes_map
 
 
-def populate_gp(con, gpc_filename, nrow, step):
-	with progressbar.ProgressBar(widgets=[progressbar.Percentage(), progressbar.Bar(), progressbar.ETA(), ],
-								 max_value=int(nrow / step) + 1) as bar:
-		for i, chunk in enumerate(
-				pd.read_csv(gpc_filename, chunksize=step, low_memory=False, encoding="ISO-8859-1", delimiter='\t')):
-			chunk['read_2'] = chunk.read_2.combine_first(chunk.read_3)
-
-			# To have field as data_provider and value as read2/3
-			trips = chunk.rename(columns={'data_provider': 'field', 'event_dt': 'time', 'read_2': 'value'})[
-				['eid', 'field', 'time', 'value']]
-			trips = trips[trips['value'].notnull()]
-			trips['field'] = 'read_' + trips['field'].astype(str)
-
-			x = con.executemany(f'INSERT INTO {"str"} values({",".join("?" * len(trips.columns))})',
-								trips.values.tolist())
-			bar.update(i)
-	#
-	print('UKBCC database - finished populating GP clinical')
-
-
 def create_tab_fields_map(tabs, field_desc):
 	tab_fields = {}
 	type_lookups = dict(
@@ -130,10 +110,11 @@ def insert_main_chunk(chunk, tab_name, tab_fields):
 #TODO: Give gp_clinical data its own table. I think the event dates cannot be fit into the form we currently have
 def insert_gp_clin_chunk(chunk):
 	chunk['read_2'] = chunk.read_2.combine_first(chunk.read_3)
-	chunk["array"]=0
+
+	chunk['array'] = '0'
 	# To have field as data_provider and value as read2/3
 	trips = chunk.rename(columns={'data_provider': 'field', 'event_dt': 'time', 'read_2': 'value'})[
-		['eid', 'field', 'time', 'value']]
+		['eid', 'field', 'time', 'array', 'value']]
 	trips = trips[trips['value'].notnull()]
 	trips['field'] = 'read_' + trips['field'].astype(str)
 
@@ -268,41 +249,43 @@ def filter_pivoted_results(main_criteria, field_desc):
 
 	# q['all_of'] =  " AND ".join(join_field_vals(main_criteria['all_of']))#field_desc[field_desc['field']=='read_2']['ukb_type'].iloc[0]=='Categorical multiple'
 	q['all_of'] = " AND ".join(join_field_vals(main_criteria['all_of']))
-	print('1')
 	# q['any_of'] =  "({})".format(" OR ".join(join_field_vals(main_criteria['any_of'])))
 	q['any_of'] = "({})".format(" OR ".join(join_field_vals(main_criteria['any_of'])))
-	print('2')
 	# q['none_of'] = "NOT ({})".format(" OR ".join(join_field_vals(main_criteria['none_of'])))
 	# q['none_of'] = "NOT ({})".format(" OR ".join(join_field_vals([(f'{k}_{v}', v) for k, v in main_criteria['none_of']])))
 	q['none_of'] = "NOT ({})".format(' OR '.join([f'{x[0]} AND "{x[1][0]}_{x[1][1]}" is not NULL' for x in
 												  zip(join_field_vals(main_criteria['none_of']),
 													  main_criteria['none_of'])]))
-	print('3')
 	selection_query = " AND ".join([qv for qk, qv in q.items() if main_criteria[qk]])
 
 
 # Make query: select * from tab where field=f1 and value=v1 or field=f2 and value=v2 ...
 # Make query: select * from tab where field=f1 and value=v1 or field=f2 and value=v2 ...
-def tab_select(tab, qts, field_desc):
-	if not qts:
+def tab_select(tab, query_tuples, field_desc):
+	query_tuples = [qt for qt in query_tuples if qt['tab'] == tab]
+	if not query_tuples:
 		return ""
-	quote = lambda x: '"' if field_desc[field_desc['field'] == re.sub('^f', '', x)]['sql_type'].iloc[
-								 0] == 'VARCHAR' else ""
-	return 'select * from {} where {}'.format(tab,
-											  " or ".join(['field="{}" and value {}'.format(
-												  q['field'],
-												  'is not NULL' if q['val'] == 'nan' else '={}{}{}'.format(
-													  quote(q['field']), q['val'], quote(q['field']))
-											  ) for q in qts]))  # TODO: duplicates join_field_vals
+
+	#Are we looking at varchat?
+	is_varchar  = lambda x: field_desc[field_desc['field'] == re.sub('^f', '', x)]['sql_type'].iloc[0] == 'VARCHAR'
+	#If varchar, need to quote, otherwise don't quote
+	quote_char = lambda x: "'" if is_varchar(x) else ""
+
+	#Surround query with the appropriate quotes
+	quote_value = lambda q:  '={}{}{}'.format(quote_char(q['field']), q['val'], quote_char(q['field']))
+	# Rreturn all non-NULL fields of search term is nan, otherwise get a field/value query
+	prepare_value = lambda q: 'is not NULL' if q['val'] == 'nan' else quote_value(q)
+
+	# Get the right field/value queries for all query_tuples
+	tab_selection = " or ".join(["field='{}' and value {}".format(q['field'], prepare_value(q)) for q in query_tuples])
+	return 'select * from {} where {}'.format(tab,tab_selection)  # TODO: duplicates join_field_vals
 
 
 def create_query_tuples(cohort_criteria, field_desc):
 	print(1)
 	query_tuples = [(vi[0], vi[1]) for v in cohort_criteria.values() for vi in v]
 	# query_tuples = [list(qt) + [field_desc[field_desc['field'] == str(int(float(qt[0])))]['tab'].iloc[0]] for qt in query_tuples]
-	print(2)
 	query_tuples = [list(qt) + [field_desc[field_desc['field'] == qt[0]]['tab'].iloc[0]] for qt in query_tuples]
-	print(3)
 	query_tuples = [dict(zip(('field', 'val', 'tab'), q)) for q in query_tuples]
 	return(query_tuples)
 
@@ -312,14 +295,14 @@ def unify_query_tuples(query_tuples, field_desc):
 	tabs = [t for t in field_desc['tab'].iloc[1:].unique()]
 	# Look at the fields in each table, form into query, take union
 	union_q = "(" + " union ".join(
-		filter(len, [tab_select(tab, [qt for qt in query_tuples if qt['tab'] == tab], field_desc) for tab in tabs])) + ")"
+		filter(len, [tab_select(tab, query_tuples, field_desc) for tab in tabs])) + ")"
 
 	return(union_q)
 
 
 def pivot_results(field_desc, query_tuples):
-	field_sql_map = {f: field_desc[field_desc['field'] == f]['sql_type'].iloc[0] for f in
-					 set([q['field'] for q in query_tuples])}
+	#field_sql_map = {f: field_desc[field_desc['field'] == f]['sql_type'].iloc[0] for f in
+	#				 set([q['field'] for q in query_tuples])}
 	# col_names_q = ",".join(
 	# 	[f"cast(max(distinct case when field='{f}' then value end) as {field_sql_map[f]}) as 'f{f}'" for f in set([q['field'] for q in query_tuples])])
 	pivot_query = ",".join([
@@ -351,15 +334,15 @@ def query_sqlite_db(db_filename: str, cohort_criteria: dict):
 	field_desc = pd.read_sql('SELECT * from field_desc', con)
 
 	print("generate main criteria: {}".format(cohort_criteria))
-	cohort_criteria = {k: [(re.sub(r'\.[0-9]+$', '', v0), v1) for (v0, v1) in vs] for k, vs in cohort_criteria.items()}
+	#cohort_criteria = {k: [(re.sub(r'\.[0-9]+$', '', v0), v1) for (v0, v1) in vs] for k, vs in cohort_criteria.items()}
 	main_criteria = {k: [('f' + vi[0], vi[1]) for vi in v if vi[0] in field_desc['field'].values]
 					 for k, v in cohort_criteria.items()}
 
-
-	selection_query = filter_pivoted_results(main_criteria, field_desc)
 	query_tuples = create_query_tuples(cohort_criteria, field_desc)
 	long_tables_query = unify_query_tuples(query_tuples, field_desc)
 	pivot_query = pivot_results(field_desc, query_tuples)
+	selection_query = filter_pivoted_results(main_criteria, field_desc)
+
 	# Add the table for the field inop each query and turn in them into dictionaries to help readability
 	# query_tuples = [(int(float(vi[0])), vi[1]) for v in cohort_criteria.values() for vi in v]
 
