@@ -1,8 +1,15 @@
 language: python
 install:
-    - pip install -r requirements.txt
+- pip install -r requirements.txt
 jobs:
-    include:
-        - name "3.6 unit test"
+  include:
+  - name "3.6 unit test"
 script:
-    - pytest
+- pytest
+deploy:
+  provider: pypi
+  username: __token__
+  password:
+    secure: fN6B1b53jVij3VD60P2OHKuUZhPNhN91se8sbeO+lukdd+LkSFzvOYgGYS1+DxL2iov0bh9vQuI/TiXQGw18lV0L+EiFNOtyVopGPNU3r8ag+5495jChcWVZrLUZ2x8zIhyiUd5jiIaDKHXLFwWQfZcHfelLACDSxvd1IMCHSlakVlyaUEmehHpCCMpfI0YmDwr7POzEj4knJslP0auJN/c8NQ4g8RxczwNsSbqAWslyQoo2c2lmOV835bxrBFq6tW8c83J0xPeSF/TMHJ7xrpHwaAFr7+F5FFmBwp4micbcf2rXd7L4UHZ9KGFQIxbGU45SNzZ4HWY0GjjywedVT+oUKuTJdGdHGMIXwqxOErzY/JloTyuJ7C6CgVoV8WnF7N0I3KTy9uXj8MZHNIKjsug0c4dsjQFa1ecwSgCnjpxe6HXyEoOrpgRcAPPmvd9DcRokTIBKZEhzLa4+0qjNBayzmNHkWHpcHoeV5HtyAuFKCRcPXNw6mdeWeE/6eTSdFbr5hx134X+NZAqQsPRUxEnjdYVje7yfQacUlJMUihtaRLWMIf/ewgcgx/whfBZbCsPTUOybh5OQBiTNukyX2G53izRIKWAoUJogqp8rwiR3nFz3of79A5OGJgFDlsZN4ODgjQIg4LwEJN9K0azR4UCLPkc6qwiiDzsF4/Efuc8=
+  on: 
+    tags: true
