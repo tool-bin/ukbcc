@@ -80,11 +80,46 @@ def test_unify_queries(field_desc):
     assert obs_query == exp_query
 
 
+# 
+def test_expand_query(field_desc):
+    field="6148"
+    obs = db.expand_field(field, field_desc)
+    exp = [['6148', '0', '1'], ['6148', '0', '2']]
+    assert obs == exp
 
 
+# 
+def test_generate_main_column_queries(field_desc):
+    field_sql_map = {'6148': 'VARCHAR', 
+                     '21003': 'INTEGER', 
+                     'read_3': 'VARCHAR', 
+                     '6070': 'VARCHAR'}
+    
+    field="6148"
+    obs = db.generate_main_column_queries(field, field_desc,field_sql_map)
+    exp = ["cast(max(distinct case when field='6148' and time='0' and array='1' then value end) as VARCHAR) as 'f6148-0.1'",
+           "cast(max(distinct case when field='6148' and time='0' and array='2' then value end) as VARCHAR) as 'f6148-0.2'"]
+    assert obs == exp
 
 
+#
+def test_pivot_results(field_desc):
+    query_tuples = [{'field':'6148', 'val':'1', 'tab':'str'}]
+    obs = db.pivot_results(field_desc, query_tuples)
+    exp = "cast(max(distinct case when field='6148' and time='0' and array='1' then value end) as VARCHAR) as 'f6148-0.1',cast(max(distinct case when field='6148' and time='0' and array='2' then value end) as VARCHAR) as 'f6148-0.2'"
+    print(obs)
+    print(exp)
+    assert obs == exp
 
+
+#
+def test_pivot_results_read3(field_desc):
+    query_tuples = [{'field':'read_3', 'val':'229..', 'tab':'str'}]
+    obs = db.pivot_results(field_desc, query_tuples)
+    exp = "cast(max(distinct case when field='read_3' and value='229..' then 1 end) as VARCHAR) as 'fread_3-229..'"
+    print(obs)
+    print(exp)
+    assert obs == exp
 
 
 

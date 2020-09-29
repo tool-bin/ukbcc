@@ -257,7 +257,7 @@ def filter_pivoted_results(main_criteria, field_desc):
 												  zip(join_field_vals(main_criteria['none_of']),
 													  main_criteria['none_of'])]))
 	selection_query = " AND ".join([qv for qk, qv in q.items() if main_criteria[qk]])
-
+	return(selection_query)
 
 # Make query: select * from tab where field=f1 and value=v1 or field=f2 and value=v2 ...
 # Make query: select * from tab where field=f1 and value=v1 or field=f2 and value=v2 ...
@@ -299,16 +299,36 @@ def unify_query_tuples(query_tuples, field_desc):
 
 	return(union_q)
 
+def expand_field(field, field_desc):
+	fs = field_desc[field_desc["field"] == field]["field_col"].to_list()
+	return [re.split(r'[-.]', f) for f in fs]
 
+
+def generate_main_column_queries(field, field_desc,field_sql_map):
+
+	fs = expand_field(field, field_desc)
+	distinct_str = lambda f: f"distinct case when field='{f[0]}' and time='{f[1]}' and array='{f[2]}' then value end"
+
+	return([f"cast(max({distinct_str(f)}) as {field_sql_map[f[0]]}) as 'f{f[0]}-{f[1]}.{f[2]}'" for f in fs])
+
+
+#TODO: When we allow searches using specific times/arrays this will need to be extended.
+# In fact, it already does with the gp_clinical data
 def pivot_results(field_desc, query_tuples):
-	#field_sql_map = {f: field_desc[field_desc['field'] == f]['sql_type'].iloc[0] for f in
-	#				 set([q['field'] for q in query_tuples])}
-	# col_names_q = ",".join(
+	field_sql_map = {f: field_desc[field_desc['field'] == f]['sql_type'].iloc[0] for f in
+					 set([q['field'] for q in query_tuples])}
+	#print(field_sql_map)
+	#col_names_q = ",".join(
 	# 	[f"cast(max(distinct case when field='{f}' then value end) as {field_sql_map[f]}) as 'f{f}'" for f in set([q['field'] for q in query_tuples])])
-	pivot_query = ",".join([
-		f"max(distinct case when field='{q['field']}' and value ='{q['val']}' then value end) as 'f{q['field']}_{q['val']}'"
-		for q in query_tuples])
-	return(pivot_query)
+
+	uniq_fields=set([q['field'] for q in query_tuples])
+	pivot_queries = [",".join(generate_main_column_queries(f,field_desc,field_sql_map)) for f in uniq_fields if f not in ['read_2', 'read_3']]
+	if 'read_2' in uniq_fields or  'read_3' in uniq_fields:
+		pivot_queries = pivot_queries + [f"cast(max(distinct case when field='{q['field']}' and value='{q['val']}' then 1 end) as VARCHAR) as 'f{q['field']}-{q['val']}'" for
+									 q in query_tuples if q['field'] in ['read_2', 'read_3'] ]
+	#f"max(distinct case when field='{q['field']}' and value ='{q['val']}' then value end) as 'f{q['field']}_{q['val']}'"
+	#for q in query_tuples])
+	return(",".join(pivot_queries))
 
 
 def query_sqlite_db(db_filename: str, cohort_criteria: dict):
