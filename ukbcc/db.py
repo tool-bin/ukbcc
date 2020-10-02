@@ -109,15 +109,17 @@ def insert_main_chunk(chunk, tab_name, tab_fields):
 
 #TODO: Give gp_clinical data its own table. I think the event dates cannot be fit into the form we currently have
 def insert_gp_clin_chunk(chunk):
-	chunk['read_2'] = chunk.read_2.combine_first(chunk.read_3)
+	#chunk['read_2'] = chunk.read_2.combine_first(chunk.read_3)
+	print("chunk: {}".format(chunk))
 
+	chunk = chunk.melt(id_vars=['eid', 'data_provider', 'event_dt'], value_vars=['read_2', 'read_3']).query('~value.isna()')
 	chunk['array'] = '0'
 	# To have field as data_provider and value as read2/3
-	trips = chunk.rename(columns={'data_provider': 'field', 'event_dt': 'time', 'read_2': 'value'})[
+	trips = chunk.rename(columns={'variable': 'field', 'event_dt': 'time'})[
 		['eid', 'field', 'time', 'array', 'value']]
 	trips = trips[trips['value'].notnull()]
-	trips['field'] = 'read_' + trips['field'].astype(str)
-
+	#trips['field'] = 'read_' + trips['field'].astype(str)
+	print(trips)
 	return (f'INSERT INTO {"str"} values({",".join("?" * len(trips.columns))})',
 						trips.values.tolist())
 
@@ -253,12 +255,12 @@ def prepare_value(qt,field_desc) :
 	return  '={}{}{}'.format(quote, qt['val'], quote)
 
 
-def field_value_query_template(f,v,f_ex, field_desc):
-	val_str=prepare_value({'field': f, 'val': v}, field_desc)
+def field_value_query_template(f,v,f_ex, field_desc, null=False):
+	val_str=prepare_value({'field': f, 'val': v if null==False else 'nan'}, field_desc)
 	if len(f_ex) == 3:
 		return "'f{}-{}.{}' {}".format(f_ex[0], f_ex[1], f_ex[2], val_str)
 	print(f_ex)
-	return "'f{}' {}".format(f_ex[0], val_str)
+	return "'f{}-{}' {}".format(f_ex[0],v, val_str)
 
 # field_val_pairs: list of tuples from a cohort criteria, e.g. [('6070', "1"), ('6119', "1")]
 def join_field_vals(field_val_pairs, field_desc, operation):
@@ -268,7 +270,7 @@ def join_field_vals(field_val_pairs, field_desc, operation):
 
 	if operation == 'none_of':
 		val_search = [field_value_query_template(f,v,f_ex,field_desc) for f,v in field_val_pairs for f_ex in expand_field(f, field_desc) ]
-		null_search = [field_value_query_template(f,'nan',f_ex,field_desc) for f,v in field_val_pairs for f_ex in expand_field(f, field_desc)]
+		null_search = [field_value_query_template(f,v,f_ex,field_desc, null=True) for f,v in field_val_pairs for f_ex in expand_field(f, field_desc)]
 		return [f"({x[0]} AND {x[1]})" for x in zip(val_search, null_search)]
 
 	expand_pairs = lambda f,v: " OR ".join([field_value_query_template(f,v,f_ex,field_desc) for f_ex in expand_field(f,field_desc)])
@@ -333,6 +335,7 @@ def unify_query_tuples(query_tuples, field_desc, has_none=False):
 	union_q = "(" + " union ".join(tab_queries) + ")"
 
 	return(union_q)
+
 
 def expand_field(field, field_desc):
 	fs = field_desc[field_desc["field"] == field]["field_col"].to_list()
@@ -404,7 +407,7 @@ def query_sqlite_db(cohort_criteria: dict, con: sqlite3.Connection=None, db_file
             select eid, {pivot_query}
           from {long_tables_query}
          GROUP BY eid) where {selection_query}'''.strip('\n')
-	print("Query: {}".format(q))
+	#print("Query: {}".format(q))
 	print(f'Run query {datetime.now()}\n {q}')
 	res = pd.read_sql(q, con)
 	print(f'Done {datetime.now()}')

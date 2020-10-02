@@ -41,8 +41,8 @@ def gp_csv(tmpdir_factory):
 "1037918,	3,	08/05/1984,	,F45..,	\n"
 "1037918,	3,	08/12/1986,	,229..,	0.0,	\n"
 "1016017,	3,	24/12/1964,	XE0of,	\n"
-"1041796,	3,	21/09/1966,	4662.,	0.0,	\n"
-"1016017,	3,	31/10/1967,	XE0of,	1.0,	2.0,	3.0\n"
+"1041796,	3,	21/09/1966,	4662.,,	0.0,	\n"
+"1016017,	3,	31/10/1967,	XE0of,,	1.0,	2.0,	3.0\n"
         )
     fn = tmpdir_factory.mktemp("gp").join("gp.csv")
     #Tabs write out strangely so we swap tabs for commas when outputting

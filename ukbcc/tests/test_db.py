@@ -173,8 +173,12 @@ def test_db_create(sqlite_db):#main_csv, showcase_csv, gp_csv, tmpdir):
 
     #Check some gp_clinical fields exist
     vals_read_3 = con.execute("select * from str where field='read_3'").fetchall()
-    assert len(vals_read_3)==6
+    assert len(vals_read_3)==3
 
+    #Check some gp_clinical fields exist
+    vals_read_2 = con.execute("select * from str where field='read_2'").fetchall()
+    assert len(vals_read_2)==3
+    
 
 
 def test_db_main_insert(main_csv):

@@ -245,9 +245,9 @@ def test_db_missing_fields(sqlite_db):
 
 #Can we do a query on read2 at all?
 def test_db_all_gp_clinical_read2(sqlite_db): 
-    cohort_criteria = {'all_of': [('read_2', "229..")], 'any_of': [], 'none_of': []}
+    cohort_criteria = {'all_of': [('read_2', "4662.")], 'any_of': [], 'none_of': []}
     obs=db.query_sqlite_db(con=sqlite_db, cohort_criteria=cohort_criteria)    
-    exp_ids = set([1037918])
+    exp_ids = set([1041796])
     assert exp_ids == set(obs['eid'].tolist())
 
 
