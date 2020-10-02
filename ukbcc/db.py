@@ -230,17 +230,50 @@ def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str
 
 
 
+#Are we looking at varchat?
+def is_varchar(x,field_desc):
+	field_in_field_desc =  any (field_desc['field'] == re.sub('^f', '', x) )
+	print("field_in_field_desc: {}".format(field_in_field_desc))
+	if not field_in_field_desc:
+		raise ValueError(f"{re.sub('^f', '', x)} not in field_desc['field']")
+	return field_desc[field_desc['field'] == re.sub('^f', '', x)]['sql_type'].iloc[0] == 'VARCHAR'
+
+#If varchar, need to quote, otherwise don't quote
+def quote_char(x,field_desc):
+	if is_varchar(x, field_desc):
+		return  "'"
+	return ""
+
+#
+def prepare_value(qt,field_desc) :
+	if qt['val'] == 'nan':
+		return 'is not NULL'
+	# Surround query with the appropriate quotes
+	quote=quote_char(qt['field'],field_desc)
+	return  '={}{}{}'.format(quote, qt['val'], quote)
 
 
+def field_value_query_template(f,v,f_ex, field_desc):
+	val_str=prepare_value({'field': f, 'val': v}, field_desc)
+	if len(f_ex) == 3:
+		return "'f{}-{}.{}' {}".format(f_ex[0], f_ex[1], f_ex[2], val_str)
+	print(f_ex)
+	return "'f{}' {}".format(f_ex[0], val_str)
 
-# Fit each condition to a template and derive a final filter
-def join_field_vals(fs, field_desc):
-	if (not fs):
+# field_val_pairs: list of tuples from a cohort criteria, e.g. [('6070', "1"), ('6119', "1")]
+def join_field_vals(field_val_pairs, field_desc, operation):
+	if (not field_val_pairs):
 		return []
-	quote = lambda x: '"' if field_desc[field_desc['field'] == re.sub('^f', '', x)]['sql_type'].iloc[
-								 0] == 'VARCHAR' else ""
-	return ['"{}" {}'.format(f'{f}_{v}', 'is not NULL' if v == 'nan' else '={}{}{}'.format(quote(f), v, quote(f)))
-			for f, v in fs]
+	assert operation in ['all_of', 'any_of', 'none_of']
+
+	if operation == 'none_of':
+		val_search = [field_value_query_template(f,v,f_ex,field_desc) for f,v in field_val_pairs for f_ex in expand_field(f, field_desc) ]
+		null_search = [field_value_query_template(f,'nan',f_ex,field_desc) for f,v in field_val_pairs for f_ex in expand_field(f, field_desc)]
+		return [f"({x[0]} AND {x[1]})" for x in zip(val_search, null_search)]
+
+	expand_pairs = lambda f,v: " OR ".join([field_value_query_template(f,v,f_ex,field_desc) for f_ex in expand_field(f,field_desc)])
+	#This dictionary constrcut is to match the query_tuples dictionaries. Not ideal!
+	return ["("+expand_pairs(f,v)+")" for f,v in field_val_pairs]
 
 
 def filter_pivoted_results(main_criteria, field_desc):
@@ -257,7 +290,7 @@ def filter_pivoted_results(main_criteria, field_desc):
 												  zip(join_field_vals(main_criteria['none_of']),
 													  main_criteria['none_of'])]))
 	selection_query = " AND ".join([qv for qk, qv in q.items() if main_criteria[qk]])
-	return(selection_query)
+	return re.sub("'", '"',selection_query)
 
 # Make query: select * from tab where field=f1 and value=v1 or field=f2 and value=v2 ...
 # Make query: select * from tab where field=f1 and value=v1 or field=f2 and value=v2 ...
@@ -266,36 +299,39 @@ def tab_select(tab, query_tuples, field_desc):
 	if not query_tuples:
 		return ""
 
-	#Are we looking at varchat?
-	is_varchar  = lambda x: field_desc[field_desc['field'] == re.sub('^f', '', x)]['sql_type'].iloc[0] == 'VARCHAR'
-	#If varchar, need to quote, otherwise don't quote
-	quote_char = lambda x: "'" if is_varchar(x) else ""
-
-	#Surround query with the appropriate quotes
-	quote_value = lambda q:  '={}{}{}'.format(quote_char(q['field']), q['val'], quote_char(q['field']))
-	# Rreturn all non-NULL fields of search term is nan, otherwise get a field/value query
-	prepare_value = lambda q: 'is not NULL' if q['val'] == 'nan' else quote_value(q)
-
 	# Get the right field/value queries for all query_tuples
-	tab_selection = " or ".join(["field='{}' and value {}".format(q['field'], prepare_value(q)) for q in query_tuples])
-	return 'select * from {} where {}'.format(tab,tab_selection)  # TODO: duplicates join_field_vals
+	tab_selection = " or ".join(["field='{}' and value {}".format(q['field'], prepare_value(q,field_desc)) for q in query_tuples])
+	return 'select * from {} where {}'.format(tab,tab_selection)
 
 
 def create_query_tuples(cohort_criteria, field_desc):
-	print("create query tuples")
 	query_tuples = [(vi[0], vi[1]) for v in cohort_criteria.values() for vi in v]
 	# query_tuples = [list(qt) + [field_desc[field_desc['field'] == str(int(float(qt[0])))]['tab'].iloc[0]] for qt in query_tuples]
+
+	fields_not_in_field_desc = [qt[0] for qt in query_tuples if not any(field_desc['field']==qt[0])]
+	print("all_fields_in_field_desc: {}".format([x in field_desc['field'] for x in fields_not_in_field_desc]))
+	print(fields_not_in_field_desc)
+
+	if fields_not_in_field_desc:
+		raise ValueError(f"{','.join(fields_not_in_field_desc)} not in field_desc['field']")
+
 	query_tuples = [list(qt) + [field_desc[field_desc['field'] == qt[0]]['tab'].iloc[0]] for qt in query_tuples]
 	query_tuples = [dict(zip(('field', 'val', 'tab'), q)) for q in query_tuples]
 	return(query_tuples)
 
 
-def unify_query_tuples(query_tuples, field_desc):
+def unify_query_tuples(query_tuples, field_desc, has_none=False):
 	# print('derive unique tabs')
+
+	#If we have a none-of query, we need a way to include all possible eids. So we extract all fields that have
+	#a value of height, i.e  everyone
+	if has_none:
+		query_tuples = query_tuples + create_query_tuples({'none_of': [('50', 'nan')]}, field_desc)
 	tabs = [t for t in field_desc['tab'].iloc[1:].unique()]
+	tab_queries = filter(len, [tab_select(tab, query_tuples, field_desc) for tab in tabs])
 	# Look at the fields in each table, form into query, take union
-	union_q = "(" + " union ".join(
-		filter(len, [tab_select(tab, query_tuples, field_desc) for tab in tabs])) + ")"
+	union_q = "(" + " union ".join(tab_queries) + ")"
+
 	return(union_q)
 
 def expand_field(field, field_desc):
@@ -316,21 +352,17 @@ def generate_main_column_queries(field, field_desc,field_sql_map):
 def pivot_results(field_desc, query_tuples):
 	field_sql_map = {f: field_desc[field_desc['field'] == f]['sql_type'].iloc[0] for f in
 					 set([q['field'] for q in query_tuples])}
-	#print(field_sql_map)
-	#col_names_q = ",".join(
-	# 	[f"cast(max(distinct case when field='{f}' then value end) as {field_sql_map[f]}) as 'f{f}'" for f in set([q['field'] for q in query_tuples])])
 
 	uniq_fields=set([q['field'] for q in query_tuples])
 	pivot_queries = [",".join(generate_main_column_queries(f,field_desc,field_sql_map)) for f in uniq_fields if f not in ['read_2', 'read_3']]
 	if 'read_2' in uniq_fields or  'read_3' in uniq_fields:
-		pivot_queries = pivot_queries + [f"cast(max(distinct case when field='{q['field']}' and value='{q['val']}' then 1 end) as VARCHAR) as 'f{q['field']}-{q['val']}'" for
+		pivot_queries = pivot_queries + [f"cast(max(distinct case when field='{q['field']}' and value='{q['val']}' then value end) as VARCHAR) as 'f{q['field']}-{q['val']}'" for
 									 q in query_tuples if q['field'] in ['read_2', 'read_3'] ]
-	#f"max(distinct case when field='{q['field']}' and value ='{q['val']}' then value end) as 'f{q['field']}_{q['val']}'"
-	#for q in query_tuples])
+
 	return(",".join(pivot_queries))
 
 
-def query_sqlite_db(db_filename: str, cohort_criteria: dict):
+def query_sqlite_db(cohort_criteria: dict, con: sqlite3.Connection=None, db_filename: str=None):
 	"""Query the triple store
 
 		Keyword arguments:
@@ -349,7 +381,8 @@ def query_sqlite_db(db_filename: str, cohort_criteria: dict):
 		"""
 
 	# TODO: Fix cohort criteria generation so that its more inline with the db we create.
-	con = sqlite3.connect(database=db_filename)
+	if(db_filename):
+		con = sqlite3.connect(database=db_filename)
 	field_desc = pd.read_sql('SELECT * from field_desc', con)
 
 	print("generate main criteria: {}".format(cohort_criteria))
@@ -357,10 +390,12 @@ def query_sqlite_db(db_filename: str, cohort_criteria: dict):
 	main_criteria = {k: [('f' + vi[0], vi[1]) for vi in v if vi[0] in field_desc['field'].values]
 					 for k, v in cohort_criteria.items()}
 
+	has_none = 'none_of' in cohort_criteria and cohort_criteria['none_of']
 	query_tuples = create_query_tuples(cohort_criteria, field_desc)
-	long_tables_query = unify_query_tuples(query_tuples, field_desc)
+	long_tables_query = unify_query_tuples(query_tuples, field_desc, has_none)
+
 	pivot_query = pivot_results(field_desc, query_tuples)
-	selection_query = filter_pivoted_results(main_criteria, field_desc)
+	selection_query = filter_pivoted_results(cohort_criteria, field_desc)
 
 	# Add the table for the field inop each query and turn in them into dictionaries to help readability
 	# query_tuples = [(int(float(vi[0])), vi[1]) for v in cohort_criteria.values() for vi in v]
@@ -369,7 +404,7 @@ def query_sqlite_db(db_filename: str, cohort_criteria: dict):
             select eid, {pivot_query}
           from {long_tables_query}
          GROUP BY eid) where {selection_query}'''.strip('\n')
-
+	print("Query: {}".format(q))
 	print(f'Run query {datetime.now()}\n {q}')
 	res = pd.read_sql(q, con)
 	print(f'Done {datetime.now()}')
