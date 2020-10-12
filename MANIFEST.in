@@ -1,2 +1,3 @@
 include README.md
 include bin/ukbcc
+include bin/build_database

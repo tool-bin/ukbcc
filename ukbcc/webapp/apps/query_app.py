@@ -300,5 +300,4 @@ def submit_cohort_query(n: int, defined_terms: dict, all_terms: list,
     output_runquery = dbc.Row(dbc.Col([output_text,
                                        dbc.Button("Close", color='primary', id="run_query_close", style={"margin": "5px"})]))
 
-    print("IDs: {}".format(ids))
     return ids, timestamp

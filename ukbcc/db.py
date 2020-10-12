@@ -254,7 +254,7 @@ def filter_pivoted_results(main_criteria, field_desc):
 	# q['none_of'] = "NOT ({})".format(" OR ".join(join_field_vals(main_criteria['none_of'])))
 	# q['none_of'] = "NOT ({})".format(" OR ".join(join_field_vals([(f'{k}_{v}', v) for k, v in main_criteria['none_of']])))
 	q['none_of'] = "NOT ({})".format(' OR '.join([f'{x[0]} AND "{x[1][0]}_{x[1][1]}" is not NULL' for x in
-												  zip(join_field_vals(main_criteria['none_of'], field_desc),
+												  zip(join_field_vals(main_criteria['none_of']),
 													  main_criteria['none_of'])]))
 	selection_query = " AND ".join([qv for qk, qv in q.items() if main_criteria[qk]])
 	return(selection_query)

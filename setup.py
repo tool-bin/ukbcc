@@ -29,7 +29,7 @@ setup(
         'Natural Language :: English',
         'Intended Audience :: Science/Research'
     ],
-    scripts=['bin/ukbcc_cli', 'bin/ukbcc'],
+    scripts=['bin/ukbcc_cli', 'bin/ukbcc', 'bin/build_database'],
     # entry_points={
     #     'console_scripts': [
     #         'ukbcc_alt = ukbcc.main:main',
