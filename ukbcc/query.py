@@ -101,8 +101,10 @@ def query_databases(cohort_criteria: dict, queries: dict, main_filename: str, wr
     }
 
     main_fields = []
+    empty = []
     for logicKey in cohort_criteria.keys():
-        if len(cohort_criteria[logicKey]) == 0:
+        if not cohort_criteria[logicKey]:
+            empty.append(logicKey)
             continue
         for entry in cohort_criteria[logicKey]:
             if entry[0] not in ['read_2', 'read_3']:
@@ -139,6 +141,9 @@ def query_databases(cohort_criteria: dict, queries: dict, main_filename: str, wr
     except Exception as error:
         #print("No results from intersection between ands and ors, resulting in exception: {}. Creating empty ands_ors set".format(error))
         ands_ors = set()
+    # if any_of and all_of are empty, return all eids in the dataset
+    if 'any_of' in empty and 'all_of' in empty:
+        ands_ors = set(pd.read_csv(main_filename, usecols=['eid'], dtype=str)['eid'].to_list())
     eids = list(ands_ors - nots)
 
     if write:

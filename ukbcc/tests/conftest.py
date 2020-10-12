@@ -35,7 +35,7 @@ def main_csv(tmpdir_factory):
 
 @pytest.fixture(scope='module')
 def gp_csv(tmpdir_factory):
-    test_gp_dat = (   
+    test_gp_dat = (
 "eid,	data_provider,	event_dt,	read_2,	read_3,	value1,	value2,	value3\n"
 "1037918,	3,	01/01/1980,	,XE0Gu,	\n"
 "1037918,	3,	08/05/1984,	,F45..,	\n"
@@ -54,7 +54,7 @@ def gp_csv(tmpdir_factory):
 
 @pytest.fixture(scope='module')
 def showcase_csv(tmpdir_factory):
-    test_showcase_dat = (   
+    test_showcase_dat = (
 "Path,Category,FieldID,Field,Participants,Items,Stability,ValueType,Units,ItemType,Strata,Sexed,Instances,Array,Coding,Notes,Link\n"
 "OCT,100016,6070,OCT measured (right),,98849,Complete,Categorical single,,Data,Primary,Unisex,2,1,100274,n1,http://biobank.ctsu.ox.ac.uk/showcase/field.cgi?id=6070\n"
 "EYE,100041,6119,Which eye(s) affected by glaucoma,,3970,Complete,Categorical single,,Data,Primary,Unisex,4,1,100515,n2,http://biobank.ctsu.ox.ac.uk/showcase/field.cgi?id=6119\n"
@@ -76,8 +76,8 @@ def showcase_csv(tmpdir_factory):
 @pytest.fixture(scope='module')
 def sqlite_db(main_csv, showcase_csv, gp_csv, tmpdir_factory):
     db_file = str(tmpdir_factory.mktemp("sqlite").join("db.sqlite"))
-    con = db.create_sqlite_db(db_filename=db_file, 
-                     main_filename=main_csv, 
+    con = db.create_sqlite_db(db_filename=db_file,
+                     main_filename=main_csv,
                      gp_clin_filename = gp_csv,
                      showcase_file = showcase_csv,
                      step=2)
@@ -102,8 +102,23 @@ def field_desc():
        "read_3  read_3   read_3  Categorical multiple  VARCHAR  object       str\n"
     ))))
     return(field_desc)
-    
-    
+
+@pytest.fixture(scope='module')
+def cohort_criteria():
+    cohort_criteria = {'all_of': [], 'any_of': [['21017', '1263']], 'none_of': []}
+    return(cohort_criteria)
+
+@pytest.fixture(scope='module')
+def query_tuples():
+    exp_query_tuples = [{'field': '21017', 'val': '1263', 'tab': 'str'}]
+    return(exp_query_tuples)
+
+@pytest.fixture(scope='module')
+def main_criteria():
+    main_criteria = {'all_of': [], 'any_of': [('f21017', '1263')], 'none_of': []}
+    return(main_criteria)
+
+
 
 
 #@pytest.fixture
