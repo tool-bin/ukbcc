@@ -279,7 +279,7 @@ def submit_cohort_query(n: int, defined_terms: dict, all_terms: list,
 
     db_filename = config['db_path']
 
-    res = db.query_sqlite_db(db_filename, cohort_dictionaries['encoded'])
+    res = db.query_sqlite_db(db_filename=db_filename, cohort_criteria=cohort_dictionaries['encoded'])
     ret = html.P(f"No matching ids found. Please change your criteria.")
     if res.shape[0]:
         t1=tableone.TableOne(res)

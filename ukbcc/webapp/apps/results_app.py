@@ -39,7 +39,8 @@ tab = dbc.FormGroup(
             # html.P("Please find the results of your cohort search below", className="card-text"),
             dbc.Row(id='history_results', align='center'),
             html.Div([
-                dbc.Button("Save cohort IDs", color='success', id="save_cohort_ids_modal_btn", style={"margin": "5px"})
+                dbc.Button("Save cohort IDs", color='success', id="save_cohort_ids_modal_btn", style={"margin": "5px"}),
+                dbc.Button("Save as CSV", color='success', id="save_as_csv_modal_btn", style={"margin": "5px"})
             ]),
             dbc.Row(dbc.Col(id='save_id_status'), align='center'),
             html.H3("Cohort Search Results Report", className="card-text"),

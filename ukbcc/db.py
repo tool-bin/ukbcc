@@ -79,7 +79,7 @@ def create_field_desc(main_df, showcase_file):
 def create_table_queries(tabs):
 	#
 	# Create a table for every sqltype
-	print("create tables")
+	#print("create tables")
 	queries=[]
 	for tab_name, field_type in tabs.items():
 		queries.append(f"DROP TABLE IF EXISTS {tab_name};")
@@ -110,7 +110,7 @@ def insert_main_chunk(chunk, tab_name, tab_fields):
 #TODO: Give gp_clinical data its own table. I think the event dates cannot be fit into the form we currently have
 def insert_gp_clin_chunk(chunk):
 	#chunk['read_2'] = chunk.read_2.combine_first(chunk.read_3)
-	print("chunk: {}".format(chunk))
+	#print("chunk: {}".format(chunk))
 
 	chunk = chunk.melt(id_vars=['eid', 'data_provider', 'event_dt'], value_vars=['read_2', 'read_3']).query('~value.isna()')
 	chunk['array'] = '0'
@@ -119,7 +119,7 @@ def insert_gp_clin_chunk(chunk):
 		['eid', 'field', 'time', 'array', 'value']]
 	trips = trips[trips['value'].notnull()]
 	#trips['field'] = 'read_' + trips['field'].astype(str)
-	print(trips)
+	#print(trips)
 	return (f'INSERT INTO {"str"} values({",".join("?" * len(trips.columns))})',
 						trips.values.tolist())
 
@@ -187,6 +187,7 @@ def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str
 	tabs = dict(zip(['str', 'int', 'real', 'datetime'], ["VARCHAR", "INTEGER", "REAL", "REAL"]))
 	tab_fields = create_tab_fields_map(tabs, field_desc)
 	#Create queries to drop and create tables.
+	print ("Create tables")
 	x=con.executescript("".join(create_table_queries(tabs)))
 
 	# Add columns to field_desc indicate which table each field goes into
@@ -200,6 +201,7 @@ def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str
 	dtypes_dict = dict(zip(field_desc['field_col'].to_list(), field_desc['pd_type'].to_list()))
 
 	# GP clinical data
+	print ("Insert GP data")
 	max_pb = int(estimate_line_count(gp_clin_filename) / step) + 1
 	pb_widgets = [progressbar.Percentage(), progressbar.Bar(), progressbar.ETA(), ]
 	reader = pd.read_csv(gp_clin_filename, chunksize=step, low_memory=False, encoding="ISO-8859-1", delimiter='\t')
@@ -210,6 +212,7 @@ def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str
 
 	# TODO: This is slow. We can parallelise this using Queue
 	# TODO: Repeats the specific code above, except insert call and delimiter
+	print ("Insert main data")
 	max_pb = int(estimate_line_count(main_filename)/ step)+ 1
 	reader = pd.read_csv(main_filename, chunksize=step, low_memory=False, encoding="ISO-8859-1",
 						 dtype=dtypes_dict, parse_dates=date_cols)
@@ -235,7 +238,7 @@ def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str
 #Are we looking at varchat?
 def is_varchar(x,field_desc):
 	field_in_field_desc =  any (field_desc['field'] == re.sub('^f', '', x) )
-	print("field_in_field_desc: {}".format(field_in_field_desc))
+	#print("field_in_field_desc: {}".format(field_in_field_desc))
 	if not field_in_field_desc:
 		raise ValueError(f"{re.sub('^f', '', x)} not in field_desc['field']")
 	return field_desc[field_desc['field'] == re.sub('^f', '', x)]['sql_type'].iloc[0] == 'VARCHAR'
@@ -259,7 +262,7 @@ def field_value_query_template(f,v,f_ex, field_desc, null=False):
 	val_str=prepare_value({'field': f, 'val': v if null==False else 'nan'}, field_desc)
 	if len(f_ex) == 3:
 		return "'f{}-{}.{}' {}".format(f_ex[0], f_ex[1], f_ex[2], val_str)
-	print(f_ex)
+	#print(f_ex)
 	return "'f{}-{}' {}".format(f_ex[0],v, val_str)
 
 # field_val_pairs: list of tuples from a cohort criteria, e.g. [('6070', "1"), ('6119', "1")]
@@ -311,8 +314,8 @@ def create_query_tuples(cohort_criteria, field_desc):
 	# query_tuples = [list(qt) + [field_desc[field_desc['field'] == str(int(float(qt[0])))]['tab'].iloc[0]] for qt in query_tuples]
 
 	fields_not_in_field_desc = [qt[0] for qt in query_tuples if not any(field_desc['field']==qt[0])]
-	print("all_fields_in_field_desc: {}".format([x in field_desc['field'] for x in fields_not_in_field_desc]))
-	print(fields_not_in_field_desc)
+	#print("all_fields_in_field_desc: {}".format([x in field_desc['field'] for x in fields_not_in_field_desc]))
+	#print(fields_not_in_field_desc)
 
 	if fields_not_in_field_desc:
 		raise ValueError(f"{','.join(fields_not_in_field_desc)} not in field_desc['field']")
@@ -386,7 +389,11 @@ def query_sqlite_db(cohort_criteria: dict, con: sqlite3.Connection=None, db_file
 	# TODO: Fix cohort criteria generation so that its more inline with the db we create.
 	if(db_filename):
 		con = sqlite3.connect(database=db_filename)
+
+
 	field_desc = pd.read_sql('SELECT * from field_desc', con)
+	if(not any(cohort_criteria.values())):
+	  return pd.DataFrame({'eid':[]})
 
 	print("generate main criteria: {}".format(cohort_criteria))
 	#cohort_criteria = {k: [(re.sub(r'\.[0-9]+$', '', v0), v1) for (v0, v1) in vs] for k, vs in cohort_criteria.items()}

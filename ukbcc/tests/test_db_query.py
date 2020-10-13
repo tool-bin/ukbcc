@@ -281,3 +281,9 @@ def test_db_any_pair_same_field_query(sqlite_db):
     exp_ids = set([1041796, 1037058,  1030520,  1003670])
     assert exp_ids == set(obs['eid'].tolist())
 
+#Empty query
+def test_db_empty_query(sqlite_db):
+    cohort_criteria = {'any_of': [], 'all_of': [], 'none_of': []}
+    obs=db.query_sqlite_db(con=sqlite_db, cohort_criteria=cohort_criteria)    
+    exp_ids = set([])
+    assert exp_ids == set(obs['eid'].tolist())
