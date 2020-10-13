@@ -147,7 +147,7 @@ def search_kw_button(_: int, config: dict, search_terms: list, kw_search: dict):
         return ("Config has not been set. Missing all fields"), ()
 
     #Show error if we are missing fields
-    required_config = set(['db_path', 'gp_path', 'readcodes_path', 'codings_path', 'showcase_path'])
+    required_config = set(['db_path', 'readcodes_path', 'codings_path', 'showcase_path'])
     existing_config_fields=set(config.keys())
     missing_config_fields = required_config.difference(existing_config_fields)
     if len(missing_config_fields)!=0:
