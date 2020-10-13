@@ -195,7 +195,7 @@ def test_missing_fields(main_csv, gp_csv):
 
 #Can we do a query on read2 at all?
 def test_all_gp_clinical_read2(main_csv, gp_csv):
-    cohort_criteria = {'all_of': [('read_2', "229..")], 'any_of': [], 'none_of': []}
+    cohort_criteria = {'all_of': [('read_2', "4662.")], 'any_of': [], 'none_of': []}
     gen_query = query.create_queries(cohort_criteria,
                                    main_filename=main_csv,
                                    gpc_path=gp_csv)
@@ -204,7 +204,7 @@ def test_all_gp_clinical_read2(main_csv, gp_csv):
                                 write_dir=None, gpc_path=gp_csv,
                                 out_filename=None, write=False)
 
-    exp_ids = set(["1037918"])
+    exp_ids = set(["1041796"])
     assert exp_ids == set(ids)
 
 

@@ -285,15 +285,10 @@ def filter_pivoted_results(main_criteria, field_desc):
 	#NB: which fields do we one-hot-encode? Those with array values. Need to do some checks to see if this all types of fields.
 	q = {}
 
-	# q['all_of'] =  " AND ".join(join_field_vals(main_criteria['all_of']))#field_desc[field_desc['field']=='read_2']['ukb_type'].iloc[0]=='Categorical multiple'
-	q['all_of'] = " AND ".join(join_field_vals(main_criteria['all_of'], field_desc))
-	# q['any_of'] =  "({})".format(" OR ".join(join_field_vals(main_criteria['any_of'])))
-	q['any_of'] = "({})".format(" OR ".join(join_field_vals(main_criteria['any_of'], field_desc)))
-	# q['none_of'] = "NOT ({})".format(" OR ".join(join_field_vals(main_criteria['none_of'])))
-	# q['none_of'] = "NOT ({})".format(" OR ".join(join_field_vals([(f'{k}_{v}', v) for k, v in main_criteria['none_of']])))
-	q['none_of'] = "NOT ({})".format(' OR '.join([f'{x[0]} AND "{x[1][0]}_{x[1][1]}" is not NULL' for x in
-												  zip(join_field_vals(main_criteria['none_of']),
-													  main_criteria['none_of'])]))
+	q['all_of'] = " AND ".join(join_field_vals(main_criteria['all_of'], field_desc, 'all_of'))
+	q['any_of'] = "({})".format(" OR ".join(join_field_vals(main_criteria['any_of'], field_desc, 'any_of')))
+	q['none_of'] = "NOT ({})".format(" OR ".join(join_field_vals(main_criteria['none_of'], field_desc, 'none_of')))
+
 	selection_query = " AND ".join([qv for qk, qv in q.items() if main_criteria[qk]])
 	return re.sub("'", '"',selection_query)
 
@@ -396,9 +391,6 @@ def query_sqlite_db(cohort_criteria: dict, con: sqlite3.Connection=None, db_file
 	  return pd.DataFrame({'eid':[]})
 
 	print("generate main criteria: {}".format(cohort_criteria))
-	#cohort_criteria = {k: [(re.sub(r'\.[0-9]+$', '', v0), v1) for (v0, v1) in vs] for k, vs in cohort_criteria.items()}
-	main_criteria = {k: [('f' + vi[0], vi[1]) for vi in v if vi[0] in field_desc['field'].values]
-					 for k, v in cohort_criteria.items()}
 
 	has_none = 'none_of' in cohort_criteria and cohort_criteria['none_of']
 	query_tuples = create_query_tuples(cohort_criteria, field_desc)

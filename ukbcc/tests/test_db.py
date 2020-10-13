@@ -137,8 +137,9 @@ def test_pivot_results(field_desc, query_tuples):
     pivot_query = db.pivot_results(field_desc, query_tuples)
     assert exp_pivot_queries == pivot_query
 
-def test_filter_pivot_results(main_criteria, field_desc):
-    exp_selection_query = '("f21017_1263" ="1263")'
+def test_filter_pivot_results(field_desc):
+    main_criteria = {'all_of': [], 'any_of': [('21017', '1263')], 'none_of': []}
+    exp_selection_query = '(("f21017-0.0" ="1263"))'
     selection_query = db.filter_pivoted_results(main_criteria, field_desc)
     assert exp_selection_query == selection_query
 
