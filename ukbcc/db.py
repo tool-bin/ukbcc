@@ -49,15 +49,16 @@ def create_tab_fields_map(tabs, field_desc):
 
 def create_field_desc(main_df, showcase_file):
 	data_dict = pd.read_csv(showcase_file)
-	data_dict['FieldID'] = list(map(str, data_dict['FieldID']))
+	data_dict.columns = map(str.lower, data_dict.columns)
+	data_dict['fieldid'] = list(map(str, data_dict['fieldid']))
 	ukbtype_sqltype_map, ukbtype_pandastypes_map = create_type_maps()
 
 	field_desc = pd.DataFrame({'field_col': main_df.columns,
 							   'field': ['eid'] + [str(x.split('-')[0]) for x in main_df.columns[1:]]})
 	field_desc['category'] = [-1] + list(
-		map(dict(zip(data_dict['FieldID'], data_dict['Category'])).get, field_desc['field'][1:]))
-	field_desc['ukb_type'] = list(map(dict(zip(['eid'] + data_dict['FieldID'].to_list(),
-											   ['Integer'] + data_dict['ValueType'].to_list())).get,
+		map(dict(zip(data_dict['fieldid'], data_dict['category'])).get, field_desc['field'][1:]))
+	field_desc['ukb_type'] = list(map(dict(zip(['eid'] + data_dict['fieldid'].to_list(),
+											   ['integer'] + data_dict['valuetype'].to_list())).get,
 									  field_desc['field']))
 
 	field_desc['sql_type'] = list(map(ukbtype_sqltype_map.get, field_desc['ukb_type']))
