@@ -157,7 +157,7 @@ def add_tabs_to_field_desc(field_desc, tab_fields):
 
 
 # TODO: do more checks on whether the files exist
-def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str="",
+def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str,
 					 showcase_file: str, step: int = 5000) -> sqlite3.Connection:
 	"""Creates an sql database
 
