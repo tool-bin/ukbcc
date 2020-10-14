@@ -201,11 +201,11 @@ def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str
 		(field_desc['ukb_type'] == 'Date') | (field_desc['ukb_type'] == 'Time')].to_list()
 	dtypes_dict = dict(zip(field_desc['field_col'].to_list(), field_desc['pd_type'].to_list()))
 
+	pb_widgets = [progressbar.Percentage(), progressbar.Bar(), progressbar.ETA(), ]
 	# GP clinical data
 	if gp_clin_filename:
 		print ("Insert GP data")
 		max_pb = int(estimate_line_count(gp_clin_filename) / step) + 1
-		pb_widgets = [progressbar.Percentage(), progressbar.Bar(), progressbar.ETA(), ]
 		reader = pd.read_csv(gp_clin_filename, chunksize=step, low_memory=False, encoding="ISO-8859-1", delimiter='\t')
 		with progressbar.ProgressBar(widgets=pb_widgets, max_value=max_pb)	as bar:
 			for i, chunk in enumerate(reader):
