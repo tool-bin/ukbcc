@@ -157,7 +157,7 @@ def add_tabs_to_field_desc(field_desc, tab_fields):
 
 # TODO: do more checks on whether the files exist
 def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str,
-					 showcase_file: str, step: int = 5000) -> sqlite3.Connection:
+					 showcase_file: str, step: int = 5000, append=False) -> sqlite3.Connection:
 	"""Creates an sql database
 
 	Keyword arguments:
@@ -187,33 +187,39 @@ def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str
 	tabs = dict(zip(['str', 'int', 'real', 'datetime'], ["VARCHAR", "INTEGER", "REAL", "REAL"]))
 	tab_fields = create_tab_fields_map(tabs, field_desc)
 	#Create queries to drop and create tables.
-	print ("Create tables")
-	x=con.executescript("".join(create_table_queries(tabs)))
+	if(not append):
+		print ("Create tables")
+		x=con.executescript("".join(create_table_queries(tabs)))
 
-	# Add columns to field_desc indicate which table each field goes into
-	# Then write fields to a table in the database
-	field_desc = add_tabs_to_field_desc(field_desc, tab_fields)
-	field_desc.to_sql("field_desc", con, if_exists='replace', index=False)
+		# Add columns to field_desc indicate which table each field goes into
+		# Then write fields to a table in the database
+		field_desc = add_tabs_to_field_desc(field_desc, tab_fields)
+		field_desc.to_sql("field_desc", con, if_exists='replace', index=False)
+	else:
+		field_desc = pd.read_sql('SELECT * from field_desc', con)
 
 	# Create list of dates, dictionary of all column types and a boolean vector of where 'eid' sits
 	date_cols = field_desc['field_col'][
 		(field_desc['ukb_type'] == 'Date') | (field_desc['ukb_type'] == 'Time')].to_list()
 	dtypes_dict = dict(zip(field_desc['field_col'].to_list(), field_desc['pd_type'].to_list()))
 
-	# GP clinical data
-	print ("Insert GP data")
-	max_pb = int(estimate_line_count(gp_clin_filename) / step) + 1
 	pb_widgets = [progressbar.Percentage(), progressbar.Bar(), progressbar.ETA(), ]
-	reader = pd.read_csv(gp_clin_filename, chunksize=step, low_memory=False, encoding="ISO-8859-1", delimiter='\t')
-	with progressbar.ProgressBar(widgets=pb_widgets, max_value=max_pb)	as bar:
-		for i, chunk in enumerate(reader):
-			x = con.executemany(*insert_gp_clin_chunk(chunk))
-			bar.update(i)
+
+	# GP clinical data
+	if (gp_clin_filename):
+		print ("Insert GP data")
+		max_pb = int(estimate_line_count(gp_clin_filename) / step) + 1
+		reader = pd.read_csv(gp_clin_filename, chunksize=step, low_memory=False, encoding="ISO-8859-1", delimiter='\t')
+		with progressbar.ProgressBar(widgets=pb_widgets, max_value=max_pb)	as bar:
+			for i, chunk in enumerate(reader):
+				x = con.executemany(*insert_gp_clin_chunk(chunk))
+				bar.update(i)
 
 	# TODO: This is slow. We can parallelise this using Queue
 	# TODO: Repeats the specific code above, except insert call and delimiter
-	print ("Insert main data")
-	max_pb = int(estimate_line_count(main_filename)/ step)+ 1
+	lines = estimate_line_count(main_filename)
+	print ("Insert main data from {}.\n Est lines={}".format(main_filename, lines))
+	max_pb = int(lines/ step)+ 1
 	reader = pd.read_csv(main_filename, chunksize=step, low_memory=False, encoding="ISO-8859-1",
 						 dtype=dtypes_dict, parse_dates=date_cols)
 	with progressbar.ProgressBar(widgets=pb_widgets, max_value=max_pb) as bar:
@@ -225,7 +231,8 @@ def create_sqlite_db(db_filename: str, main_filename: str, gp_clin_filename: str
 	con.commit()
 	print('UKBCC database - finished populating')
 
-	create_index(con)
+	if (not append):
+		create_index(con)
 	print('UKBCC database - finished')
 
 	return (con)

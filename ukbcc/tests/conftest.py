@@ -3,7 +3,7 @@ import pandas as pd
 from io import StringIO
 import re
 from ukbcc import db
-#import sqlite
+import sqlite3
 #import textwrap
 
 @pytest.fixture(scope='module')
@@ -32,6 +32,19 @@ def main_csv(tmpdir_factory):
     print(fn)
     return str(fn)
 
+
+@pytest.fixture(scope='module')
+def main_append_csv(tmpdir_factory):
+    test_main_dat = (
+    'eid,21017-0.0,41270-0.1,6070-0.0,6119-0.0,6148-0.1,6148-0.2,53-0.0,4286-0.0,50-0.0,21003-0.0,22182-0.0\n'
+'1037912,21017_0_0,E119,3,,4,5,1/10/2008,,165,67,"2,0,0,0"\n'
+)
+    test_main_dat = re.sub("\t+", ",", test_main_dat)
+    #test_main_df = pd.read_csv(StringIO(test_main_dat), delimiter="[ ]+", quotechar="'")
+    fn = tmpdir_factory.mktemp("main").join("ukb2.csv")
+    fn.write(test_main_dat)#test_main_df.to_csv(str(fn), sep=",", quotechar='"', index=False)
+    print(fn)
+    return str(fn)
 
 @pytest.fixture(scope='module')
 def gp_csv(tmpdir_factory):
@@ -74,13 +87,19 @@ def showcase_csv(tmpdir_factory):
 
 
 @pytest.fixture(scope='module')
-def sqlite_db(main_csv, showcase_csv, gp_csv, tmpdir_factory):
+def db_file(main_csv, showcase_csv, gp_csv, tmpdir_factory):
     db_file = str(tmpdir_factory.mktemp("sqlite").join("db.sqlite"))
-    con = db.create_sqlite_db(db_filename=db_file,
+    db.create_sqlite_db(db_filename=db_file,
                      main_filename=main_csv,
                      gp_clin_filename = gp_csv,
                      showcase_file = showcase_csv,
                      step=2)
+    return(db_file)
+
+
+@pytest.fixture(scope='module')
+def sqlite_db(db_file):
+    con = sqlite3.connect(database=db_file)
     return(con)
 
 @pytest.fixture(scope='module')

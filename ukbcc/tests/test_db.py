@@ -181,6 +181,31 @@ def test_db_create(sqlite_db):#main_csv, showcase_csv, gp_csv, tmpdir):
     assert len(vals_read_2)==3
     
 
+def test_db_create_append(db_file, showcase_csv, main_append_csv):#main_csv, showcase_csv, gp_csv, tmpdir):
+    #db_file = str(tmpdir.mkdir("sqlite").join("db.sqlite"))
+    #con = db.create_sqlite_db(db_filename=db_file,
+    #                 main_filename=main_csv,
+    #                 gp_clin_filename = gp_csv,
+    #                 showcase_file = showcase_csv,
+    #                 step=2)
+
+
+    #Check some main dataset fields exist
+    con = db.create_sqlite_db(db_filename=db_file,
+                        main_filename=main_append_csv,
+                        gp_clin_filename='',
+                        showcase_file=showcase_csv,
+                        step=1, append=True)
+
+    #Check we've created the right tables
+    tabs=con.execute("select name from sqlite_master where type = 'table';").fetchall()
+    exp_tabs=set(["int", "str", "real", "datetime", "field_desc"])
+    assert set([x[0] for x in tabs]) == exp_tabs
+
+    vals_6148 = con.execute("select * from str where field='6070' and value='3'").fetchall()
+    assert len(vals_6148)==1
+
+
 
 def test_db_main_insert(main_csv):
     dtypes_dict = {
