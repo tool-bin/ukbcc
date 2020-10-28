@@ -11,7 +11,7 @@ import os
 import tableone
 from io import StringIO
 
-from ukbcc import query, utils, db
+from ukbcc import query, utils, db, stats
 import pprint
 
 from datetime import datetime
@@ -197,8 +197,8 @@ def _create_conditional_logic_list(logic_terms: list, defined_terms: dict):
 @app.callback(
     # [Output("query_results", "children"),
     [Output("cohort_id_results", "data"),
-    Output("cohort_id_results_timestamp", "data")],
-    # Output("cohort_id_report", "data")],
+    Output("cohort_id_results_timestamp", "data"),
+    Output("cohort_id_report", "data")],
     [Input("cohort_search_submit1", "n_clicks")],
     [State("defined_terms", "data"),
      State({"index":0, "name":"query_term_dropdown"}, 'value'),
@@ -278,6 +278,8 @@ def submit_cohort_query(n: int, defined_terms: dict, all_terms: list,
     print('\ncreate_queries query_sqlite_db {}'.format(print_time()))
 
     db_filename = config['db_path']
+    showcase_filename=config['showcase_path']
+    coding_filename=config['codings_path']
 
     res = db.query_sqlite_db(db_filename=db_filename, cohort_criteria=cohort_dictionaries['encoded'])
     ret = html.P(f"No matching ids found. Please change your criteria.")
@@ -287,17 +289,20 @@ def submit_cohort_query(n: int, defined_terms: dict, all_terms: list,
                                  hover=True)
 
     ids=res['eid'].to_list()
-    print('\nfinished query_databases {}'.format(print_time()))
-    print('\n generating report {}'.format(print_time()))
+    # print('\nfinished query_databases {}'.format(print_time()))
+    # print('\n generating report {}'.format(print_time()))
+    print(f"length of ids {len(ids)}")
+
+    stats_dict, translation_df = stats.compute_stats_db(db_filename, ids, showcase_filename, coding_filename)
+
+    # stats_fields = {"all_of": [], "any_of": [["20002", "1263"]], "none_of": []}
     # stats_dict, translation_df = stats.compute_stats(main_filename=config['main_path'],
     #                                            eids=ids,
-    #                                            showcase_filename=config['showcase_path'],
-    #                                            coding_filename=config['codings_path'])
-    # stats_report_dict = stats.create_report(translation_df)
+    stats_report_dict = stats.create_report(translation_df)
 
     footer = dbc.ModalFooter(dbc.Button("Close", id="close_run_query_btn_new", className="ml-auto", style={"margin": "5px"}))
     output_text = html.P(ret)
     output_runquery = dbc.Row(dbc.Col([output_text,
                                        dbc.Button("Close", color='primary', id="run_query_close", style={"margin": "5px"})]))
 
-    return ids, timestamp
+    return ids, timestamp, stats_report_dict

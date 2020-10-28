@@ -370,7 +370,7 @@ def pivot_results(field_desc, query_tuples):
 	return(",".join(pivot_queries))
 
 
-def query_sqlite_db(cohort_criteria: dict, con: sqlite3.Connection=None, db_filename: str=None):
+def query_sqlite_db(cohort_criteria: dict, con: sqlite3.Connection=None, db_filename: str=None, eids_list: list=[]):
 	"""Query the triple store
 
 		Keyword arguments:
@@ -379,7 +379,8 @@ def query_sqlite_db(cohort_criteria: dict, con: sqlite3.Connection=None, db_file
 			path and filename of db to query
 		cohort_criteria: dict
 			cohort_criteria defining query
-
+		eids_list: list
+			optional list of EIDs to filter the resulting dataframe for
 
 		Returns:
 		--------
@@ -414,7 +415,12 @@ def query_sqlite_db(cohort_criteria: dict, con: sqlite3.Connection=None, db_file
           from {long_tables_query}
          GROUP BY eid) where {selection_query}'''.strip('\n')
 	#print("Query: {}".format(q))
-	print(f'Run query {datetime.now()}\n {q}')
+	# print(f'Run query {datetime.now()}\n {q}')
 	res = pd.read_sql(q, con)
+	if eids_list:
+		print(f"filtering for ids {eids_list}")
+		res_filt = res.set_index(['eid']).iloc[res.set_index(['eid']).index.isin(eids_list)]
+		res = res_filt
+		print(f"res_filt shape {res.shape}")
 	print(f'Done {datetime.now()}')
 	return (res)

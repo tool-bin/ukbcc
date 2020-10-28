@@ -24,7 +24,7 @@ cohort_ids_out = dbc.Form(
             dbc.Label("Cohort IDs File (path)", html_for={"type": "config_input","name":"cohort_ids_outfile"}),
             dbc.Input(placeholder="Name and path of the file to write cohort IDs to",
                                           type="text", id="cohort_ids_outfile", persistence=False, style={"margin": "5px"}),
-            dbc.FormText("Specify the name and path of file to write cohort IDs to e.g /data/cohort_ids.txt", color="secondary")
+            dbc.FormText("Specify the name of the file to write cohort IDs to e.g cohort_ids.txt", color="secondary")
         ],
         className='mr-3',
     ),

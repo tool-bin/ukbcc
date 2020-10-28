@@ -4,10 +4,158 @@ from . import utils
 import os
 import plotly.express as px
 import plotly
+from . import db
 import json
 
+def compute_stats_db(db_filename: str, eids_list: list, showcase_filename: str, coding_filename: str, column_keys: list=['34', '52', '22001', '21000', '22021'], out_path=""):
+    """Returns basic statistics for list of EIDs and given columns.
 
-def compute_stats(main_filename: str, eids: list, showcase_filename: str, coding_filename: str,
+    Keyword arguments:
+    ------------------
+    db_filename: str
+        name and path of SQLite db file
+    eids: list[str]
+        list of eids
+    column_keys: list[str]
+        list of column keys to include from the main dataset
+
+    Returns:
+    --------
+    (stats_dict, translated_df): (dict, pd.DataFrame)
+        stats_dict is a dictionary with one entry per column and the fields: type, status, stats_table,
+        `stats_table`: pd.Series with statistics
+        `status`: str, with success or error message
+        `type`: description of the table type
+        translation_df is the extraction of the relevant columns and decoded values
+    """
+    if out_path == "":
+        write_out = False
+    else:
+        write_out = True
+
+
+    orig_column_keys = ['34-0.0', '52-0.0', '22001-0.0', '21000-0.0', '22021-0.0']
+    criteria_dict = {'any_of': [(col, 'nan') for col in column_keys], 'all_of': [], 'none_of': []}
+    stats_df = db.query_sqlite_db(db_filename=db_filename, cohort_criteria=criteria_dict, eids_list=eids_list).set_index(['eid'])
+
+    stats_filt = stats_df.iloc[stats_df.index.isin(eids_list)]
+
+    cols = stats_filt.columns.tolist()
+    # print("cols ", cols)
+    cols_orig = [col.split('f')[1] for col in cols]
+    renamedic = {orig: new for orig, new in zip(cols, cols_orig)}
+
+    translation_df = stats_filt.rename(renamedic, axis=1)[orig_column_keys]
+
+    col_dtype = {'34-0.0': 'int64', '52-0.0': 'int64', '21000-0.0': 'int64', '22001-0.0': 'float64', '22021-0.0': 'float64'}
+
+    for col in translation_df.columns.tolist():
+        settype = col_dtype[col]
+        translation_df[col] = translation_df[col].astype(settype)
+
+    # create dictionary that contains all codes
+    field_dict = dict()
+    showcase = pd.read_csv(showcase_filename, dtype='string')
+    coding = pd.read_csv(coding_filename, dtype='string')
+    codes = []
+
+    for field in column_keys:
+        field = field.split('-')[0]
+        field_dict[field] = dict()
+        try:
+            field_dict[field]['name'] = showcase.query('FieldID == "{}"'.format(field))['Field'].values[0]
+        except:
+            field_dict[field]['name'] = field
+        try:
+            field_dict[field]['coding'] = int(showcase.query('FieldID == "{}"'.format(field))['Coding'].values[0])
+            codes.append(int(showcase.query('FieldID == "{}"'.format(field))['Coding'].values[0]))
+        except:
+            field_dict[field]['coding'] = np.nan
+        try:
+            field_dict[field]['type'] = showcase.query('FieldID == "{}"'.format(field))['ValueType'].values[0]
+        except:
+            field_dict[field]['type'] = np.nan
+
+    # create coding dictionary for values
+    coding_dict = dict()
+    for col in set(codes):
+        relevant_df = coding.query('Coding == "{}"'.format(col))
+        coding_dict['{}'.format(col)] = dict(zip(relevant_df.Value, relevant_df.Meaning))
+
+    # create dictionary to rename columns
+    rename_dict = dict()
+    for col in translation_df.columns:
+        rename_dict[col] = col.split('-')[0]
+
+    # rename columns
+    translation_df = translation_df.rename(columns=rename_dict)
+
+    # print(f"trans_df cols {translation_df.columns.tolist()}")
+    # print(f"rename dic {rename_dict}")
+    # print(f"field dic {field_dict}")
+
+    # replace values
+    for col in translation_df.columns:
+        # print(f"checking col {col}")
+        col_type = field_dict[col]['type']
+        coding_scheme = field_dict[col]['coding']
+
+        # print(f'{col}, {col_type}, {coding_scheme}')
+        if col_type in ['Integer', 'Categorical single']:
+            translation_df[col] = translation_df[col].astype(pd.Int32Dtype()).astype(str)
+        if not pd.isna(coding_scheme):
+            if str(coding_scheme) in coding_dict.keys():
+                translation_df[col] = translation_df[col].map(coding_dict[f"{coding_scheme}"])
+
+    name_dict = dict()
+    statistics_dict = dict()
+
+    for col in translation_df.columns:
+        try:
+            name_dict[col] = field_dict[col]['name']
+            statistics_dict[field_dict[col]['name']] = {}
+        except:
+            name_dict[col] = col
+            statistics_dict[col] = {}
+
+    # understand column types to extract meaningful statistics
+    for col in translation_df.columns:
+        col_type = field_dict[col]['type']
+        if col_type in ['Integer', 'Continuous']:
+            translation_df[col] = pd.to_numeric(translation_df[col], errors='coerce')
+            statistics_dict[field_dict[col]['name']]['type'] = 'Pandas describe'
+            statistics_dict[field_dict[col]['name']]['status'] = 'success'
+            statistics_dict[field_dict[col]['name']]['stats_table'] = translation_df[col].describe().to_dict()
+        elif col_type in ['Date', 'Time']:
+            translation_df[col] = pd.to_datetime(translation_df[col], errors='coerce')
+            statistics_dict[field_dict[col]['name']]['type'] = 'Pandas describe'
+            statistics_dict[field_dict[col]['name']]['status'] = 'success'
+            statistics_dict[field_dict[col]['name']]['stats_table'] = translation_df[col].describe().to_dict()
+        elif col_type in ['Categorical multiple', 'Text', 'Compound']:
+            statistics_dict[field_dict[col]['name']]['type'] = 'NA'
+            statistics_dict[field_dict[col]['name']]['data_type'] = col_type
+            statistics_dict[field_dict[col]['name']][
+                'status'] = f'ERROR: stats on {col_type} data currently not supported'
+            statistics_dict[field_dict[col]['name']]['stats_table'] = pd.DataFrame().to_dict()
+        else:
+            statistics_dict[field_dict[col]['name']]['data_type'] = col_type
+            statistics_dict[field_dict[col]['name']]['type'] = 'Value count'
+            statistics_dict[field_dict[col]['name']]['status'] = 'success'
+            statistics_dict[field_dict[col]['name']]['stats_table'] = translation_df[col].value_counts(normalize=False).to_dict()
+
+    # rename columns to make them more readable
+    translation_df = translation_df.rename(columns=name_dict)
+    if write_out:
+        utils.write_dictionary(statistics_dict, os.path.join(out_path, 'stats_dict.json'))
+        translation_df.to_csv(os.path.join(out_path, 'stats_fields.csv'))
+
+    return statistics_dict, translation_df
+
+
+
+
+
+def compute_stats_dataframe(main_filename: str, eids: list, showcase_filename: str, coding_filename: str,
                   column_keys: list = ['34-0.0', '52-0.0', '22001-0.0', '21000-0.0', '22021-0.0'], out_path: str="") \
                   -> (dict, pd.DataFrame):
     """Returns basic statistics for given columns and a translated dataframe.
@@ -91,7 +239,7 @@ def compute_stats(main_filename: str, eids: list, showcase_filename: str, coding
             translation_df[col] = translation_df[col].astype(pd.Int32Dtype()).astype(str)
         if not pd.isna(coding_scheme):
             if str(coding_scheme) in coding_dict.keys():
-                translation_df[col] = translation_df[col].map(coding_dict["{coding_scheme}"])
+                translation_df[col] = translation_df[col].map(coding_dict[f"{coding_scheme}"])
 
     name_dict = dict()
     statistics_dict = dict()
