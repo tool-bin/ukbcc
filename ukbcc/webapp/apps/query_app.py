@@ -288,7 +288,7 @@ def submit_cohort_query(n: int, defined_terms: dict, all_terms: list,
         ret=dbc.Table.from_dataframe(pd.read_csv(StringIO(t1.to_csv())), striped=True, bordered=True,
                                  hover=True)
 
-    ids=res['eid'].to_list()
+    ids=res['eid'].tolist()
     # print('\nfinished query_databases {}'.format(print_time()))
     # print('\n generating report {}'.format(print_time()))
     print(f"length of ids {len(ids)}")

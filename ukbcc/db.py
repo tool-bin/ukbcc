@@ -418,8 +418,8 @@ def query_sqlite_db(cohort_criteria: dict, con: sqlite3.Connection=None, db_file
 	# print(f'Run query {datetime.now()}\n {q}')
 	res = pd.read_sql(q, con)
 	if eids_list:
-		print(f"filtering for ids {eids_list}")
-		res_filt = res.set_index(['eid']).iloc[res.set_index(['eid']).index.isin(eids_list)]
+		print(f"filtering for ids")
+		res_filt = res.set_index(['eid']).iloc[res.set_index(['eid']).index.isin(eids_list)].reset_index()
 		res = res_filt
 		print(f"res_filt shape {res.shape}")
 	print(f'Done {datetime.now()}')
