@@ -24,6 +24,21 @@ def read_txt_file(file: str):
     return lines
 
 
+def write_txt_file(output_file: str, eids: list):
+    with open(output_file, "w") as f:
+        for id in eids:
+            f.write(str(id) + ",")
+
+
+def read_txt_file(file: str):
+    lines = []
+    with open(file, "r") as f:
+        for line in f.read().split(','):
+            if line != "":
+                lines.append(line)
+    return lines
+
+
 def read_dictionary(file: str):
     """Loads contents of a file into a dictionary
 
