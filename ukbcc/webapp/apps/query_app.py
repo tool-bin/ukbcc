@@ -193,6 +193,23 @@ def _create_conditional_logic_list(logic_terms: list, defined_terms: dict):
     return term_final, term_decoded_final
 
 
+def decode_results_dataframe(encoded_terms, decoded_terms, dataframe):
+    split_f = lambda x: x.split("f")[1]
+    split_ds = lambda x: x.split("-")[0]
+    get_ds = lambda x: x.split("-")[1]
+    cols = dataframe.columns.tolist()
+    mapping_cols, cv_mapper = {}, {}
+    for enc, dec in zip(encoded_terms, decoded_terms):
+        cv_mapper[enc[0]] = {enc[1]: dec[1]}
+        mapping_cols[enc[0]] = dec[0]
+    col_strings = [f"{mapping_cols[split_ds(split_f(c))]}-{get_ds(c)}" for c in cols if 'eid' not in c]
+    cv_replace_dict = {k: cv_mapper[split_ds(split_f(k))] for k in cols if 'eid' not in k}
+    cols_replace = {k: v for k, v in zip(cols[1:], col_strings)}
+    df_vals = dataframe.replace(cv_replace_dict)
+    df_cols_vals = df_vals.rename(cols_replace, axis=1)
+    return df_cols_vals
+
+
 #Submit a query
 @app.callback(
     # [Output("query_results", "children"),
@@ -257,6 +274,10 @@ def submit_cohort_query(n: int, defined_terms: dict, all_terms: list,
             cohort_dictionaries["encoded"][logic] = terms_encoded
             cohort_dictionaries["decoded"][logic] = terms_decoded
 
+    # terms_coding_mapping = list(zip(terms_encoded, terms_decoded))
+    # print(f"terms coding mapping {terms_coding_mapping}")
+
+
     outpath = config['cohort_path']
     if kw_search_terms:
         term_outfile = os.path.join(outpath, 'search_terms.txt')
@@ -278,8 +299,8 @@ def submit_cohort_query(n: int, defined_terms: dict, all_terms: list,
     print('\ncreate_queries query_sqlite_db {}'.format(print_time()))
 
     db_filename = config['db_path']
-    showcase_filename=config['showcase_path']
-    coding_filename=config['codings_path']
+    showcase_filename = config['showcase_path']
+    coding_filename = config['codings_path']
 
     res = db.query_sqlite_db(db_filename=db_filename, cohort_criteria=cohort_dictionaries['encoded'])
     ret = html.P(f"No matching ids found. Please change your criteria.")
@@ -289,10 +310,11 @@ def submit_cohort_query(n: int, defined_terms: dict, all_terms: list,
                                  hover=True)
 
     ids=res['eid'].tolist()
+    res_decoded = decode_results_dataframe(terms_encoded, terms_decoded, res)
+    resdict = res_decoded.to_dict()
     # print('\nfinished query_databases {}'.format(print_time()))
     # print('\n generating report {}'.format(print_time()))
     print(f"length of ids {len(ids)}")
-
     stats_dict, translation_df = stats.compute_stats_db(db_filename, ids, showcase_filename, coding_filename)
 
     # stats_fields = {"all_of": [], "any_of": [["20002", "1263"]], "none_of": []}
@@ -305,4 +327,4 @@ def submit_cohort_query(n: int, defined_terms: dict, all_terms: list,
     output_runquery = dbc.Row(dbc.Col([output_text,
                                        dbc.Button("Close", color='primary', id="run_query_close", style={"margin": "5px"})]))
 
-    return ids, timestamp, stats_report_dict
+    return resdict, timestamp, stats_report_dict

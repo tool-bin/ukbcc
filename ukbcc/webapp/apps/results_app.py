@@ -17,18 +17,18 @@ from ukbcc import query, utils, stats
 
 from dash.exceptions import PreventUpdate
 
-cohort_ids_out = dbc.Form(
+cohort_results_out = dbc.Form(
     [
         dbc.FormGroup(
         [
-            dbc.Label("Cohort IDs File (path)", html_for={"type": "config_input","name":"cohort_ids_outfile"}),
-            dbc.Input(placeholder="Name and path of the file to write cohort IDs to",
-                                          type="text", id="cohort_ids_outfile", persistence=False, style={"margin": "5px"}),
-            dbc.FormText("Specify the name of the file to write cohort IDs to e.g cohort_ids.txt", color="secondary")
+            dbc.Label("Cohort Results File (path)", html_for={"type": "config_input","name":"cohort_results_outfile"}),
+            dbc.Input(placeholder="Name and path of the file to write cohort results CSV to",
+                                          type="text", id="cohort_results_outfile", persistence=False, style={"margin": "5px"}),
+            dbc.FormText("Specify the name of the file to write cohort results to e.g cohort_results.csv", color="secondary")
         ],
         className='mr-3',
     ),
-    dbc.Button(children="Save", color="success", id="save_cohort_ids_button", className="ml-auto", style={"margin":"5px", "display":"block"}),
+    dbc.Button(children="Save", color="success", id="save_cohort_results_btn", className="ml-auto", style={"margin":"5px", "display":"block"}),
     ],
 )
 
@@ -39,10 +39,9 @@ tab = dbc.FormGroup(
             # html.P("Please find the results of your cohort search below", className="card-text"),
             dbc.Row(id='history_results', align='center'),
             html.Div([
-                dbc.Button("Save cohort IDs", color='success', id="save_cohort_ids_modal_btn", style={"margin": "5px"}),
-                dbc.Button("Save as CSV", color='success', id="save_as_csv_modal_btn", style={"margin": "5px"})
+                dbc.Button("Save", color='success', id="save_results_modal_btn", style={"margin": "5px"})
             ]),
-            dbc.Row(dbc.Col(id='save_id_status'), align='center'),
+            dbc.Row(dbc.Col(id='save_results_status'), align='center'),
             html.H3("Cohort Search Results Report", className="card-text"),
             html.Div(id='history_results_report'),
             html.Div([
@@ -50,15 +49,15 @@ tab = dbc.FormGroup(
             ]),
             dbc.Modal(
                 [
-                    dbc.ModalHeader("Write cohort IDs to file"),
-                    dbc.ModalBody(cohort_ids_out, id="write_cohort_file_modal", style={"overflow-wrap": "break-word"}),
+                    dbc.ModalHeader("Write cohort results to file"),
+                    dbc.ModalBody(cohort_results_out, id="write_cohort_results_modal", style={"overflow-wrap": "break-word"}),
                     dbc.ModalFooter(
-                        dbc.Button("Close", id="close_cohort_file_modal_btn", className="ml-auto", style={"margin": "5px"})
-                        # dbc.Button("Save", id="save_cohort_ids_button", color="success", className="ml-auto", style={"margin": "5px"}),
+                        dbc.Button("Close", id="close_cohort_results_modal_btn", className="ml-auto", style={"margin": "5px"}),
                     ),
                 ],
-                id="save_cohort_ids_modal",
-                size="lg"),
+                id="save_cohort_results_modal",
+                size="lg"
+            ),
         ]
     ),
     className="mt-3",
@@ -70,42 +69,43 @@ def toggle_modals(n1, n2, n3, is_open):
     return is_open
 
 @app.callback(
-    [Output("save_cohort_ids_modal", "is_open"),
-    Output("save_id_status", "children")],
-    [Input("save_cohort_ids_modal_btn", "n_clicks"),
-    Input("save_cohort_ids_button", "n_clicks"),
-    Input("close_cohort_file_modal_btn", "n_clicks")],
+    [Output("save_cohort_results_modal", "is_open"),
+    Output("save_results_status", "children")],
+    [Input("save_results_modal_btn", "n_clicks"),
+    Input("save_cohort_results_btn", "n_clicks"),
+    Input("close_cohort_results_modal_btn", "n_clicks")],
     [State("config_store","data"),
     State("cohort_id_results", "data"),
-    State("cohort_ids_outfile", "value"),
-    State("save_cohort_ids_modal", "is_open")],
+    State("cohort_results_outfile", "value"),
+    State("save_cohort_results_modal", "is_open")],
 )
-def save_cohort_ids(n1: int, n2: int, n3: int, config_init: dict, cohort_ids: list, outfilename: str, is_open: bool):
-    """Handler to save cohort IDs to text file.
+def save_cohort_results(n1: int, n2: int, n3: int, config_init: dict, cohort: pd.DataFrame, outfilename: str, is_open: bool):
+    """Handler to save cohort results to CSV file.
 
     Keyword arguments:
     ------------------
     n1: int
-        indicates number of clicks of "save_cohort_ids_modal_btn"
+        indicates number of clicks of "save_cohort_results_modal_btn"
     n2: int
         indicates number of clicks of "save_cohort_ids_btn"
     n3: int
         indicates number of clicks of "close_cohort_file_modal_btn"
     config_init: dict
         contains configuration file paths
-    cohort_ids: list
-        contains cohort IDs found after performing cohort search
+    cohort: pd.DataFrame
+        filtered main dataset for specific cohort criteria, with columns
+        determined by the selected datafields
     outfilename: str
         name of file to write cohort IDs to
     is_open: bool
-        indicates with "save_cohort_ids_modal" is open
+        indicates with "save_cohort_results_modal" is open
 
     Returns:
     --------
     check: bool
-        indicates with "save_cohort_ids_modal" is open
+        indicates with "save_cohort_results_modal" is open
     write_out_status: str
-        indicates if cohort IDs file has been created
+        indicates if cohort results file has been created
 
     """
     ctx = dash.callback_context
@@ -113,24 +113,31 @@ def save_cohort_ids(n1: int, n2: int, n3: int, config_init: dict, cohort_ids: li
         raise PreventUpdate
 
     write_out_status = ""
+    if cohort:
+        cohort_df = pd.DataFrame.from_dict(cohort)
+        cohort_ids = cohort_df['eid'].tolist()
+    else:
+        cohort_ids = []
+        cohort_df = pd.DataFrame()
     if not cohort_ids:
         write_out_status = "No results have been returned, please run a cohort search by navigating to the Configure tab."
         return False, write_out_status
     if outfilename:
-        write_out_status = "Wrote cohort IDs successfully to {}".format(outfilename)
+        write_out_status = f"Wrote cohort results successfully to {outfilename}"
         try:
             outfile_path = config_init['cohort_path']
             os.path.exists(outfile_path)
         except FileNotFoundError as fe:
-            write_out_status = "outfile path parent directory does not exists, caused following exception {}".format(fe)
+            write_out_status = f"outfile path parent directory does not exists, caused following exception {fe}"
         if n2:
             try:
                 outfile = os.path.join(outfile_path, outfilename)
-                utils.write_txt_file(outfile, cohort_ids)
+                cohort_df.to_csv(outfile, index=False)
+                # utils.write_txt_file(outfile, cohort_results)
             except Exception as e:
-                write_out_status = "failed to write cohort ids to file, caused following exception {}".format(e)
+                write_out_status = f"failed to write cohort ids to file, caused following exception {e}"
     elif not outfilename and n2:
-            write_out_status = "No path or filename provided, please provide valid path and filename by clicking the Save cohort IDs button."
+        write_out_status = "No path or filename provided, please provide valid path and filename by clicking the Save cohort IDs button."
     check = toggle_modals(n1, n2, n3, is_open)
     return check, write_out_status
 
@@ -190,15 +197,15 @@ def _create_graph(graph_dictionary: dict, c: int):
      State("cohort_id_report", "data"),
      State("config_store", "data")]
 )
-def return_results(results_returned: int, results: list, cohort_id_report: dict, config: dict):
+def return_results(results_returned: int, results: pd.DataFrame, cohort_id_report: dict, config: dict):
     """Check whether results were returned from cohort search.
 
     Keyword arguments:
     ------------------
     results_returned: int
         timestamp for when "cohort_id_results" store was last updated
-    results: list
-        list of cohort IDs
+    results: pd.DataFrame
+        filtered main dataset for specific cohort
     cohort_id_report: dict
         dict of figures generated by "compute_stats" function in stats module
     config: dict
@@ -213,7 +220,9 @@ def return_results(results_returned: int, results: list, cohort_id_report: dict,
 
     """
     if results_returned:
-        output_text = dbc.Col([html.P(f"Found {len(results)} matching ids.")])
+        results_df = pd.DataFrame.from_dict(results)
+        ids = results_df['eid'].tolist()
+        output_text = dbc.Col([html.P(f"Found {len(ids)} matching ids.")])
         stats_report = []
         if cohort_id_report:
             c = 0
