@@ -1,5 +1,6 @@
 import dash
-from ukbcc.webapp.app import app
+# from ukbcc.webapp.app import app
+from app import app
 
 import dash_html_components as html
 import dash_bootstrap_components as dbc
@@ -23,7 +24,7 @@ cohort_ids_out = dbc.Form(
             dbc.Label("Cohort IDs File (path)", html_for={"type": "config_input","name":"cohort_ids_outfile"}),
             dbc.Input(placeholder="Name and path of the file to write cohort IDs to",
                                           type="text", id="cohort_ids_outfile", persistence=False, style={"margin": "5px"}),
-            dbc.FormText("Specify the name and path of file to write cohort IDs to e.g /data/cohort_ids.txt", color="secondary")
+            dbc.FormText("Specify the name of the file to write cohort IDs to e.g cohort_ids.txt", color="secondary")
         ],
         className='mr-3',
     ),
@@ -38,7 +39,8 @@ tab = dbc.FormGroup(
             # html.P("Please find the results of your cohort search below", className="card-text"),
             dbc.Row(id='history_results', align='center'),
             html.Div([
-                dbc.Button("Save cohort IDs", color='success', id="save_cohort_ids_modal_btn", style={"margin": "5px"})
+                dbc.Button("Save cohort IDs", color='success', id="save_cohort_ids_modal_btn", style={"margin": "5px"}),
+                dbc.Button("Save as CSV", color='success', id="save_as_csv_modal_btn", style={"margin": "5px"})
             ]),
             dbc.Row(dbc.Col(id='save_id_status'), align='center'),
             html.H3("Cohort Search Results Report", className="card-text"),

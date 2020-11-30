@@ -6,8 +6,8 @@ from dash.dependencies import Input, Output, State, MATCH, ALL
 import dash_bootstrap_components as dbc
 import json
 
-from .app import app
-from .apps import config_app, kw_search_app, include_kw_app, definitions_app, query_app, results_app
+from app import app
+from apps import config_app, kw_search_app, include_kw_app, definitions_app, query_app, results_app
 import webbrowser
 from threading import Timer
 
@@ -47,8 +47,8 @@ app.layout = dbc.Container(
 
 
 @app.callback(
-    Output("tab-content", "children"),
-    [Input("tabs", "active_tab")]
+	Output("tab-content", "children"),
+	[Input("tabs", "active_tab")]
 )
 def render_tab_content(active_tab: str):
     """Render tabs.
@@ -77,7 +77,6 @@ def render_tab_content(active_tab: str):
             return html.P("Tab '{}' is not implemented...".format(active_tab))
     else:
         return config_app.tab
-
 
 @app.callback(
     Output("tabs", "active_tab"),
@@ -135,9 +134,8 @@ def open_browser():
 	webbrowser.open_new("http://localhost:{}".format(port))
 
 def main():
-    Timer(1, open_browser).start();
-    app.run_server(debug=True, use_reloader=False, dev_tools_props_check=False, dev_tools_ui=False, port=port)
-    # gunicorn -w 4 webapp:main
+    # Timer(1, open_browser).start();
+    app.run_server(debug=True, use_reloader=True, dev_tools_props_check=False, dev_tools_ui=True, port=port)
 
 if __name__ == '__main__':
     main()

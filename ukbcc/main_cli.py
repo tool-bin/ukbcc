@@ -1,5 +1,6 @@
 import argparse
-from . import colors, ui, filter, query, stats
+from . import colors, ui, filter, query, stats, db
+
 import os
 import sys
 from os import path
@@ -47,14 +48,29 @@ def main():
         overwrite = 'N'
         while path.exists(config_directory+'config.conf') and overwrite not in ['y, Y']:
             overwrite = input('File exists. Overwrite? [Y/N]: ')
-            config_directory = input('Please specify directory for config file: ')
-        main_filename = input('Please specify the full path and name of main dataset: ')
-        gp_clinical_file = input('Please specify the path and name of the GP clinical file (see README for how to download this). If you do not want to query this dataset, please type NO')
+            #config_directory = input('Please specify directory for config file: ')
+
+        db_exists = 'a'
+        while db_exists not in ['y', 'Y', 'N', 'n']:
+            db_exists = input('Have you run ukbcc previously and created an optimised database? [Y/N]: ')
+            print(f'|{db_exists}|')
+        db_exists=str2bool(db_exists)
+        if(db_exists):
+            db_filename = input('Please specify the full path and name of ukbcc-formatted database: ')
+        else:
+            db_filename = os.path.join(aux_dir, 'ukb.sql')
+            db_filename_new = input(f'Please specify the full path and name of a file to store the ukbcc-formatted database. [hit enter] for default: {db_filename}): ')
+            if(db_filename_new!=''):
+                db_filename=db_filename_new
+            main_filename = input('Please specify the full path and name of main dataset: ')
+            gp_clinical_file = input('Please specify the path and name of the GP clinical file (see README for how to download this). If you do not want to query this dataset, please type NO')
+
         out_path = input('Please specify the output directory for generated files: ')
         out_filename = input('Please specify the name of the file to store the list of ids for the cohort: ')
 
         with open(os.path.join(config_directory, "config.conf"), "w+") as file:
             file.write('[PATHS]\n'
+                       f'db_filename = "{db_filename}"\n'
                        f'main_filename = "{main_filename}"\n'
                        f'gp_clinical_file = "{gp_clinical_file}"\n'
                        f'out_path = "{out_path}"\n'
@@ -62,6 +78,7 @@ def main():
 
         config = configparser.ConfigParser()
         config.read(f'{config_directory}'+'/config.conf')
+        db_filename = config['PATHS']['db_filename'].strip('""')
         main_filename = config['PATHS']['main_filename'].strip('""')
         gp_clinical_file = config['PATHS']['gp_clinical_file'].strip('""')
         out_path = config['PATHS']['out_path'].strip('""')
@@ -79,6 +96,7 @@ def main():
 
         config = configparser.ConfigParser()
         config.read(config_filepath)
+        db_filename = config['PATHS']['db_filename'].strip('""')
         main_filename = config['PATHS']['main_filename'].strip('""')
         out_filename = config['PATHS']['out_filename'].strip('""')
         out_path = config['PATHS']['out_path'].strip('""')
@@ -95,6 +113,17 @@ def main():
         dt_string = now.strftime("_%d%m_%H%M%S")
         out_path = out_path + dt_string
         os.mkdir(out_path)
+
+    if(not os.path.exists(db_filename)):
+        print(f'"Creating UKBCC optimised database {datetime.now().strftime("%H:%M:%S")}. This may take a few minutes."')
+        search_df = filter.construct_search_df(showcase_filename=showcase_filename,
+                                               coding_filename=coding_filename,
+                                               readcode_filename=readcode_filename)
+
+        conn=db.create_sqlite_db(db_filename, main_filename, gp_clinical_file, search_df)
+        print(f'"UKBCC optimised database created. {datetime.now().strftime("%H:%M:%S")}"')
+
+
 
     search_terms_input = input(cols['orange'] + 'Please enter comma-separated search terms: ' + cols['default'])
     search_terms = search_terms_input.split(',')

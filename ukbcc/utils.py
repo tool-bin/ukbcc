@@ -5,6 +5,24 @@ import json
 import os
 from configparser import ConfigParser
 
+from datetime import datetime
+print_time = lambda: datetime.now().strftime("%H:%M:%S")
+
+
+def write_txt_file(output_file: str, eids: list):
+    with open(output_file, "w") as f:
+        for id in eids:
+            f.write(str(id) + ",")
+
+
+def read_txt_file(file: str):
+    lines = []
+    with open(file, "r") as f:
+        for line in f.read().split(','):
+            if line != "":
+                lines.append(line)
+    return lines
+
 
 def write_txt_file(output_file: str, eids: list):
     with open(output_file, "w") as f:
@@ -157,10 +175,15 @@ def get_columns(main_filename: str, keys: list, delimiter: str=',', nrows: int =
         filtered dataframe
     """
 
+    print('\nread_main {}'.format(print_time()))
     main_df = pd.read_csv(main_filename, nrows=1, dtype='string', delimiter=delimiter)
+    print('\ngenerate query{}'.format(print_time()))
     keys_query = _get_query(keys)
+    print('\nfilter{}'.format(print_time()))
     col_list = main_df.filter(regex=keys_query).columns.tolist()
+    print('\nread filtered{}'.format(print_time()))
     filtered_df = pd.read_csv(main_filename, usecols=col_list, dtype=str, nrows=nrows, delimiter=delimiter)
+    print('\ndone {}'.format(print_time()))
     if write:
         print("Writing file")
         filtered_df.to_csv(out_filename, index=False)
@@ -246,7 +269,9 @@ def filter_main_df(main_filename: str, column_keys: list, values: list, eids: li
     """
     entries = list(zip(column_keys, values))
     collist = get_columns(main_filename, column_keys).columns.tolist()
+    print('\ngenerate query2{}'.format(print_time()))
     query_string = query._create_mds_query(main_filename, entries, 'any_of')
+    print('\nrun query{}'.format(print_time()))
     filtered = query._query_main_data(main_filename=main_filename, keys=collist, query=query_string, return_df=True).set_index('eid')
     if eids:
         filtered_df = filtered.loc[filtered.index.intersection(eids)]
@@ -255,3 +280,26 @@ def filter_main_df(main_filename: str, column_keys: list, values: list, eids: li
             write_txt_file(filename, filtered_eids)
     else:
         return filtered
+
+
+# Print iterations progress
+def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
+    """
+    Call in a loop to create terminal progress bar
+    @params:
+        iteration   - Required  : current iteration (Int)
+        total       - Required  : total iterations (Int)
+        prefix      - Optional  : prefix string (Str)
+        suffix      - Optional  : suffix string (Str)
+        decimals    - Optional  : positive number of decimals in percent complete (Int)
+        length      - Optional  : character length of bar (Int)
+        fill        - Optional  : bar fill character (Str)
+        printEnd    - Optional  : end character (e.g. "\r", "\r\n") (Str)
+    """
+    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+    filledLength = int(length * iteration // total)
+    bar = fill * filledLength + '-' * (length - filledLength)
+    print(f'\r{prefix} |{bar}| {percent}% {suffix}', end = printEnd)
+    # Print New Line on Complete
+    if iteration == total:
+        print()

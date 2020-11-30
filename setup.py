@@ -29,7 +29,7 @@ setup(
         'Natural Language :: English',
         'Intended Audience :: Science/Research'
     ],
-    scripts=['bin/ukbcc_cli', 'bin/ukbcc'],
+    scripts=['bin/ukbcc_cli', 'bin/ukbcc', 'bin/build_database'],
     # entry_points={
     #     'console_scripts': [
     #         'ukbcc_alt = ukbcc.main:main',
@@ -47,8 +47,10 @@ setup(
         'pandas >= 1.0.3',
         'requests >= 2.23.0',
         'numpy >= 1.18',
+        'tableone >= 0.7.8',
         'dash >= 1.13.4',
         'dash-bootstrap-components >= 0.10.3',
+        'progressbar2 >= 3.0',
         'pytest >= 6.0.0'
     ],
     python_requires='>=3.6'

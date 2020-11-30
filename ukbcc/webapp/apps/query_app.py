@@ -1,5 +1,6 @@
 import dash
-from ukbcc.webapp.app import app
+# from ukbcc.webapp.app import app
+from app import app
 
 import dash_html_components as html
 import dash_bootstrap_components as dbc
@@ -7,8 +8,10 @@ from dash.dependencies import Input, Output, State, MATCH, ALL
 import dash_core_components as dcc
 import pandas as pd
 import os
+import tableone
+from io import StringIO
 
-from ukbcc import query, utils, stats
+from ukbcc import query, utils, db, stats
 import pprint
 
 from datetime import datetime
@@ -121,7 +124,6 @@ def set_querable_terms(active_tab: str, defined_terms: dict):
     """
     # If we have no defined terms, sop this callback
     if (defined_terms is None):
-        print(defined_terms)
         raise PreventUpdate
 
     opts=[{'label': val['name'][0], 'value': key} for key,val in defined_terms.items()]
@@ -193,8 +195,8 @@ def _create_conditional_logic_list(logic_terms: list, defined_terms: dict):
 
 #Submit a query
 @app.callback(
-    [Output("query_results", "children"),
-    Output("cohort_id_results", "data"),
+    # [Output("query_results", "children"),
+    [Output("cohort_id_results", "data"),
     Output("cohort_id_results_timestamp", "data"),
     Output("cohort_id_report", "data")],
     [Input("cohort_search_submit1", "n_clicks")],
@@ -235,7 +237,6 @@ def submit_cohort_query(n: int, defined_terms: dict, all_terms: list,
         contains IDs returned from search
 
     """
-    print('\nsubmit_cohort_query()')
     pp = pprint.PrettyPrinter(indent=4)
 
     ctx = dash.callback_context
@@ -274,26 +275,34 @@ def submit_cohort_query(n: int, defined_terms: dict, all_terms: list,
         else:
             print(f"could not save {k} cohort dictionary to {cohort_out}")
 
-    print('\ncreate_queries {}'.format(print_time()))
-    queries = query.create_queries(cohort_criteria=cohort_dictionaries['encoded'],
-                                   main_filename=config['main_path'],
-                                   gpc_path=config['gp_path'])
-    pp.pprint(queries)
-    print('\nquery_databases {}'.format(print_time()))
-    ids = query.query_databases(cohort_criteria=cohort_dictionaries['encoded'],
-                                queries=queries, main_filename=config['main_path'],
-                                write_dir=config['cohort_path'], gpc_path=config['gp_path'],
-                                out_filename=config['out_filename'], write=False)
-    print('\nfinished query_databases {}'.format(print_time()))
-    print('\n generating report {}'.format(print_time()))
-    stats_dict, translation_df = stats.compute_stats(main_filename=config['main_path'],
-                                               eids=ids,
-                                               showcase_filename=config['showcase_path'],
-                                               coding_filename=config['codings_path'])
+    print('\ncreate_queries query_sqlite_db {}'.format(print_time()))
+
+    db_filename = config['db_path']
+    showcase_filename=config['showcase_path']
+    coding_filename=config['codings_path']
+
+    res = db.query_sqlite_db(db_filename=db_filename, cohort_criteria=cohort_dictionaries['encoded'])
+    ret = html.P(f"No matching ids found. Please change your criteria.")
+    if res.shape[0]:
+        t1=tableone.TableOne(res)
+        ret=dbc.Table.from_dataframe(pd.read_csv(StringIO(t1.to_csv())), striped=True, bordered=True,
+                                 hover=True)
+
+    ids=res['eid'].tolist()
+    # print('\nfinished query_databases {}'.format(print_time()))
+    # print('\n generating report {}'.format(print_time()))
+    print(f"length of ids {len(ids)}")
+
+    stats_dict, translation_df = stats.compute_stats_db(db_filename, ids, showcase_filename, coding_filename)
+
+    # stats_fields = {"all_of": [], "any_of": [["20002", "1263"]], "none_of": []}
+    # stats_dict, translation_df = stats.compute_stats(main_filename=config['main_path'],
+    #                                            eids=ids,
     stats_report_dict = stats.create_report(translation_df)
 
     footer = dbc.ModalFooter(dbc.Button("Close", id="close_run_query_btn_new", className="ml-auto", style={"margin": "5px"}))
-    output_text = html.P(f"Found {len(ids)} matching ids.")
+    output_text = html.P(ret)
     output_runquery = dbc.Row(dbc.Col([output_text,
                                        dbc.Button("Close", color='primary', id="run_query_close", style={"margin": "5px"})]))
-    return output_text, ids, timestamp, stats_report_dict
+
+    return ids, timestamp, stats_report_dict

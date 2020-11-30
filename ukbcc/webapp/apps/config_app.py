@@ -1,4 +1,5 @@
-from ukbcc.webapp.app import app
+# from ukbcc.webapp.app import app
+from app import app
 
 import dash
 import dash_html_components as html
@@ -11,11 +12,10 @@ import json
 import ukbcc
 from ukbcc import query, utils
 
-main_path_input = dbc.FormGroup([
-        dbc.Label("Main Dataset File", html_for={"type": "config_input","name":"main_path"}),
-        dbc.Input(placeholder="Specify the name and path to main dataset file e.g /data/main.csv",
-                                      type="text", id={"type": "config_input","name":"main_path"}, persistence=True, style={"margin": "5px"}),
-        dbc.FormText("Specify the name and path to main dataset file", color="secondary"),
+db_path_input = dbc.FormGroup([
+        dbc.Label("SQLite Database (path)", html_for={"type": "config_input","name":"db_path"}),
+        dbc.Input(placeholder="Specify the name and path to sqlite database e.g /data/ukb_sql.sqlite", type="text", id={"type": "config_input","name":"db_path"}, persistence=True, style={"margin": "5px"}),
+        dbc.FormText("Specify the name and path to SQLite database file", color="secondary"),
         dbc.FormFeedback(
                     "File exists", valid=True
                 ),
@@ -25,19 +25,19 @@ main_path_input = dbc.FormGroup([
                 )
 ])
 
-gp_path_input = dbc.FormGroup([
-        dbc.Label("GP Dataset File", html_for={"type": "config_input", "name":"gp_path"}),
-        dbc.Input(placeholder="Specify the name and path to GP data file e.g /data/gp_clinical.txt", type="text", id={"type": "config_input", "name":"gp_path"}, persistence=True),
-        #dbc.Input(type="file", id={"type": "file", "name": "gp_path"},),
-        dbc.FormText("Specify the name and path to GP data file", color="secondary"),
-        dbc.FormFeedback(
-                    "File exists", valid=True
-                ),
-        dbc.FormFeedback(
-                    "File does not exist, please check path",
-                    valid=False,
-                )
-])
+# gp_path_input = dbc.FormGroup([
+#         dbc.Label("GP Dataset File", html_for={"type": "config_input", "name":"gp_path"}),
+#         dbc.Input(placeholder="Specify the name and path to GP data file e.g /data/gp_clinical.txt", type="text", id={"type": "config_input", "name":"gp_path"}, persistence=True),
+#         #dbc.Input(type="file", id={"type": "file", "name": "gp_path"},),
+#         dbc.FormText("Specify the name and path to GP data file", color="secondary"),
+#         dbc.FormFeedback(
+#                     "File exists", valid=True
+#                 ),
+#         dbc.FormFeedback(
+#                     "File does not exist, please check path",
+#                     valid=False,
+#                 )
+# ])
 
 showcase_path_input = dbc.FormGroup([
         dbc.Label("Showcase Dataset File", html_for={"type": "config_input", "name": "showcase_path"}),
@@ -101,9 +101,8 @@ tab = dbc.FormGroup(
     dbc.CardBody(
         [
             html.H3("Settings", className="card-text"),
-            html.H4("File Paths", className="card-text"),
-            dbc.Form([main_path_input,
-                      gp_path_input,
+            html.H4("File Paths"),
+            dbc.Form([db_path_input,
                       showcase_path_input,
                       codings_path_input,
                       readcodes_path_input]),
@@ -128,28 +127,24 @@ def check_path_exists(path: str):
 
 
 @app.callback(
-    [Output({'type': 'config_input', 'name': 'main_path'}, "valid"), Output({'type': 'config_input', 'name': 'main_path'}, "invalid"),
-    Output({'type': 'config_input', 'name': 'gp_path'}, "valid"), Output({'type': 'config_input', 'name': 'gp_path'}, "invalid"),
+    [Output({'type': 'config_input', 'name': 'db_path'}, "valid"), Output({'type': 'config_input', 'name': 'db_path'}, "invalid"),
     Output({'type': 'config_input', 'name': 'showcase_path'}, "valid"), Output({'type': 'config_input', 'name': 'showcase_path'}, "invalid"),
     Output({'type': 'config_input', 'name': 'codings_path'}, "valid"), Output({'type': 'config_input', 'name': 'codings_path'}, "invalid"),
     Output({'type': 'config_input', 'name': 'readcodes_path'}, "valid"), Output({'type': 'config_input', 'name': 'readcodes_path'}, "invalid"),
     Output({'type': 'config_input', 'name': 'cohort_path'}, "valid"), Output({'type': 'config_input', 'name': 'cohort_path'}, "invalid")],
-    [Input({'type': 'config_input', 'name': "main_path"}, "value"),
-    Input({'type': 'config_input', 'name': "gp_path"}, "value"),
+    [Input({'type': 'config_input', 'name': "db_path"}, "value"),
     Input({'type': 'config_input', 'name': "showcase_path"}, "value"),
     Input({'type': 'config_input', 'name': "codings_path"}, "value"),
     Input({'type': 'config_input', 'name': "readcodes_path"}, "value"),
     Input({'type': 'config_input', 'name': "cohort_path"}, "value")]
 )
-def check_validity(main_path: str, gp_path: str, showcase_path: str, codings_path: str, readcodes_path: str, cohort_path: str):
+def check_validity(db_path: str, codings_path: str, showcase_path: str, readcodes_path: str, cohort_path: str):
     """Check path validity.
 
     Keyword arguments:
     ------------------
-    main_path: str
+    db_path: str
         path to main dataset
-    gp_path: str
-        path to GP Clinical dataset
     aux_dir_path: str
         path to directory to write auxillary files to
     cohort_path: str
@@ -161,10 +156,6 @@ def check_validity(main_path: str, gp_path: str, showcase_path: str, codings_pat
         whether main dataset path is valid
     main_invalid: bool
         whether main dataset path is invalid
-    gp_valid: bool
-        whether GP Clinical dataset path is valid
-    gp_invalid: bool
-        whether GP Clinical dataset path is invalid
     showcase_valid: bool
         whether showcase file path is valid
     showcase_invalid: bool
@@ -180,13 +171,12 @@ def check_validity(main_path: str, gp_path: str, showcase_path: str, codings_pat
     cohort_invalid: bool
         whether cohort directory path is invalid
     """
-    main_valid, main_invalid = check_path_exists(main_path)
-    gp_valid, gp_invalid = check_path_exists(gp_path)
+    main_valid, main_invalid = check_path_exists(db_path)
     showcase_valid, showcase_invalid = check_path_exists(showcase_path)
     codings_valid, codings_invalid = check_path_exists(codings_path)
     readcodes_valid,readcodes_invalid = check_path_exists(readcodes_path)
     cohort_valid, cohort_invalid = check_path_exists(cohort_path)
-    return main_valid, main_invalid, gp_valid, gp_invalid, showcase_valid, showcase_invalid, codings_valid, codings_invalid, readcodes_valid, readcodes_invalid, cohort_valid, cohort_invalid
+    return main_valid, main_invalid, showcase_valid, showcase_invalid, codings_valid, codings_invalid, readcodes_valid, readcodes_invalid, cohort_valid, cohort_invalid
 
 
 # Save config input
@@ -231,3 +221,4 @@ def save_config_handler(values: str, n_click: int, config_init: dict):
             if 'value' in config_id_dict:
                 config[config_id_dict['id']['name']]=config_id_dict['value']
         return config
+    return config
