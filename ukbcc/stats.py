@@ -47,10 +47,14 @@ def compute_stats_db(db_filename: str, eids_list: list, showcase_filename: str, 
 
     translation_df = stats_filt.rename(renamedic, axis=1)[orig_column_keys]
 
-    col_dtype = {'34-0.0': 'int64', '52-0.0': 'int64', '21000-0.0': 'int64', '22001-0.0': 'float64', '22021-0.0': 'float64'}
+    col_dtype = {'34': 'Int64', '52': 'Int64', '21000': 'Int64', '22001': 'float64', '22021': 'float64'}
+    split_ds = lambda x: x.split("-")[0]
+
+    # col_dtype = {'34-0.0': 'int64', '52-0.0': 'Int64', '21000-0.0': 'int64', '22001-0.0': 'float64', '22021-0.0': 'float64'}
 
     for col in translation_df.columns.tolist():
-        settype = col_dtype[col]
+        settype = col_dtype[split_ds(col)]
+        translation_df[col] = translation_df[col].astype(float)
         translation_df[col] = translation_df[col].astype(settype)
 
     # create dictionary that contains all codes
