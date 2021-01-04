@@ -31,6 +31,18 @@ cohort_results_out = dbc.Form(
     dbc.Button(children="Save", color="success", id="save_cohort_results_btn", className="ml-auto", style={"margin":"5px", "display":"block"}),
     ],
 )
+# add_new_term_modal = dbc.Modal(
+#                 [
+#                     dbc.ModalHeader("Find fields"),
+#                     dbc.ModalBody(id="find_terms_modalbody", children=kw_search_app.kw_search_group),
+#                     dbc.ModalFooter(
+#                         dbc.Button("Close", id={'type': 'find_terms_modal_btn', 'name': 'close'}, className="ml-auto"),
+#                     id="find_terms_modalfooter"),
+#                 ],
+#                 id="find_terms_modal",
+#                 size="xl",
+#                 style={'maxWidth': '1600px', 'width': '90%'})
+#
 
 tab = dbc.FormGroup(
     dbc.CardBody(
@@ -42,6 +54,7 @@ tab = dbc.FormGroup(
                 dbc.Button("Save", color='success', id="save_results_modal_btn", style={"margin": "5px"})
             ]),
             dbc.Row(dbc.Col(id='save_results_status'), align='center'),
+            dbc.Row(dbc.Col(id='defined_term_rows')),
             html.H3("Cohort Search Results Report", className="card-text"),
             html.Div(id='history_results_report'),
             html.Div([
@@ -62,6 +75,37 @@ tab = dbc.FormGroup(
     ),
     className="mt-3",
 )
+
+def get_default_fields_table():
+    fields = {'Field':['Year of Birth', 'Genetic Sex'], 'FieldID':['3', '52'], 'Coding':['10', '3'], 'Value':['all','all'], 'Meaning':['all', 'all']}
+    df = pd.DataFrame.from_dict(fields)
+    return df
+
+def get_default_dropdown_card():
+    default_cols = {'34-0.0': 'int64', '52-0.0': 'int64', '21000-0.0': 'int64', '22001-0.0': 'float64', '22021-0.0': 'float64'}
+    default_df = get_default_fields_table()
+    default_card = get_dropdown_card(0, 1, f"terms {len(default_df.index)}", default_df)
+    return default_card
+
+def get_dropdown_card(idx, id, v, term_count_str, terms_tab):
+    card = dbc.Card(dbc.Row(
+    [
+        dbc.Col(dbc.Button("❌", id={'modal_ctrl':'none','name': id + '_remove'}), width={"size": 1}),
+        dbc.Col(html.H3(v['name'], id=id + '_name_title'), width={"size": 4}),
+        dbc.Col(dbc.Button("Add terms", id={"name": id + '_any', "type": "find_terms_modal_btn"}),
+                width={"size": 2}),
+
+        dbc.Col(html.H5(term_count_str, id={"name": id + '_terms', "type": "text"}), width={"size": 3}),
+        dbc.Col(dbc.Button("▼", id={"index": idx, "type": "expand"}), width={"size": 1, "offset":1}),
+        dbc.Collapse(
+            dbc.Card(
+                dbc.CardBody([
+                    html.H5('Defining terms'),
+                    terms_tab
+                ])),
+            id={"index": idx, "type": "collapse"})
+        ]))
+    return card
 
 def toggle_modals(n1, n2, n3, is_open):
     if n1 or n3:

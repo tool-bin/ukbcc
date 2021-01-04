@@ -150,6 +150,26 @@ def alter_defined_term(n_clicks: int, modified_timestamp: int, defined_terms: di
         defined_terms[get_random_string(16)]={'name':name, 'any':[]}
     return defined_terms
 
+def get_dropdown_card(idx, id, v, term_count_str, terms_tab):
+    card = dbc.Card(dbc.Row(
+    [
+        dbc.Col(dbc.Button("❌", id={'modal_ctrl':'none','name': id + '_remove'}), width={"size": 1}),
+        dbc.Col(html.H3(v['name'], id=id + '_name_title'), width={"size": 4}),
+        dbc.Col(dbc.Button("Add terms", id={"name": id + '_any', "type": "find_terms_modal_btn"}),
+                width={"size": 2}),
+
+        dbc.Col(html.H5(term_count_str, id={"name": id + '_terms', "type": "text"}), width={"size": 3}),
+        dbc.Col(dbc.Button("▼", id={"index": idx, "type": "expand"}), width={"size": 1, "offset":1}),
+        dbc.Collapse(
+            dbc.Card(
+                dbc.CardBody([
+                    html.H5('Defining terms'),
+                    terms_tab
+                ])),
+            id={"index": idx, "type": "collapse"})
+        ]))
+    return card
+
 @app.callback(
     Output("defined_term_rows", "children"),
     [Input("defined_terms", "modified_timestamp")],
@@ -175,6 +195,7 @@ def populate_defined_terms(defined_terms_timestamp: int, defined_terms: dict):
         raise PreventUpdate
 
     defined_fields=[]
+    print(f"defined terms dic {defined_terms}")
     for idx, (id,v) in enumerate(defined_terms.items()):
         n_any_terms = len(defined_terms[id]['any'])
 
@@ -185,24 +206,7 @@ def populate_defined_terms(defined_terms_timestamp: int, defined_terms: dict):
         if(len(tab_any_terms.index)==0):
             terms_tab=html.H5("No terms added yet. Hit the 'Add terms' button")
 
-        #TODO: Move this to its own function
-        #TODO: Consider using dbc.Collapse to allow showing lots of terms
-        defined_fields.append(dbc.Card(dbc.Row([
-            dbc.Col(dbc.Button("❌", id={'modal_ctrl':'none','name': id + '_remove'}), width={"size": 1}),
-            dbc.Col(html.H3(v['name'], id=id + '_name_title'), width={"size": 4}),
-            dbc.Col(dbc.Button("Add terms", id={"name": id + '_any', "type": "find_terms_modal_btn"}),
-                    width={"size": 2}),
-
-            dbc.Col(html.H5(term_count_str, id={"name": id + '_terms', "type": "text"}), width={"size": 3}),
-            dbc.Col(dbc.Button("▼", id={"index": idx, "type": "expand"}), width={"size": 1, "offset":1}),
-            dbc.Collapse(
-                dbc.Card(
-                    dbc.CardBody([
-                        html.H5('Defining terms'),
-                        terms_tab
-                    ])),
-                id={"index": idx, "type": "collapse"})
-        ])))
+        defined_fields.append(get_dropdown_card(idx, id, v, term_count_str, terms_tab))
     return (defined_fields)
 
 
