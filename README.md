@@ -48,6 +48,17 @@ Or clone the repo:
 
 **NB**: We strongly recommend using a virtual environment when installing this package and its dependencies. Please see this link for further information: https://docs.python.org/3/tutorial/venv.html
 
+Quick usage:
+---------
+
+Run the following command in the terminal
+
+    $ ukbcc
+
+The above command will setup the web-based interface and generates a web address where this can be accessed.
+
+Follow the instructions on the website to proceed with cohort generation.
+
 Usage
 --------
 
