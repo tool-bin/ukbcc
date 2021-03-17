@@ -6,19 +6,19 @@ Authors: Isabell Kiral, Nathalie Willems, Benjamin Goudey
 Overview
 --------
 
-Tool for curation of UK Biobank data to generate cohorts. The tool can filter the main and associated datasets (e.g general practioner clinical data) based on search terms provided by the user. It can be used interactively through a web-based interface, a command line interface, or imported as a module and integrated into a broader pipeline. Additional functionality, such as automatically downloading large data files (bulk data) is also supported.
+Tool for curation of UK Biobank data to generate cohorts. The tool can filter the main and associated datasets (e.g general practioner clinical data) based on search terms provided by the user. It can be used interactively through a web-based interface, or imported as a module and integrated into a broader pipeline. Additional functionality, such as automatically downloading large data files (bulk data) is also supported.
 
 
-Known Issues
+<!-- Known Issues
 ------------
-Currently there are known issues in running very long and complex queries (e.g > 800 datafield:value combinations), resulting in errors from the pandas library. We are working on these issues, and will update subsequent releases with these bug fixes soon.
+Currently there are known issues in running very long and complex queries (e.g > 800 datafield:value combinations), resulting in errors from the pandas library. We are working on these issues, and will update subsequent releases with these bug fixes soon. -->
 
 
 Prerequisites
 --------
 
-* The provided tool is developed for Python version 3 and can be imported as a package as described below.
-* The *`interactive mode`* is developed to be run in the command line and has been developed for and tested on MacOS and Linux systems.
+* Python 3.8
+<!-- * The *`web-based mode`* is developed to be run from a terminal commandline and has been developed for and tested on MacOS and Linux systems. -->
 <!--* Some functionality, particularly automated download of files, relies on running a headless browsers. To make sure this runs smoothly, please follow the steps below
 
 ### Enabling UKBB direct access to Primay Care databases
@@ -52,7 +52,7 @@ Usage
 --------
 
 There are two ways to use with this module:
-1. Running the module from the command line and leveraging the *`interactive mode`* features to dynamically generate cohorts.
+1. Running the module from the command line and leveraging the *`web mode`* features to dynamically generate cohorts.
 2. Importing the module into an existing pipeline, and using the functions developed to interact with the UKBB databases.
 
 There is more detailed information in [our paper](https://www.biorxiv.org/content/10.1101/2020.07.12.199810v1).
@@ -67,7 +67,7 @@ In order to make full use of this module, you will need to download the followin
 <!-- * [`lookupCodeDescriptions.csv`](https://github.ibm.com/aur-genomics/modellingScripts/blob/master/isabell/cohortPipeline/lookupCodeDescriptions.csv): A file that maps descriptions to codes for the following formats: ICD9, ICD10, read_2, read_3.
 * [`coding19.tsv`](https://github.ibm.com/aur-genomics/modellingScripts/blob/master/isabell/cohortPipeline/coding19.tsv): A file that maps the `node_id`s from the main dataset to ICD10 codes.    -->
 
-### Downloading the GP clinical dataset
+#### Downloading the GP clinical dataset
 The GP clinical dataset can be downloaded directly from the UK Biobank showcase website, through the Data Portal webpage. Instructions for how to download this file are provided below:
 1. Log into the UK Biobank showcase website (https://bbams.ndph.ox.ac.uk/ams/resApplications)
 2. Navigate to your Project by clicking the "Project" button on the left-hand side of the page
@@ -77,15 +77,9 @@ The GP clinical dataset can be downloaded directly from the UK Biobank showcase 
 6. Click on the "Table Download" button
 7. Type in "gp_clinical" into the search bar and click the "Fetch Table" button
 8. Click on the generated link. This will automatically start downloading the gp_clinical table, as tab-separated plain-text file.
-9. Provide the path and name of the GP clinical file to the main.py module in order to use this dataset within the *`interactive`* mode of the UKBCC module
+9. Provide the path and name of the GP clinical file to the main.py module in order to use this dataset within the *`web`* mode of the UKBCC module
 
-## Interactive mode
-
-There are two ways to run *`interactive mode`*:
-1. Through a web-based interface
-2. Through a command-line interface
-
-### Web-based interface
+## Web-based interface
 
 In order to use the web-based interface, please run the following command from the command line:
 
@@ -105,7 +99,7 @@ We recommend using a web-server if you would like to run the UKBCC tool in a pro
 - uWSIG: https://uwsgi-docs.readthedocs.io/en/latest/
 
 
-### Command-line interface
+<!-- ### Command-line interface
 
 In order to use the command-line interface functionality, the module can simple be called from the command line.
 
@@ -118,7 +112,7 @@ Use the `portal_access` flag and provide the location and filename of the gp_cli
 ```shell
 $ ukbcc --portal_access False --gp_clinical_file ./pathtodata/gp_clinical.txt
 ``` -->
-2. You will be asked to provide certain information. Make sure to provide the full or relative path (and filename if asked).
+<!-- 2. You will be asked to provide certain information. Make sure to provide the full or relative path (and filename if asked).
 ```shell
 >> Please specify directory for config file [`.` for current directory]:
 >> Please specify the full path and name of main dataset:
@@ -153,15 +147,15 @@ The module will write all the relevant files to the specified output directory. 
 3. Selection of desired datafield:code combinations (e.g datafields with codes that refer to conditions of `glaucoma`)
 ![Alt text](images/cohort_selection.png?raw=true "Datafield:code Selection")
 4. Selection of conditional logic to apply (e.g all participants can have *`any of`* the subtypes of `glaucoma`)
-![Alt text](images/update_inclusion_logic.png?raw=true "Conditional Logic") -->
+![Alt text](images/update_inclusion_logic.png?raw=true "Conditional Logic") --> --> -->
 
-## Stand-alone mode
+## Import modules
 
 The ukbcc module uses dictionaries in order to represent the various datafield:code combinations and conditional logic to be applied in generating a cohort.
-This dictionary will be automatically generated through the *`interactive mode`*.
+This dictionary will be automatically generated through the *`web mode`*.
 Alternatively, the user can write this dictionary themselves, and use the **query** submodule to further interact with UKBB databases.
 Further information about the expected structure of the dictionary is provided in the docstrings of the functions within this module.
-It is recommended the user leverage the `interactive mode` if using the ukbcc module for the first time.
+It is recommended the user leverage the `web mode` if using the ukbcc module for the first time.
 
 To learn about how to use modules in this package in your existing pipeline, see example-module notebook in the examples directory in this repo.
 
