@@ -1,6 +1,6 @@
 import dash
-# from ukbcc.webapp.app import app
-from app import app
+from ukbcc.webapp.app import app
+# from app import app
 
 import dash_html_components as html
 import dash_bootstrap_components as dbc
@@ -40,8 +40,8 @@ tab = dbc.FormGroup(
             dbc.Row(id='history_results', align='center'),
             html.Div([
                 dbc.Button("Save cohort IDs", color='success', id="save_cohort_ids_modal_btn", style={"margin": "5px"}),
-                dbc.Button("Save as CSV", color='success', id="save_as_csv_modal_btn", style={"margin": "5px"})
-            ]),
+            #     dbc.Button("Save as CSV", color='success', id="save_as_csv_modal_btn", style={"margin": "5px"})
+            # ]),
             dbc.Row(dbc.Col(id='save_id_status'), align='center'),
             html.H3("Cohort Search Results Report", className="card-text"),
             html.Div(id='history_results_report'),
